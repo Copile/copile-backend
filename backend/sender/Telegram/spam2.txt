@@ -1,0 +1,5 @@
+DOGEUSDT LONG      
+Leverage: Cross 20x      
+Entry: 0.1585      
+Targets: 0.15997 - 0.16449 - 0.16574 - 0.16732      
+SL: 0.14777
