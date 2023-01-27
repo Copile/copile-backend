@@ -16,8 +16,8 @@ app.get("/", (req, res) => {
     res.send("Hello world");
 });
 
-app.post("/newTrade", async (req, res) => {
-    console.log("Received new trade:", req.body);
+app.post("/createBalances", async (req, res) => {
+    console.log("Received new balance request:", req.body);
     console.log(req.body);
 
 
@@ -29,7 +29,7 @@ app.post("/newTrade", async (req, res) => {
 
         const uuid = (Math.random() * 100).toString();
 
-        const parent = client.queuePath("copile", "us-central1", "trade-queue");
+        const parent = client.queuePath("copile", "us-central1", "balance-queue");
         const task = {
             httpRequest: {
                 headers: {
