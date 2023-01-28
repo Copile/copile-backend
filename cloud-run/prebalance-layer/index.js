@@ -20,15 +20,15 @@ app.post("/createBalances", async (req, res) => {
     console.log("Received new balance request:", req.body);
     console.log(req.body);
 
+    let users = []
+    const query = db.collection('users');
+    const snapshot = await query.get();
+    snapshot.forEach(doc => {
+        user_id = doc.id
+        users.push(user_id)
+    });
 
-    for(let i = 0; i < 1; i++) {
-
-        const query = db.collection('users').where('uuid', '==', 'av3FW2jOwQgZexx6ZTFQ');
-        const querySnapshot = await query.get();
-        console.log(querySnapshot.docs[0].data());
-
-        const uuid = (Math.random() * 100).toString();
-
+    for(let i = 0; i < users.length; i++) {
         const parent = client.queuePath("copile", "us-central1", "balance-queue");
         const task = {
             httpRequest: {
@@ -36,17 +36,18 @@ app.post("/createBalances", async (req, res) => {
                     "Content-Type": "text/plain",
                 },
                 httpMethod: "POST",
-                url: "https://trade-handler-zvakwy7kgq-uc.a.run.app/send_call",
+                url: "https://prebalance-layer-zvakwy7kgq-uc.a.run.app/createBalance",
                 oidcToken: {
                     serviceAccountEmail: "tasks-service-account@copile.iam.gserviceaccount.com"
                 },
-                body: Buffer.from(req.body).toString("base64")
+                body: Buffer.from(users[i]).toString("base64")
             }
         };
+
         const request = { parent, task };
         const [response] = await client.createTask(request);
         const name = response.name;
-        console.log("Created trade", name);
+        console.log("Started balance control", name)
     }
 
     res.send(JSON.stringify({handled: true}));
@@ -55,9 +56,6 @@ app.post("/createBalances", async (req, res) => {
 app.get("*", (req, res) => {
     res.send("OK").end();
 });
-
-
-
 
 const PORT = process.env.PORT || 8080;
 app.listen(process.env.PORT || 8080, () => {
