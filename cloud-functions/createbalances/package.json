@@ -1,15 +1,8 @@
 {
-  "name": "submitTrade",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "createBalances",
+  "version": "0.0.1",
   "dependencies": {
+    "@google-cloud/pubsub": "^0.18.0",
     "@google-cloud/tasks": "^3.0.5",
     "express": "^4.18.2",
     "request": "^2.88.2"
