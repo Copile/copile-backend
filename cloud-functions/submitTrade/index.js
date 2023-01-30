@@ -3,6 +3,7 @@
 
 const request = require("request");
 const express = require("express");
+const bodyParser = require('body-parser');
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
@@ -10,13 +11,15 @@ app.use(express.urlencoded({ extended: true }));
 const { CloudTasksClient } = require("@google-cloud/tasks");
 const client = new CloudTasksClient();
 
-app.get("/submitTrade", async (req, res) => {
+app.post("/submitTrade", async (req, res) => {
     // create new GCP Cloud Task in "trade-queue" queue
 
     // create random UUID
     const uuid = (Math.random() * 100).toString();
+    
+    trade = JSON.stringify(req.body)
 
-    const parent = client.queuePath("miratrading-ltd", "us-east1", "new-trade-queue");
+    const parent = client.queuePath("copile", "us-central1", "processing-queue");
     const task = {
         // appEngineHttpRequest: {
         //     headers: {
@@ -28,18 +31,19 @@ app.get("/submitTrade", async (req, res) => {
         // },
         httpRequest: {
             headers: {
-                "Content-Type": "text/plain",
+                "Content-Type": "application/json",
             },
             httpMethod: "POST",
-            url: "https://new-trade-handler-sp5g6ee64a-ue.a.run.app/newTrade",
+            url: "https://preprocessing-layer-zvakwy7kgq-uc.a.run.app/newTrade",
             oidcToken: {
-                serviceAccountEmail: "tasks-service-account@miratrading-ltd.iam.gserviceaccount.com"
+                serviceAccountEmail: "tasks-service-account@copile.iam.gserviceaccount.com"
             },
-            body: Buffer.from(uuid).toString("base64")
+            body: Buffer.from(trade).toString("base64")
         }
     };
 
-    console.log("Adding a new-trade (" + uuid + ") to new-trade-queue");
+    console.log("Adding a new-trade (" + uuid + ") to processing-queue");
+    console.log(req.body);
 
 
     const request = { parent, task };
