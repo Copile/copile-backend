@@ -46,8 +46,7 @@ def send_sl():
             # call method to send stop loss
             print("stoploss sent:", request.data)
         except Exception as error:
-            pri
-            nt(error)
+            print(error)
 
 
 if __name__ == '_main_':
