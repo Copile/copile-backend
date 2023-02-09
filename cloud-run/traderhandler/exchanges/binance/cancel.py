@@ -6,7 +6,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def binance_cancel(uuid, symbol, order_id):
+def send_cancel(uuid, symbol, order_id):
 
     try:
         client = Client(API_KEY, API_SECRET)

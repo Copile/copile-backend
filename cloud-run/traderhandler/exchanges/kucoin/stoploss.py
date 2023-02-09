@@ -5,7 +5,7 @@ api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
 api_passphrase = "mira12345678"
 
 
-def kucoin_stoploss(uuid, symbol, SL, SL_Percentage):
+def send_stoploss(uuid, symbol, SL, SL_Percentage):
 
     # Connecting to Kucoin API
     client_trade = Trade(key=api_key, secret=api_secret, passphrase=api_passphrase, is_sandbox=False, url='')

@@ -1,7 +1,7 @@
 from pybit import usdt_perpetual
 
 
-def bybit_cancel(uuid, symbol, order_id):
+def send_cancel(uuid, symbol, order_id):
     API_KEY = "i8x20EPFOccGzd2myU"
     API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGfS"
 

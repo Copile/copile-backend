@@ -1,7 +1,7 @@
 from pybit import usdt_perpetual
 
 
-def bybit_emergency(uuid, side, symbol):
+def send_emergency(uuid, side, symbol):
     side = 'BUY' if side == 'Buy' else 'SELL'
 
     session = usdt_perpetual.HTTP(

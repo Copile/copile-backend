@@ -6,7 +6,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def binance_trade(uuid, side, symbol, leverage, Margin, price):
+def send_trade(uuid, side, symbol, leverage, Margin, price):
     client = Client(API_KEY, API_SECRET)
     side = 'BUY' if side == 'Buy' else 'SELL'
     info = client.futures_exchange_info()

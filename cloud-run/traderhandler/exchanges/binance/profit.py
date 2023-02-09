@@ -5,7 +5,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def binance_profit(uuid, side, symbol, TP, TP_Percentage):
+def send_profit(uuid, side, symbol, TP, TP_Percentage):
     client = Client(API_KEY, API_SECRET)
     info = client.futures_exchange_info()
     symbols = info['symbols']
@@ -30,4 +30,3 @@ def binance_profit(uuid, side, symbol, TP, TP_Percentage):
                 return f"Successfully placed Take-Profit {TP} Order for {uuid}"
             except Exception as error:
                 print(format(error))
-

@@ -2,7 +2,7 @@ from pybit import usdt_perpetual
 import time
 
 
-def bybit_stoploss(uuid, side, symbol, SL, SL_Percentage):
+def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
     side = 'BUY' if side == 'Buy' else 'SELL'
 
     API_KEY = "i8x20EPFOccGzd2myU"

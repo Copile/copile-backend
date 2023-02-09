@@ -5,7 +5,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGfS"
 
 
-def binance_stoploss(uuid, side, symbol, SL, SL_Percentage):
+def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
     client = Client(API_KEY, API_SECRET)
     info = client.futures_exchange_info()
     symbols = info['symbols']

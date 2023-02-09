@@ -1,7 +1,7 @@
 from pybit import usdt_perpetual
 
 
-def bybit_trade(uuid, side, symbol, leverage, Margin, price):
+def send_trade(uuid, side, symbol, leverage, Margin, price):
     side = "Buy" if side == "BUY" else "Sell"
 
     # Connecting to Bybit API

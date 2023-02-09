@@ -5,7 +5,7 @@ api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
 api_passphrase = "mira12345678"
 
 
-def kucoin_cancel(uuid, order_id):
+def send_cancel(uuid, order_id):
     # Connecting to Kucoin API
     client_trade = Trade(key=api_key, secret=api_secret, passphrase=api_passphrase, is_sandbox=False, url='')
 
