@@ -1,4 +1,5 @@
 from binance.client import Client
+from ..firestore_functions import store_trade_data
 import time
 
 API_KEY = "i8x20EPFOccGzd2myU"

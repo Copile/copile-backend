@@ -38,7 +38,8 @@ def check_balance(license):
                     get_balance = eval("check_" + f"{item}(api_key, api_secret, api_passphrase)")
                     data['exchanges'][f'{item}'] = str(get_balance)
 
-        new = db.collection(u'users').document(f'{license}').collection(u'balances').document(str(int(time.time()))).set(data)
+        new = db.collection(u'users').document(f'{license}').collection(u'balances').document(
+            str(int(time.time()))).set(data)
         return {f"Created Balance Document for {license} for {str(int(time.time()))} "}
     except Exception as error:
         return print("(check_script) Failed finding balance {}".format(error))

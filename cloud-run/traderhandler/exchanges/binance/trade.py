@@ -1,6 +1,7 @@
 from binance.client import Client
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from binance.helpers import round_step_size
+from ..firestore_functions import store_trade_data
 
 API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
@@ -48,6 +49,7 @@ def send_trade(uuid, side, symbol, leverage, Margin, price):
                     price=round(price, price_precision)
                 )
                 print(create_order)
+                store_trade_data(uuid, symbol, price, create_order.get('orderId'))
                 return f"**Successfully placed order! - {uuid} - {symbol}**"
             except BinanceAPIException as error:
                 print(error)
