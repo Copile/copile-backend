@@ -1,7 +1,7 @@
 from pybit import usdt_perpetual
 
 
-def send_trade(uuid, side, symbol, leverage, Margin, price):
+def send_trade(account_id, side, symbol, leverage, Margin, price):
     side = "Buy" if side == "BUY" else "Sell"
 
     # Connecting to Bybit API
@@ -24,14 +24,14 @@ def send_trade(uuid, side, symbol, leverage, Margin, price):
             sell_leverage=int(leverage)
         )
     except Exception as error:
-        print(f"Leverage set - {uuid}")
+        print(f"Leverage set - {account_id}")
     try:
         mode = session.cross_isolated_margin_switch(
             symbol=symbol,
             is_isolated=False,
         )
     except Exception as error:
-        print(f"Switched to Cross-Margin - {uuid}")
+        print(f"Switched to Cross-Margin - {account_id}")
 
     # Creating order and placing all necessary Take profit positions
     try:
@@ -46,6 +46,6 @@ def send_trade(uuid, side, symbol, leverage, Margin, price):
             close_on_trigger=False,
         )
         print(create_order)
-        return f"**Successfully placed order! - {uuid} - {symbol}**"
+        return f"**Successfully placed order! - {account_id} - {symbol}**"
     except Exception as error:
         print(format(error))

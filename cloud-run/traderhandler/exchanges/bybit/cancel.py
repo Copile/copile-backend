@@ -1,7 +1,7 @@
 from pybit import usdt_perpetual
 
 
-def send_cancel(uuid, symbol, order_id):
+def send_cancel(account_id, symbol, order_id):
     API_KEY = "i8x20EPFOccGzd2myU"
     API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGfS"
 
@@ -16,6 +16,6 @@ def send_cancel(uuid, symbol, order_id):
             order_id=order_id
         )
         print(cancel)
-        return f"Cancelled order ID: {str(order_id)} for {uuid}"
+        return f"Cancelled order ID: {str(order_id)} for {account_id}"
     except Exception as error:
-        print(f"{error} - {uuid}")
+        print(f"{error} - {account_id}")

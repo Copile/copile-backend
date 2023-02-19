@@ -1,12 +1,12 @@
 from binance.client import Client
-from ..firestore_functions import store_trade_data
+from ..firestore_functions import store_sl
 import time
 
 API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGfS"
 
 
-def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
+def send_stoploss(account_id, side, symbol, SL, SL_Percentage):
     client = Client(API_KEY, API_SECRET)
     info = client.futures_exchange_info()
     symbols = info['symbols']
@@ -28,7 +28,12 @@ def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
                     quantity=SL_amount,
                     reduceOnly='True',
                 )
-                print(SL_order)
-                return f"Successfully placed Stoploss {SL} Order for {uuid}"
+                sl_dict = {
+                    "trade_id": "this should be tradeID or orderID idek",
+                    "sl": SL,
+                    "sl_percentage": SL_Percentage
+                }
+                store_sl(account_id, sl_dict)
+                return f"Successfully placed Stoploss {SL} Order for {account_id}"
             except Exception as error:
                 print(format(error))

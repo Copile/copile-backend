@@ -6,7 +6,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def send_emergency(uuid, side, symbol):
+def send_emergency(account_id, side, symbol):
     client = Client(API_KEY, API_SECRET)
     side = 'BUY' if side == 'Buy' else 'SELL'
     position = client.futures_position_information(

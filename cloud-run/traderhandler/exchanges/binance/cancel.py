@@ -6,7 +6,7 @@ API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def send_cancel(uuid, symbol, order_id):
+def send_cancel(account_id, symbol, order_id):
 
     try:
         client = Client(API_KEY, API_SECRET)
@@ -16,7 +16,7 @@ def send_cancel(uuid, symbol, order_id):
             orderID=int(float(order_id))
         )
         print(cancel)
-        return f"Cancelled order ID: {str(order_id)} for {uuid}"
+        return f"Cancelled order ID: {str(order_id)} for {account_id}"
     except BinanceAPIException as error:
         print(error)
     except BinanceOrderException as error:

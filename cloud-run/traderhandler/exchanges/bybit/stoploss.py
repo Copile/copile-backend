@@ -2,7 +2,7 @@ from pybit import usdt_perpetual
 import time
 
 
-def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
+def send_stoploss(account_id, side, symbol, SL, SL_Percentage):
     side = 'BUY' if side == 'Buy' else 'SELL'
 
     API_KEY = "i8x20EPFOccGzd2myU"
@@ -22,7 +22,7 @@ def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
             )
             print(partial_mode)
         except Exception as error:
-            print(f"Switched Position Mode - {uuid}")
+            print(f"Switched Position Mode - {account_id}")
 
     position = str(session.my_position(symbol=symbol)['result'][0 if side == 'BUY' else 1]['size'])
     min_qty = session.query_symbol()['result']
@@ -41,6 +41,6 @@ def send_stoploss(uuid, side, symbol, SL, SL_Percentage):
                 stop_loss=float(SL),
             )
             print(SL_order)
-            return f"Successfully placed Stoploss {SL} Order for {uuid}"
+            return f"Successfully placed Stoploss {SL} Order for {account_id}"
 
 bybit_stoploss(12312312, "Buy", "BTCUSDT", 20500, "0.50")

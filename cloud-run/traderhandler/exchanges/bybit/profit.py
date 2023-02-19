@@ -2,7 +2,7 @@ from pybit import usdt_perpetual
 import time
 
 
-def send_profit(uuid, side, symbol, TP, TP_Percentage):
+def send_profit(account_id, side, symbol, TP, TP_Percentage):
     side = 'BUY' if side == 'Buy' else 'SELL'
 
     API_KEY = "i8x20EPFOccGzd2myU"
@@ -23,7 +23,7 @@ def send_profit(uuid, side, symbol, TP, TP_Percentage):
             )
             print(partial_mode)
         except Exception as error:
-            print(f"Switched Position Mode - {uuid}")
+            print(f"Switched Position Mode - {account_id}")
 
     position = str(session.my_position(symbol=symbol)['result'][0 if side == 'BUY' else 1]['size'])
     min_qty = session.query_symbol()['result']
@@ -42,7 +42,7 @@ def send_profit(uuid, side, symbol, TP, TP_Percentage):
                 take_profit=float(TP),
             )
             print(TP_order)
-            return f"Successfully placed Take-Profit {TP} Order for {uuid}"
+            return f"Successfully placed Take-Profit {TP} Order for {account_id}"
 
 
 bybit_profit(12312312, "Buy", "BTCUSDT", 21500, "0.50")

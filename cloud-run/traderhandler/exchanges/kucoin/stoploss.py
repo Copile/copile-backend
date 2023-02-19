@@ -5,7 +5,7 @@ api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
 api_passphrase = "mira12345678"
 
 
-def send_stoploss(uuid, symbol, SL, SL_Percentage):
+def send_stoploss(account_id, symbol, SL, SL_Percentage):
 
     # Connecting to Kucoin API
     client_trade = Trade(key=api_key, secret=api_secret, passphrase=api_passphrase, is_sandbox=False, url='')
@@ -39,6 +39,6 @@ def send_stoploss(uuid, symbol, SL, SL_Percentage):
             reduce_only=True,
         )
         print(SL_order)
-        return f"Successfully placed Stoploss {SL} Order for {uuid}"
+        return f"Successfully placed Stoploss {SL} Order for {account_id}"
     except Exception as error:
         print(error)
