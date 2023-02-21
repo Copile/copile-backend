@@ -33,8 +33,9 @@ def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_
                     quantity=sl_amount,
                     reduceOnly='True',
                 )
+                order_id = sl_order['orderId']
                 sl_dict = {
-                    "order_id": sl_order.get("orderId"),
+                    "order_id": order_id,
                     "trade_id": trade_id,
                     "sl_document_id": sl_document_id,
                     "sl_number": sl_number,

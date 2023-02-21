@@ -33,8 +33,9 @@ def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_pe
                     quantity=TP_amount,
                     reduceOnly='True',
                 )
+                order_id = tp_order['orderId']
                 tp_dict = {
-                    "order_id": tp_order.get("orderId"),
+                    "order_id": order_id,
                     "trade_id": trade_id,
                     "tp_document_id": tp_document_id,
                     "tp_number": tp_number,

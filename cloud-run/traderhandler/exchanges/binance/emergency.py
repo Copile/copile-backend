@@ -3,10 +3,6 @@ from binance.exceptions import BinanceAPIException, BinanceOrderException
 from ..firestore_functions import get_user_keys
 from ..firestore_functions import get_trade_info
 
-API_KEY = "i8x20EPFOccGzd2myU"
-API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
-
-
 def send_emergency(account_id, trade_id):
     keys = get_user_keys(account_id, "binance")
     client = Client(keys["api_key"], keys["api_secret"])

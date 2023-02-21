@@ -27,6 +27,8 @@ def send_cancel(account_id, trade_id, document_id, trade_type):
         print(cancel)
         if trade_type == "tp" or trade_type == "sl":
             delete_tp_sl_order(account_id, trade_id, document_id, trade_type)
+        else:
+            delete_order(account_id, trade_id)
         return f"Cancelled {trade_type} order ID: {str(order_id)} for {account_id}"
     except BinanceAPIException as error:
         print(error)
