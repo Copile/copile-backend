@@ -29,20 +29,28 @@ def send_profit(account_id, side, symbol, TP, TP_Percentage):
     min_qty = session.query_symbol()['result']
     for item in min_qty:
         if item['name'] == symbol:
-            p = len(str(item['lot_size_filter']['min_trading_qty']).split(".")[1])
-            precision = int(p)
+            min_price = float(item['price_filter']['min_price'])
+            if float(item['lot_size_filter']['min_trading_qty']).is_integer():
+                precision = 0
+            else:
+                p = len(str(item['lot_size_filter']['min_trading_qty']).split(".")[1])
+                precision = int(p)
     while True:
         time.sleep(2)
         if position != '0':
             TP_amount = round(float(position) * float(TP_Percentage), precision)
-            TP_order = session.set_trading_stop(
+            TP_order = session.place_conditional_order(
+                side='Sell' if side == 'BUY' else 'Buy',
                 symbol=symbol,
-                side=side,
-                TP_size=TP_amount,
-                take_profit=float(TP),
+                order_type="Limit",
+                price=float(TP),
+                base_price=float(TP) - min_price,
+                stop_px=float(TP),
+                qty=TP_amount,
+                time_in_force="GoodTillCancel",
+                trigger_by="MarkPrice",
+                reduce_only=True,
+                close_on_trigger=True,
             )
-            print(TP_order)
+            print(TP_order['result']['stop_order_id'])
             return f"Successfully placed Take-Profit {TP} Order for {account_id}"
-
-
-bybit_profit(12312312, "Buy", "BTCUSDT", 21500, "0.50")

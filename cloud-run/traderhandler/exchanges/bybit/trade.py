@@ -45,7 +45,7 @@ def send_trade(account_id, side, symbol, leverage, Margin, price):
             reduce_only=False,
             close_on_trigger=False,
         )
-        print(create_order)
+        print(create_order['result']['order_id'])
         return f"**Successfully placed order! - {account_id} - {symbol}**"
     except Exception as error:
         print(format(error))

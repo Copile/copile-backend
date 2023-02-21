@@ -17,8 +17,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/createBalances", async (req, res) => {
-    console.log("Received new balance request:", req.body);
-    console.log(req.body);
+    console.log("Received new balance request!");
 
     let users = []
     const query = db.collection('users');
@@ -36,7 +35,7 @@ app.post("/createBalances", async (req, res) => {
                     "Content-Type": "text/plain",
                 },
                 httpMethod: "POST",
-                url: "https://prebalance-layer-zvakwy7kgq-uc.a.run.app/createBalance",
+                url: "https://balancehandler-zvakwy7kgq-uc.a.run.app/createBalance",
                 oidcToken: {
                     serviceAccountEmail: "tasks-service-account@copile.iam.gserviceaccount.com"
                 },

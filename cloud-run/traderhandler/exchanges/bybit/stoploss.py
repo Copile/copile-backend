@@ -28,19 +28,27 @@ def send_stoploss(account_id, side, symbol, SL, SL_Percentage):
     min_qty = session.query_symbol()['result']
     for item in min_qty:
         if item['name'] == symbol:
-            p = len(str(item['lot_size_filter']['min_trading_qty']).split(".")[1])
-            precision = int(p)
+            if float(item['lot_size_filter']['min_trading_qty']).is_integer():
+                precision = 0
+            else:
+                p = len(str(item['lot_size_filter']['min_trading_qty']).split(".")[1])
+                precision = int(p)
     while True:
         time.sleep(2)
         if position != '0':
             SL_amount = round(float(position) * float(SL_Percentage), precision)
-            SL_order = session.set_trading_stop(
+            SL_order = session.place_conditional_order(
+                side='Sell' if side == 'BUY' else 'Buy',
                 symbol=symbol,
-                side=side,
-                sl_size=SL_amount,
-                stop_loss=float(SL),
+                order_type="Limit",
+                price=float(SL),
+                base_price=float(SL),
+                stop_px=float(SL),
+                qty=SL_amount,
+                time_in_force="GoodTillCancel",
+                trigger_by="MarkPrice",
+                reduce_only=True,
+                close_on_trigger=True,
             )
-            print(SL_order)
+            order_id = SL_order['result']['stop_order_id']
             return f"Successfully placed Stoploss {SL} Order for {account_id}"
-
-bybit_stoploss(12312312, "Buy", "BTCUSDT", 20500, "0.50")
