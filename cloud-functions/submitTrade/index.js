@@ -11,51 +11,115 @@ app.use(express.urlencoded({ extended: true }));
 const { CloudTasksClient } = require("@google-cloud/tasks");
 const client = new CloudTasksClient();
 
-app.post("/submitTrade", async (req, res) => {
-    // create new GCP Cloud Task in "trade-queue" queue
-
-    // create random UUID
-    const uuid = (Math.random() * 100).toString();
-    
-    trade = JSON.stringify(req.body)
-
+async function addTaskToQueue(type, payload) {
     const parent = client.queuePath("copile", "us-central1", "processing-queue");
     const task = {
-        // appEngineHttpRequest: {
-        //     headers: {
-        //         "Content-Type": "text/plain",
-        //     },
-        //     httpMethod: "POST",
-        //     relativeUri: "/newTrade", // newTradeHandler/index.js/newTrade
-        //     body: Buffer.from(uuid).toString("base64")
-        // },
         httpRequest: {
             headers: {
                 "Content-Type": "application/json",
             },
             httpMethod: "POST",
-            url: "https://preprocessing-layer-zvakwy7kgq-uc.a.run.app/newTrade",
+            url: `https://preprocessing-layer-zvakwy7kgq-uc.a.run.app/${type}`,
             oidcToken: {
                 serviceAccountEmail: "tasks-service-account@copile.iam.gserviceaccount.com"
             },
-            body: Buffer.from(trade).toString("base64")
+            body: Buffer.from(JSON.stringify(payload)).toString("base64")
         }
     };
-
-    console.log("Adding a new-trade (" + uuid + ") to processing-queue");
-    console.log(req.body);
-
 
     const request = { parent, task };
     const [response] = await client.createTask(request);
     const name = response.name;
     console.log(`Created task ${name}`);
+}
 
-    return res.send(JSON.stringify({ status: 200 }));
+app.post('/submitTrade', async (req, res) => {
+  try {
+    // Get the trade data from the request body
+    const payload = req.body;
+
+    // Add the trade to the processing queue
+    await addTaskToQueue("newTrade", payload);
+
+    // Return a success response
+    res.status(200).json({ success: true, message: 'trade submitted successfully.' });
+  } catch (err) {
+    // Log the error and return an error response
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/submitTP', async (req, res) => {
+  try {
+    // Get the trade data from the request body
+    const payload = req.body;
+
+    // Add the trade to the processing queue
+    await addTaskToQueue("submitTP", payload);
+
+    // Return a success response
+    res.status(200).json({ success: true, message: 'take-profit submitted successfully.' });
+  } catch (err) {
+    // Log the error and return an error response
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/submitSL', async (req, res) => {
+  try {
+    // Get the trade data from the request body
+    const payload = req.body;
+
+    // Add the trade to the processing queue
+    await addTaskToQueue("submitSL", payload);
+
+    // Return a success response
+    res.status(200).json({ success: true, message: 'stop-loss submitted successfully.' });
+  } catch (err) {
+    // Log the error and return an error response
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/cancelOrder', async (req, res) => {
+  try {
+    // Get the trade data from the request body
+    const payload = req.body;
+
+    // Add the trade to the processing queue
+    await addTaskToQueue("cancelOrder", payload);
+
+    // Return a success response
+    res.status(200).json({ success: true, message: 'order cancel submitted successfully.' });
+  } catch (err) {
+    // Log the error and return an error response
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/cancelAllOrders', async (req, res) => {
+  try {
+    // Get the trade data from the request body
+    const payload = req.body;
+
+    // Add the trade to the processing queue
+    await addTaskToQueue("cancelAllOrders", payload);
+
+    // Return a success response
+    res.status(200).json({ success: true, message: 'orders cancel submitted successfully.' });
+  } catch (err) {
+    // Log the error and return an error response
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 app.get("/", (req, res) => {
-    res.send("Hello World");
+    res.send("Copile API");
 })
 
 app.get("*", (req, res) => {
