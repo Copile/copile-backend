@@ -1,13 +1,18 @@
 from binance.client import Client
 from ..firestore_functions import store_tp
+from ..firestore_functions import get_user_keys
+from ..firestore_functions import get_trade_info
 import time
 
-API_KEY = "i8x20EPFOccGzd2myU"
-API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
+def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage):
+    keys = get_user_keys(account_id, "binance")
+    client = Client(keys["api_key"], keys["api_secret"])
 
-def send_profit(account_id, side, symbol, TP, TP_Percentage):
-    client = Client(API_KEY, API_SECRET)
+    trade_info = get_trade_info(account_id, trade_id)
+    symbol = trade_info["symbol"]
+    side = trade_info["side"]
+
     info = client.futures_exchange_info()
     symbols = info['symbols']
     for i in range(len(symbols)):
@@ -18,22 +23,25 @@ def send_profit(account_id, side, symbol, TP, TP_Percentage):
         time.sleep(2)
         position = client.futures_position_information(symbol=symbol)[0]['positionAmt']
         if int(position) != 0:
-            TP_amount = round(float(position) * float(TP_Percentage), precision)
+            TP_amount = round(float(position) * float(tp_percentage), precision)
             try:
-                TP = client.futures_create_order(
+                tp_order = client.futures_create_order(
                     symbol=symbol,
                     side='SELL' if side == 'BUY' else 'BUY',
                     type='TAKE_PROFIT_MARKET',
-                    stopPrice=round(float(TP), price_precision),
+                    stopPrice=round(float(tp_value), price_precision),
                     quantity=TP_amount,
                     reduceOnly='True',
                 )
                 tp_dict = {
-                    "trade_id": "this should be tradeID or orderID idek",
-                    "tp": TP,
-                    "tp_percentage": TP_Percentage
+                    "order_id": tp_order.get("orderId"),
+                    "trade_id": trade_id,
+                    "tp_document_id": tp_document_id,
+                    "tp_number": tp_number,
+                    "tp_value": tp_value,
+                    "tp_percentage": tp_percentage
                 }
                 store_tp(account_id, tp_dict)
-                return f"Successfully placed Take-Profit {TP} Order for {account_id}"
+                return f"Successfully placed Take-Profit {tp_value} Order for {account_id}"
             except Exception as error:
                 print(format(error))

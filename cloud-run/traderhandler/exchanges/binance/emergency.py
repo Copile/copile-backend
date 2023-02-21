@@ -1,13 +1,20 @@
 from binance.client import Client
 from binance.exceptions import BinanceAPIException, BinanceOrderException
-from binance.helpers import round_step_size
+from ..firestore_functions import get_user_keys
+from ..firestore_functions import get_trade_info
 
 API_KEY = "i8x20EPFOccGzd2myU"
 API_SECRET = "Z122p2lilBSaDPnAwKKvP0FNFnwhZFNidGf"
 
 
-def send_emergency(account_id, side, symbol):
-    client = Client(API_KEY, API_SECRET)
+def send_emergency(account_id, trade_id):
+    keys = get_user_keys(account_id, "binance")
+    client = Client(keys["api_key"], keys["api_secret"])
+
+    trade_info = get_trade_info(account_id, trade_id)
+    symbol = trade_info["symbol"]
+    side = trade_info["side"]
+
     side = 'BUY' if side == 'Buy' else 'SELL'
     position = client.futures_position_information(
         symbol=symbol

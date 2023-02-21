@@ -1,7 +1,12 @@
-from flask import Flask, request, jsonify
-from ..exchanges import binance, kucoin, bybit, mexc
-import os
+import base64
+import json
 import logging
+import os
+
+from flask import Flask, request, jsonify
+
+from ..exchanges import binance, kucoin, bybit, mexc
+from ..exchanges.firestore_functions import get_trade_info
 
 EXCHANGES = {
     'binance': binance,
@@ -22,23 +27,32 @@ logging.basicConfig(filename='api.log', level=logging.DEBUG,
 # send calls
 @app.route('/send_call', methods=['POST'])
 def send_call():
-    exchange_name = request.form.get('exchange_name')
-    account_id = request.form.get('account_id')
-    side = request.form.get('side')
-    symbol = request.form.get('symbol')
-    leverage = request.form.get('leverage')
-    margin = request.form.get('Margin')
-    price = request.form.get('price')
+    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+    payload = data['payload']
+    exchange = data['exchange']
+    plan_id = data['plan_id']
+
+    side = payload['side']
+    symbol = payload['symbol']
+    leverage = payload['leverage']
+    entry = payload['entry']
 
     # validate inputs
-    error_response = validate_inputs(exchange_name, [account_id, side, symbol, leverage, margin, price])
+    error_response = validate_inputs(exchange, [account_id, trade_id, plan_id, side, symbol, leverage, entry])
     if error_response:
         return error_response
+
     try:
         # call method to start trade
-        EXCHANGES[exchange_name].trade.send_trade(account_id, side, symbol, leverage, margin, price)
-        logging.info(f"Call sent: {request.data}")
-        return jsonify({"message": "Call sent"}), 200
+        EXCHANGES[exchange].trade.send_trade(account_id, trade_id, plan_id, side, symbol, leverage, entry)
+        logging.info(f"Call sent: {trade_id}")
+        return jsonify({"message": f"Call sent: {trade_id}"}), 200
+
+    except ConnectionError as error:
+        logging.error(f"Connection error: {error}")
+        return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
         logging.error(f"Error sending call: {error}")
@@ -48,21 +62,33 @@ def send_call():
 # send takeprofit
 @app.route('/send_tp', methods=['POST'])
 def send_tp():
-    exchange_name = request.form.get('exchange_name')
-    account_id = request.form.get('account_id')
-    side = request.form.get('side')
-    tp = request.form.get('TP')
-    tp_percentage = request.form.get('TP_Percentage')
+    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+    payload = data['payload']
+    tp_document_id = data['tp_id']
+
+    tp_number = payload['tp_number']
+    tp_value = payload['tp_value']
+    tp_percentage = payload['tp_percentage']
+
+    exchange = get_trade_info(account_id, trade_id)["exchange"]
 
     # validate inputs
-    error_response = validate_inputs(exchange_name, [account_id, side, tp, tp_percentage])
+    error_response = validate_inputs(exchange,
+                                     [account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage])
     if error_response:
         return error_response
     try:
         # call method to sent tp
-        EXCHANGES[exchange_name].profit.send_takeprofit(account_id, side, tp, tp_percentage)
-        logging.info(f"Take profit sent: {request.data}")
-        return jsonify({"message": "Take profit sent"}), 200
+        EXCHANGES[exchange].profit.send_takeprofit(account_id, trade_id, tp_document_id, tp_number, tp_value,
+                                                   tp_percentage)
+        logging.info(f"Take profit sent: {trade_id}")
+        return jsonify({"message": f"Take profit sent {trade_id}"}), 200
+
+    except ConnectionError as error:
+        logging.error(f"Connection error: {error}")
+        return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
         logging.error(f"Error sending take profit: {error}")
@@ -72,20 +98,33 @@ def send_tp():
 # send stoploss
 @app.route('/send_sl', methods=['POST'])
 def send_sl():
-    exchange_name = request.form.get('exchange_name')
-    account_id = request.form.get('account_id')
-    side = request.form.get('side')
-    symbol = request.form.get('symbol')
+    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+    payload = data['payload']
+    sl_document_id = data['sl_id']
+
+    sl_number = payload['sl_number']
+    sl_value = payload['sl_value']
+    sl_percentage = payload['sl_percentage']
+
+    exchange = get_trade_info(account_id, trade_id)["exchange"]
 
     # validate inputs
-    error_response = validate_inputs(exchange_name, [account_id, side, symbol])
+    error_response = validate_inputs(exchange,
+                                     [account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage])
     if error_response:
         return error_response
     try:
         # call method to send stop loss
-        EXCHANGES[exchange_name].stoploss.send_stoploss(account_id, side, symbol)
-        logging.info(f"Stop loss sent: {request.data}")
-        return jsonify({"message": "Stop loss sent"}), 200
+        EXCHANGES[exchange].stoploss.send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value,
+                                                   sl_percentage)
+        logging.info(f"Stop loss sent: {trade_id}")
+        return jsonify({"message": f"Stop loss sent {trade_id}"}), 200
+
+    except ConnectionError as error:
+        logging.error(f"Connection error: {error}")
+        return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
         logging.error(f"Error sending stop loss: {error}")
@@ -95,20 +134,27 @@ def send_sl():
 # cancel single order
 @app.route('/cancel_order', methods=['POST'])
 def cancel_order():
-    exchange_name = request.form.get('exchange_name')
-    account_id = request.form.get('account_id')
-    symbol = request.form.get('symbol')
-    order_id = request.form.get('order_id')
+    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+    document_id = data['document_id']
+    trade_type = data['trade_type']
+
+    exchange = get_trade_info(account_id, trade_id)["exchange"]
 
     # validate inputs
-    error_response = validate_inputs(exchange_name, [account_id, symbol, order_id])
+    error_response = validate_inputs(exchange, [account_id, trade_id, document_id, trade_type])
     if error_response:
         return error_response
     try:
         # call method to cancel one order
-        EXCHANGES[exchange_name].cancel.send_cancel(account_id, symbol, order_id)
-        logging.info(f"Cancelled order: {request.data}")
-        return jsonify({"message": "Cancelled order"}), 200
+        EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, document_id, trade_type)
+        logging.info(f"Cancelled order: {trade_id}")
+        return jsonify({"message": f"Cancelled order: {trade_id}"}), 200
+
+    except ConnectionError as error:
+        logging.error(f"Connection error: {error}")
+        return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
         logging.error(f"Error cancelling order: {error}")
@@ -118,32 +164,47 @@ def cancel_order():
 # cancel all orders
 @app.route('/cancel_all_orders', methods=['POST'])
 def cancel_all_orders():
-    exchange_name = request.form.get('exchange_name')
-    account_id = request.form.get('account_id')
-    side = request.form.get('side')
-    symbol = request.form.get('symbol')
+    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+
+    exchange = get_trade_info(account_id, trade_id)["exchange"]
 
     # validate inputs
-    error_response = validate_inputs(exchange_name, [account_id, side, symbol])
+    error_response = validate_inputs(exchange, [account_id, trade_id])
     if error_response:
         return error_response
     try:
         # call method to cancel all orders
-        EXCHANGES[exchange_name].emergency.send_emergency(account_id, side, symbol)
+        EXCHANGES[exchange].emergency.send_emergency(account_id, trade_id)
         logging.info(f"Cancelled all orders: {request.data}")
         return jsonify({"message": "Cancelled all orders"}), 200
+
+    except ConnectionError as error:
+        logging.error(f"Connection error: {error}")
+        return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
         logging.error(f"Error cancelling all orders: {error}")
         return jsonify({"error": str(error)}), 500
 
 
-def validate_inputs(exchange_name, required_params):
+def validate_inputs(exchange_name, params):
+    """
+    Validates that the required parameters are not empty or None.
+    """
     if exchange_name not in EXCHANGES:
-        return jsonify({"error": f"Exchange '{exchange_name}' not found"}), 400
-    if not all([param for param in required_params if param is None]):
-        return jsonify({"error": "Missing required parameters"}), 400
-    return None
+        raise ValueError(f"Exchange {exchange_name} is not supported.")
+
+    for param in params:
+        if param is None or param.strip() == "":
+            raise ValueError("All parameters are required and cannot be empty.")
+
+    # if not all(char.isdigit() or char == '.' for char in params[-2]):
+    # raise ValueError("Invalid value for price/TP/SL, must be numeric.")
+
+    # if not all(char.isdigit() for char in params[-1]):
+    # raise ValueError("Invalid value for leverage/margin/TP_percentage/SL_percentage, must be an integer.")
 
 
 if __name__ == '__main__':
