@@ -45,9 +45,9 @@ app.post('/newTrade', async (req, res) => {
         const trade_ID = uuidv4();
 
         const trade_data = {
-            "trade_ID": trade_ID,
-            "user": "x",
-            "body": payload,
+            "trade_id": trade_ID,
+            "account_id": "x",
+            "payload": payload,
             "exchange": "x",
         }
 
@@ -55,7 +55,7 @@ app.post('/newTrade', async (req, res) => {
         const matchingPlans = await plansRef.where('product', '==', planId).get();
         matchingPlans.forEach(async (doc) => {
             const userId = doc.ref.parent.parent.id;
-            trade_data.user = userId
+            trade_data.account_id = userId
             const userDoc = await firestore.collection('users').doc(userId).get()
             const user = userDoc.data();
             const preferredExchange = user.preferred_exchange;
@@ -101,17 +101,17 @@ app.post('/submitTP', async (req, res) => {
         const TP_ID = uuidv4();
 
         const trade_data = {
-            'trade_ID': trade_ID,
-            'user': "x",
+            'trade_id': trade_ID,
+            'account_id': "x",
             'payload': payload,
-            'TP_ID': TP_ID,
+            'tp_id': TP_ID,
         }
         const plansRef = firestore.collectionGroup('trades');
         const tradeQuery = await plansRef.where('tradeID', '==', trade_ID).get();
       
         tradeQuery.forEach(async (doc) => {
             const userId = doc.ref.parent.parent.id;
-            trade_data.user = userId
+            trade_data.account_id = userId
             await addTaskToQueue("send_tp", trade_data)
         });
     
@@ -131,17 +131,17 @@ app.post('/submitSL', async (req, res) => {
         const SL_ID = uuidv4();
 
         const trade_data = {
-            'trade_ID': trade_ID,
-            'user': "x",
+            'trade_id': trade_ID,
+            'account_id': "x",
             'payload': payload,
-            'SL_ID': SL_ID,
+            'sl_id': SL_ID,
         }
         const plansRef = firestore.collectionGroup('trades');
         const tradeQuery = await plansRef.where('tradeID', '==', trade_ID).get();
       
         tradeQuery.forEach(async (doc) => {
             const userId = doc.ref.parent.parent.id;
-            trade_data.user = userId
+            trade_data.account_id = userId
             await addTaskToQueue("send_sl", trade_data)
         });
     
@@ -160,17 +160,17 @@ app.post('/cancelOrder', async (req, res) => {
         const { trade_ID, order_ID, type } = trade;
 
         const trade_data = {
-            'trade_ID': trade_ID,
-            'user': "x",
-            'Doc_ID': order_ID,
-            'type': type
+            'trade_id': trade_ID,
+            'account_id': "x",
+            'document_id': order_ID,
+            'trade_type': type
         }
         const plansRef = firestore.collectionGroup('trades');
         const tradeQuery = await plansRef.where('tradeID', '==', trade_ID).get();
       
         tradeQuery.forEach(async (doc) => {
             const userId = doc.ref.parent.parent.id;
-            trade_data.user = userId
+            trade_data.account_id = userId
             await addTaskToQueue("cancel_order", trade_data)
         });
     
@@ -189,15 +189,15 @@ app.post('/cancelAllOrders', async (req, res) => {
         const {trade_ID} = trade;
 
         const trade_data = {
-            'trade_ID': trade_ID,
-            'user': "x",
+            'trade_id': trade_ID,
+            'account_id': "x",
         }
         const plansRef = firestore.collectionGroup('trades');
         const tradeQuery = await plansRef.where('tradeID', '==', trade_ID).get();
       
         tradeQuery.forEach(async (doc) => {
             const userId = doc.ref.parent.parent.id;
-            trade_data.user = userId
+            trade_data.account_id = userId
             await addTaskToQueue("cancel_order", trade_data)
         });
     

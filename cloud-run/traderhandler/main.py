@@ -4,15 +4,13 @@ import logging
 import os
 
 from flask import Flask, request, jsonify
-
-from ..exchanges import binance, kucoin, bybit, mexc
-from ..exchanges.firestore_functions import get_trade_info
+from exchanges import binance, kucoin, bybit
+from exchanges.firestore_functions import get_trade_info
 
 EXCHANGES = {
     'binance': binance,
     'kucoin': kucoin,
     'bybit': bybit,
-    'mexc': mexc
     # ... add other exchanges here
 }
 
@@ -27,7 +25,7 @@ logging.basicConfig(filename='api.log', level=logging.DEBUG,
 # send calls
 @app.route('/send_call', methods=['POST'])
 def send_call():
-    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    data = json.loads(request.data.decode())
     trade_id = data['trade_id']
     account_id = data['account_id']
     payload = data['payload']
@@ -62,7 +60,7 @@ def send_call():
 # send takeprofit
 @app.route('/send_tp', methods=['POST'])
 def send_tp():
-    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    data = json.loads(request.data.decode())
     trade_id = data['trade_id']
     account_id = data['account_id']
     payload = data['payload']
@@ -81,7 +79,7 @@ def send_tp():
         return error_response
     try:
         # call method to sent tp
-        EXCHANGES[exchange].profit.send_takeprofit(account_id, trade_id, tp_document_id, tp_number, tp_value,
+        EXCHANGES[exchange].profit.send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value,
                                                    tp_percentage)
         logging.info(f"Take profit sent: {trade_id}")
         return jsonify({"message": f"Take profit sent {trade_id}"}), 200
@@ -91,6 +89,7 @@ def send_tp():
         return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
+        print(error)
         logging.error(f"Error sending take profit: {error}")
         return jsonify({"error": str(error)}), 500
 
@@ -98,7 +97,7 @@ def send_tp():
 # send stoploss
 @app.route('/send_sl', methods=['POST'])
 def send_sl():
-    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    data = json.loads(request.data.decode())
     trade_id = data['trade_id']
     account_id = data['account_id']
     payload = data['payload']
@@ -134,7 +133,7 @@ def send_sl():
 # cancel single order
 @app.route('/cancel_order', methods=['POST'])
 def cancel_order():
-    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    data = json.loads(request.data.decode())
     trade_id = data['trade_id']
     account_id = data['account_id']
     document_id = data['document_id']
@@ -157,6 +156,7 @@ def cancel_order():
         return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
+        print(error)
         logging.error(f"Error cancelling order: {error}")
         return jsonify({"error": str(error)}), 500
 
@@ -164,7 +164,7 @@ def cancel_order():
 # cancel all orders
 @app.route('/cancel_all_orders', methods=['POST'])
 def cancel_all_orders():
-    data = json.loads(base64.b64decode(request.data).decode('utf-8'))
+    data = json.loads(request.data.decode())
     trade_id = data['trade_id']
     account_id = data['account_id']
 
@@ -185,6 +185,7 @@ def cancel_all_orders():
         return jsonify({"error": "Connection error. Please try again later."}), 503
 
     except Exception as error:
+        print(error)
         logging.error(f"Error cancelling all orders: {error}")
         return jsonify({"error": str(error)}), 500
 
@@ -202,7 +203,7 @@ def validate_inputs(exchange_name, params):
 
     # if not all(char.isdigit() or char == '.' for char in params[-2]):
     # raise ValueError("Invalid value for price/TP/SL, must be numeric.")
-
+    return False
     # if not all(char.isdigit() for char in params[-1]):
     # raise ValueError("Invalid value for leverage/margin/TP_percentage/SL_percentage, must be an integer.")
 

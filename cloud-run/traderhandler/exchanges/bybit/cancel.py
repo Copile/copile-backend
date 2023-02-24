@@ -7,11 +7,11 @@ def send_cancel(account_id, trade_id, document_id, trade_type):
 
     trade_info = get_trade_info(account_id, trade_id)
     symbol = trade_info["symbol"]
-    order_id = trade_info["order_id"]
+    order_id = trade_info["orderID"]
 
     if trade_type == "tp" or trade_type == "sl":
         tp_sl_info = get_tp_sl_info(account_id, trade_id, document_id, trade_type)
-        order_id = tp_sl_info["order_id"]
+        order_id = tp_sl_info["orderID"]
 
     try:
         session = usdt_perpetual.HTTP(

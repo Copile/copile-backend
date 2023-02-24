@@ -21,72 +21,57 @@ FIELD_LEVERAGE = "leverage"
 FIELD_MARGIN = "margin"
 FIELD_EXCHANGE = "exchange"
 
-FIELD_TP_NUMBER = "tp-number"
-FIELD_TP_VALUE = "tp-value"
-FIELD_TP_PERCENTAGE = "tp-percentage"
+FIELD_TP_NUMBER = "tp_number"
+FIELD_TP_VALUE = "tp_value"
+FIELD_TP_PERCENTAGE = "tp_percentage"
 
-FIELD_SL_NUMBER = "sl-number"
-FIELD_SL_VALUE = "sl-value"
-FIELD_SL_PERCENTAGE = "sl-percentage"
+FIELD_SL_NUMBER = "sl_number"
+FIELD_SL_VALUE = "sl_value"
+FIELD_SL_PERCENTAGE = "sl_percentage"
 
 
 def store_trade(account_id, order_dict):
     # Store trade data in firestore
-    transaction = db.transaction()
+    trade_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+        order_dict["trade_id"])
+    trade_doc_ref.set({
+        FIELD_TRADE_ID: order_dict["trade_id"],
+        FIELD_ORDER_ID: order_dict["order_id"],
+        FIELD_SYMBOL: order_dict["symbol"],
+        FIELD_ORDER_TYPE: order_dict["type"],
+        FIELD_SIDE: order_dict["side"],
+        FIELD_QUANTITY: order_dict["quantity"],
+        FIELD_ENTRY: order_dict["entry"],
+        FIELD_LEVERAGE: order_dict["leverage"],
+        FIELD_MARGIN: order_dict["margin"],
+        FIELD_EXCHANGE: order_dict["exchange"]
+    })
 
-    @firestore.transactional
-    def transactional_update(t_account_id, t_order_dict):
-        trade_doc_ref = db.collection(COLLECTION_USERS).document(t_account_id).collection(COLLECTION_TRADES).document(
-            t_order_dict["trade_id"])
-        trade_doc_ref.set({
-            FIELD_TRADE_ID: t_order_dict["trade_id"],
-            FIELD_ORDER_ID: t_order_dict["order_id"],
-
-            FIELD_SYMBOL: t_order_dict["symbol"],
-            FIELD_ORDER_TYPE: t_order_dict["type"],
-            FIELD_SIDE: t_order_dict["side"],
-            FIELD_QUANTITY: t_order_dict["quantity"],
-            FIELD_ENTRY: t_order_dict["entry"],
-            FIELD_LEVERAGE: t_order_dict["leverage"],
-            FIELD_MARGIN: t_order_dict["margin"],
-            FIELD_EXCHANGE: t_order_dict["exchange"]
-        })
-
-    transactional_update(account_id, order_dict)
 
 
 # Store take profit data in firestore
 def store_tp(account_id, tp_dict):
-    transaction = db.transaction()
+    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+        tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
+    tp_doc_ref.set({
+        FIELD_TP_NUMBER: tp_dict["tp_number"],
+        FIELD_TP_VALUE: tp_dict["tp_value"],
+        FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
+        FIELD_ORDER_ID: tp_dict["order_id"],
+    })
 
-    @firestore.transactional
-    def transactional_update(t_account_id, t_tp_dict):
-        tp_doc_ref = db.collection(COLLECTION_USERS).document(t_account_id).collection(COLLECTION_TRADES).document(
-            t_tp_dict[FIELD_TRADE_ID]).collection(COLLECTION_TAKE_PROFITS).document(t_tp_dict["tp_document_id"])
-        tp_doc_ref.update({
-            FIELD_TP_NUMBER: t_tp_dict["tp_number"],
-            FIELD_TP_VALUE: t_tp_dict["tp_value"],
-            FIELD_TP_PERCENTAGE: t_tp_dict["tp_percentage"]
-        })
-
-    transactional_update(account_id, tp_dict)
 
 
 # Store stop loss data in firestore
 def store_sl(account_id, sl_dict):
-    transaction = db.transaction()
-
-    @firestore.transactional
-    def transactional_update(t_account_id, t_sl_dict):
-        tp_doc_ref = db.collection(COLLECTION_USERS).document(t_account_id).collection(COLLECTION_TRADES).document(
-            t_sl_dict[FIELD_TRADE_ID]).collection(COLLECTION_TAKE_PROFITS).document(t_sl_dict["sl_document_id"])
-        tp_doc_ref.update({
-            FIELD_TP_NUMBER: t_sl_dict["sl_number"],
-            FIELD_TP_VALUE: t_sl_dict["sl_value"],
-            FIELD_TP_PERCENTAGE: t_sl_dict["sl_percentage"]
-        })
-
-    transactional_update(account_id, sl_dict)
+    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+        sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
+    tp_doc_ref.set({
+        FIELD_SL_NUMBER: sl_dict["sl_number"],
+        FIELD_SL_VALUE: sl_dict["sl_value"],
+        FIELD_SL_PERCENTAGE: sl_dict["sl_percentage"],
+        FIELD_ORDER_ID: sl_dict["order_id"],
+    })
 
 
 # Delete single order from firestore

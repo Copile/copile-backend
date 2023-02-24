@@ -20,7 +20,7 @@ def send_emergency(account_id, trade_id):
     if position != '0':
         try:
             stop = session.place_active_order(
-                side='Buy' if side == 'Sell' else 'Sell',
+                side='Buy' if side == 'SELL' else 'Sell',
                 symbol=symbol,
                 order_type="Market",
                 qty=float(position),
