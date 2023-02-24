@@ -1,5 +1,6 @@
 from kucoin_futures.client import Trade, Market
 
+
 api_key = "637967ef0adca800011fd0a6"
 api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
 api_passphrase = "mira12345678"
@@ -41,6 +42,3 @@ def send_trade(account_id, side, symbol, leverage, Margin, price):
         return f"**Successfully placed order! - {account_id} - {symbol}**"
     except Exception as error:
         print(error)
-
-
-kucoin_trade(1312312, "Buy", "BTCUSDT", 13, 10, 20500)
