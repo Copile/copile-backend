@@ -1,20 +1,29 @@
 from kucoin_futures.client import Trade
-
-api_key = "637967ef0adca800011fd0a6"
-api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
-api_passphrase = "mira12345678"
+from ..firestore_functions import get_user_keys, get_trade_info, get_tp_sl_info, delete_tp_sl_order, delete_order
 
 
-def send_cancel(account_id, order_id):
+def send_cancel(account_id, trade_id, document_id, trade_type):
+    keys = get_user_keys(account_id, "bybit")
+    client_trade = Trade(key=keys['api_key'], secret=keys['api_secret'], passphrase=keys['api_passphrase'],
+                         is_sandbox=False, url='')
+
+    trade_info = get_trade_info(account_id, trade_id)
+    symbol = trade_info["symbol"]
+    order_id = trade_info["orderID"]
     # Connecting to Kucoin API
-    client_trade = Trade(key=api_key, secret=api_secret, passphrase=api_passphrase, is_sandbox=False, url='')
 
+    if trade_type == "tp" or trade_type == "sl":
+        tp_sl_info = get_tp_sl_info(account_id, trade_id, document_id, trade_type)
+        order_id = tp_sl_info["orderID"]
     # Cancelling specific order
     try:
         cancel = client_trade.cancel_order(
             orderId=order_id,
         )
-        print(cancel)
-        return f"Cancelled order ID: {str(order_id)} for {account_id}"
+        if trade_type == "tp" or trade_type == "sl":
+            delete_tp_sl_order(account_id, trade_id, document_id, trade_type)
+        else:
+            delete_order(account_id, trade_id)
+            return f"Cancelled order ID: {str(order_id)} for {account_id}"
     except Exception as error:
         print(error)

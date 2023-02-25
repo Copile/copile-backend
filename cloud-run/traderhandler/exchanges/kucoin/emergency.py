@@ -1,15 +1,16 @@
 from kucoin_futures.client import Trade, Market
-
-api_key = "637967ef0adca800011fd0a6"
-api_secret = "11b7ceaf-7a2a-4134-8503-247642a01fe3"
-api_passphrase = "mira12345678"
+from ..firestore_functions import get_user_keys, get_trade_info
 
 
 def send_emergency(account_id, symbol, order_id):
+    keys = get_user_keys(account_id, "bybit")
 
+    trade_info = get_trade_info(account_id, trade_id)
+    symbol = trade_info["symbol"]
+    side = trade_info["side"]
     # Connecting to Kucoin API
-    client_trade = Trade(key=api_key, secret=api_secret, passphrase=api_passphrase, is_sandbox=False, url='')
-
+    client_trade = Trade(key=keys['api_key'], secret=keys['api_secret'], passphrase=keys['api_passphrase'],
+                         is_sandbox=False, url='')
     # Fixing symbol, because of exceptions
     if symbol == "BTCUSDT":
         symbol = "XBTUSDTM"
@@ -50,4 +51,3 @@ def send_emergency(account_id, symbol, order_id):
             return f"Cancelled order ID: {str(order_id)} for {account_id}"
         except Exception as error:
             print(error)
-
