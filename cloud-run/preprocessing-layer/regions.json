@@ -1,0 +1,20 @@
+{
+    "regions": {
+        "bybit": "asia-southeast1",
+        "asia-southeast1": "asia-southeast1",
+        "us-central1": "us-central1",
+        "us-east4": "us-east4",
+        "us-east5": "us-east5",
+        "us-west1": "us-west1",
+
+        "asianRegions": ["asia-southeast1"],
+        "traderRegions": ["us-central1", "us-east1", "us-west1", "asia-southeast1"],
+        "regionMappings": {
+            "asia-southeast1": "as",
+            "us-central1": "uc",
+            "us-east4": "uk",
+            "us-east5": "ul",
+            "us-west1": "uw"
+        }
+    }
+}
