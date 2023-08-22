@@ -1,15 +1,13 @@
 const Firestore = require('@google-cloud/firestore')
 const db = new Firestore
-const request = require("request");
+const { createUserKey, deleteExchangeKey } = require('./encryption')
 const express = require("express");
-const bodyParser = require('body-parser');
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 // default user data object
 const userdata = {
     'account': "",
-    'preferred_exchange': "x",
     'exchanges': {
         'bybit': {
             "api_key": "x",
@@ -24,7 +22,13 @@ const userdata = {
             "api_key": "x",
             "api_secret": "x",
         },
+        'bingx': {
+            "api_key": "x",
+            "api_secret": "x"
+        }
     },
+    "telegram": "x",
+    "discord": "x"
 }
 
 // default plan data object
@@ -33,8 +37,9 @@ const plandata = {
     'license': "",
     'account_id': "",
     'margin': 'x',
-    'maxloss': 'x',
-    'option': 'x'
+    'percentage': 'x',
+    'option': 'x',
+    'preferred_exchange': "x"
 }
 
 // Async function to delete a document and its subcollections
@@ -57,44 +62,39 @@ async function deleteDocumentAndSubcollections(documentRef) {
 
 // Route to create license
 app.post("/createLicense", async (req, res) => {
-    // Get request body
-    let userbody = req.body
-    let users = []
-    // Check if the request is for license creation
-    if (userbody['action'] == "membership.went_valid") {
-        // Get user id and other details from request body
-        user = userbody['data']['user']['id']
-        console.log(user);
-        account_id = userbody['data']['id']
-        product = userbody['data']['product']['id']
-        license = userbody['data']['license_key']
-
-        // Get all user IDs from Firestore
-        const query = db.collection('users');
-        const snapshot = await query.get();
-        snapshot.forEach(doc => {
-            user_id = doc.id
-            users.push(user_id)
-        });
-
-        // If the user exists, add the product to the user's plans
-        if (users.includes(user) == true) {
-            plandata.product = product
-            plandata.license = license
-            plandata.account_id = account_id
-            const plancreation = await db.collection('users').doc(user).collection('plans').doc(product).set(plandata);
-            console.log("Added product for the user with the id: " + user);
-        } else {
-        // else create a new user and add the product to the user's plans    
-            userdata.account = user
-            plandata.product = product
-            plandata.license = license
-            plandata.account_id = account_id
-            const usercreation = await db.collection('users').doc(user).set(userdata)
-            const plancreation = await db.collection('users').doc(user).collection('plans').doc(product).set(plandata)
-            console.log("Created user with the id: " + user);
-        }
+    let userbody = req.body;
+    
+    if (userbody['action'] !== "membership.went_valid") {
+        return res.status(400).send(JSON.stringify({ error: "Invalid action" }));
     }
+
+    const user = userbody['data']['user']['id'];
+    const account_id = userbody['data']['id'];
+    const product = userbody['data']['product']['id'];
+    const plan = userbody['data']['plan']['id'];
+    const license = userbody['data']['license_key'];
+
+    const userRef = db.collection('users').doc(user);
+    const userSnapshot = await userRef.get();
+
+    if (userSnapshot.exists) {
+        plandata.product = product;
+        plandata.license = license;
+        plandata.account_id = account_id;
+        await userRef.collection('plans').doc(plan).set(plandata);
+        console.log("Added product for the user with the id: " + user);
+    } else {
+        userdata.account = user;
+        plandata.product = product;
+        plandata.license = license;
+        plandata.account_id = account_id;
+        
+        await userRef.set(userdata);
+        await userRef.collection('plans').doc(plan).set(plandata);
+        await createUserKey(user);
+        console.log("Created user with the id: " + user);
+    }
+
     return res.send(JSON.stringify({ status: 200 }));
 });
 
@@ -105,7 +105,7 @@ app.post("/deleteLicense", async (req, res) => {
         let plans = [];
         if (userbody["action"] == "membership.went_invalid") {
         user = userbody["data"]["user"]["id"];
-        product = userbody['data']['product']['id']
+        plan = userbody['data']['plan']['id']
         const query = db.collection("users").doc(user).collection("plans");
         const snapshot = await query.get();
         snapshot.forEach((doc) => {
@@ -120,9 +120,10 @@ app.post("/deleteLicense", async (req, res) => {
             .collection("users")
             .doc(user)
             .collection("plans")
-            .doc(product)
+            .doc(plan)
             .delete();
         }
+        const keydeletion = await deleteExchangeKey(user)
         return res.send(JSON.stringify({ status: 200 }));
         } else {
         throw new Error("Invalid action specified in request");

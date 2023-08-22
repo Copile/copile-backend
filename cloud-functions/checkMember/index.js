@@ -1,97 +1,19 @@
-// gcp cli command to deploy:
-// gcloud functions deploy submitTrade --runtime nodejs14 --trigger-http --allow-unauthenticated --source submitTrade
-
-
-const Firestore = require('@google-cloud/firestore')
-const db = new Firestore
 const request = require("request");
 const express = require("express");
-const bodyParser = require('body-parser');
-const stripe = require("stripe")("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");
-const WHOP_TOKEN = "wH3HEXvNgn3-mfp3M0UFpeaTCFVG8wmaF7V4rOxRoxg"
+const stripe = require("stripe")(process.env.stripeToken);
+const jwt = require('jsonwebtoken');
+// const {SecretManagerServiceClient} = require('@google-cloud/secret-manager');
+const WHOP_TOKEN = process.env.whopToken
+const Firestore = require('@google-cloud/firestore')
+const db = new Firestore
+
+// // New secret manager client for future transfer from env
+// const secretManagerClient = new SecretManagerServiceClient();
+
+// Connect Middleware
+const applyMiddleware = require('./middleware');
 const app = express();
-const cors = require('cors');
-
-app.use(cors());
-
-app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-const getWhopLicense = (user) => {
-    return new Promise((resolve, reject) => {
-      request({
-        url: "https://api.whop.com/api/v2/customers/" + user,
-        method: "GET",
-        headers: {
-          "Authorization": "Bearer " + WHOP_TOKEN
-        },
-        json: true
-      }, (err, resp, body) => {
-        if (err || resp.statusCode !== 200) {
-          reject(new Error("Failed to retrieve Whop license."));
-        } else {
-          resolve(body);
-        }
-      });
-    });
-};
-  
-const getWhopPlan = (plan) => {
-    return new Promise((resolve, reject) => {
-      request({
-        url: "https://api.whop.com/api/v2/plans/" + plan,
-        method: "GET",
-        headers: {
-          "Authorization": "Bearer " + WHOP_TOKEN,
-        },
-        json: true,
-      }, (err, resp, body) => {
-        if (err || resp.statusCode !== 200) {
-          reject(new Error("Failed to retrieve Whop plan."));
-        } else {
-          resolve(body);
-        }
-      });
-    });
-};
-  
-const getWhopProduct = (product) => {
-    return new Promise((resolve, reject) => {
-      request({
-        url: "https://api.whop.com/api/v2/products/" + product,
-        method: "GET",
-        headers: {
-          "Authorization": "Bearer " + WHOP_TOKEN,
-        },
-        json: true,
-      }, (err, resp, body) => {
-        if (err || resp.statusCode !== 200) {
-          reject(new Error("Failed to retrieve Whop product."));
-        } else {
-          resolve(body);
-        }
-      });
-    });
-};
-  
-const getWhopself = (user) => {
-    return new Promise((resolve, reject) => {
-      request({
-        url: `https://api.whop.com/api/v2/memberships?page=1&per=10&user_id=${user}&hide_metadata=false`,
-        method: "GET",
-        headers: {
-          "Authorization": "Bearer " + WHOP_TOKEN
-        },
-        json: true
-      }, (err, resp, body) => {
-        if (err || resp.statusCode !== 200) {
-          reject(new Error("Failed to retrieve Whop user data."));
-        } else {
-          resolve(body);
-        }
-      });
-    });
-};
+applyMiddleware(app);
 
 const getWhopMem = (mem_id) => {
     return new Promise((resolve, reject) => {
@@ -112,61 +34,154 @@ const getWhopMem = (mem_id) => {
     });
 };
 
-const getStripeCustomer = async customer => {
-    return await stripe.customers.retrieve(customer);
+const requestAsync = async (options) => {
+  return new Promise((resolve, reject) => {
+    request(options, (err, resp, body) => {
+      if (err || resp.statusCode !== 200) {
+        reject(new Error("Failed to retrieve data."));
+      } else {
+        resolve(body);
+      }
+    });
+  });
+};
+
+const getWhopData = async (path, id) => {
+  return await requestAsync({
+    url: `https://api.whop.com/api/v2/${path}${id}`,
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer " + WHOP_TOKEN
+    },
+    json: true
+  });
 };
 
 app.post("/auth", async (req, res) => {
   try {
-    const user = req.query.user;
+    const userId = req.get("x-forwarded-authorization").split(" ")[1]
+
+    console.log("userId in /auth", userId)
+   
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "UserId is missing"
+      });
+    }
+    
     const [licenses, userData] = await Promise.all([
-      getWhopself(user),
-      getWhopLicense(user),
+      getWhopData("memberships?page=1&per=10&user_id=", userId + "&hide_metadata=false"),
+      getWhopData("customers/", userId)
     ]);
+    
+    // Check if the userId is present in the userData
+    if (!userData || userData.id !== userId) {
+      return res.status(404).json({
+        success: false,
+        error: "UserId doesn't exist"
+      });
+    }
     const licenseObjects = await Promise.all(
       licenses.data
-        .filter(({ status }) => ["active", "trialing", "past_due"].includes(status))
-        .map(async ({ id, license_key, plan, product, stripe_customer_id, status, renewal_period_end, cancel_at_period_end}) => {
+        .filter(({ status }) => ["active", "trialing", "past_due", "completed"].includes(status))
+        .map(async (license) => {
           const [planData, productData] = await Promise.all([
-            getWhopPlan(plan),
-            getWhopProduct(product),
+            getWhopData("plans/", license.plan),
+            getWhopData("products/", license.product)
           ]);
-          const next_renewal = renewal_period_end;
-          const card = planData.card_payments
-            ? (
-                await stripe.customers.listPaymentMethods(stripe_customer_id, { type: "card" })
-              ).data[0].card.last4
-            : "";
+          const next_renewal = license.renewal_period_end;
+
           return {
             type: planData.card_payments ? "stripe" : "crypto",
-            status,
-            key: license_key,
-            membership: id,
+            status: license.status,
+            planID: planData.id,
+            key: license.license_key,
+            membership: license.id,
             product: productData.name,
             price: planData[planData.card_payments ? "renewal_price" : "initial_price"],
             currency: planData.base_currency,
             next_renewal,
-            cancel_at_period: cancel_at_period_end,
-            card,
+            expires_at: license.expires_at,
+            cancel_at_period: license.cancel_at_period_end,
           };
         })
     );
+
     const userobj = {
       success: true,
       user: userData,
       licenses: licenseObjects,
     };
+    
     res.status(200).json(userobj);
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: "Contact support.",
+    });
+  }
+});
+
+app.get("/verify", async (req, res) => {
+  try {
+
+    const token = req.get("x-forwarded-authorization").split(" ")[1]
+
+
+    // // Access the JWT secret from Google Cloud Secrets
+    // const [secret] = await secretManagerClient.accessSecretVersion({
+    //   name: 'projects/[PROJECT_ID]/secrets/[SECRET_NAME]/versions/latest'
+    // });
+    // const jwtSecret = secret.payload.data.toString('utf8');
+
+    const jwtSecret = process.env.JWT_SECRET
+
+    // Decode and verify the JWT token
+    const decoded = jwt.verify(token, jwtSecret);
+    const userId = decoded.user;
+
+
+    // Check if the user exists in Firestore
+    const userDoc = await db.collection('users').doc(userId).get();
+
+    if (!userDoc.exists) {
+      console.log("No userId exists")
+      return res.status(404).json({
+        success: false,
+        error: "UserId doesn't exist"
+      });
+    }
+
+    res.status(200).json({
+      success: true
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to verify user.",
     });
   }
 });
 
 // This endpoint creates a Stripe Billing Portal session for a given Whop membership ID
 app.post('/stripe', async (req, res) => {
+  const userId = req.get("x-forwarded-authorization").split(" ")[1]
+
+  console.log("userId in /auth", userId)
+
+  if (!userId) {
+    return res.status(400).json({ success: false, error: 'User name is missing' });
+  }
+
+  const userDoc = await db.collection('users').doc(userId);
+
+  if (!userDoc.exists) {
+    return res.status(404).json({success: false, error: 'User not found for stripe' });
+  }
+
   const { mem_id, return_url } = req.body;
 
   // Check if the required mem_id parameter is present in the request body
@@ -205,6 +220,20 @@ app.post('/stripe', async (req, res) => {
 });
 
 app.post('/cancel', async (req, res) => {
+  const userId = req.get("x-forwarded-authorization").split(" ")[1]
+
+  console.log("userId in /auth", userId)
+
+  if (!userId) {
+    return res.status(400).json({ success: false, error: 'User name is missing' });
+  }
+
+  const userDoc = await db.collection('users').doc(userId);
+
+  if (!userDoc.exists) {
+    return res.status(404).json({success: false, error: 'User not found for cancel' });
+  }
+
   const { mem_id } = req.body;
 
   try {
