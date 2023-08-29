@@ -14,5 +14,6 @@ RUN pip install pybit==5.3.0
 RUN pip install google-cloud-firestore
 RUN pip install google-cloud-tasks
 RUN pip install google-cloud-kms
+RUN pip install pycryptodome
 
 CMD exec gunicorn --bind :$PORT --worker-class uvicorn.workers.UvicornWorker --workers 1 --timeout 0 main:app

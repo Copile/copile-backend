@@ -3,8 +3,9 @@ bingX.perpetual.v2.market
 '''
 
 from ...error import ClientError
+import asyncio
 
-def contracts(self) -> dict:
+async def contracts(self) -> dict:
     ''' Contract Information
     GET /openApi/swap/v2/quote/contracts
 

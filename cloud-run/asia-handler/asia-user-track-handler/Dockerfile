@@ -11,6 +11,7 @@ COPY . ./
 RUN pip install fastapi[all]
 RUN pip install uvicorn[standard] gunicorn
 RUN pip install pybit==5.3.0
+RUN pip install pycryptodome
 RUN pip install google-cloud-firestore
 RUN pip install google-cloud-tasks
 RUN pip install google-cloud-kms

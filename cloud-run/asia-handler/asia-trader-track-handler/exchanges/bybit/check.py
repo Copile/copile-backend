@@ -16,13 +16,11 @@ async def check_trade(account_id, trade_id, document_id, payload, trade_info, en
         api_key=keys["api_key"],
         api_secret=keys["api_secret"],
     )
-
-    position = str(session.get_positions(category="linear", symbol=symbol)['result']['list'][0 if side == 'Buy' else 1]['size'])
-
-    if position != '0':
+    position = session.get_positions(category="linear", symbol=symbol)['result']['list'][0]
+    if float(position['size']) != 0:
         if "tp" in endpoint:
-            await send_profit(account_id, trade_id, document_id, payload["tp_number"], payload["tp_value"], payload["tp_percentage"], payload["tp_amount"], trade_info, keys)
+            await send_profit(account_id, trade_id, document_id, payload["tp_number"], payload["tp_value"], payload["tp_percentage"], payload["tp_amount"], position, trade_info, keys)
         else:
-            await send_stoploss(account_id, trade_id, document_id, payload["sl_number"], payload["sl_value"], payload["sl_percentage"], payload["sl_amount"], trade_info, keys)
+            await send_stoploss(account_id, trade_id, document_id, payload["sl_number"], payload["sl_value"], payload["sl_percentage"], payload["sl_amount"], position, trade_info, keys)
     else:
-        create_task(account_id, trade_id, document_id, payload, endpoint, 2)
+        await create_task(account_id, trade_id, document_id, payload, endpoint, 2)

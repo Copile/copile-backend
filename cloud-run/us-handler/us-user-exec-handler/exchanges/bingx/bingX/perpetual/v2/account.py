@@ -1,10 +1,10 @@
 '''
 bingX.perpetual.v2.account
 '''
-
+import asyncio
 from ...error import ClientError
 
-def balance(self,
+async def balance(self,
     recvWindow: int = None,
 ) -> dict:
     ''' Get Perpetual Swap Account Asset Information
@@ -20,7 +20,7 @@ def balance(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def positions(self,
+async def positions(self,
     symbol: str,
     recvWindow: int = None,
 ) -> dict:

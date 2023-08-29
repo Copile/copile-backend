@@ -4,11 +4,12 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from exchanges import bybit
+from exchanges import bybit, binance
 from exchanges.firestore_functions import get_trade_info, check_document_exists, store_tp, store_sl, check_executed_status
 
 EXCHANGES = {
-    'bybit': bybit
+    'bybit': bybit,
+    'binance': binance
     # ... add other exchanges here
 }
 

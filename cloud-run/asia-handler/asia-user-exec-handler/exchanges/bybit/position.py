@@ -14,6 +14,6 @@ async def get_position(account_id, trade_id, trade_info, keys):
 
     position = str(session.get_positions(category="linear", symbol=symbol)['result']['list'][0 if side == 'Buy' else 1]['size'])
     if position != '0':
-        return position
+        return abs(float(position))
     else:
         return 0

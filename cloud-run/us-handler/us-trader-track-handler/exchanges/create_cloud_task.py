@@ -37,7 +37,7 @@ async def create_task(account_id, trade_id, document_id, payload, endpoint, url)
     task = {
         "http_request": {
             "http_method": tasks_v2.HttpMethod.POST,
-            "url": CLOUD_RUN_SERVICE_URL1,
+            "url": CLOUD_RUN_SERVICE_URL1 + endpoint,
             "oidc_token": tasks_v2.OidcToken(
                 service_account_email="tasks-service-account@copile.iam.gserviceaccount.com"
             ),

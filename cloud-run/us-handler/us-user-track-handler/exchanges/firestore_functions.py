@@ -1,11 +1,12 @@
 from google.cloud import firestore
 from .decryption import decryptData
+import time
 import asyncio
 
-db = firestore.Client()
+db = firestore.AsyncClient()
 
 # Define collections and field names as constants
-COLLECTION_USERS = "users"
+COLLECTION_TRADERS = "users"
 COLLECTION_TRADES = "trades"
 COLLECTION_PLANS = "plans"
 COLLECTION_TAKE_PROFITS = "take-profits"
@@ -23,6 +24,7 @@ FIELD_ENTRY = "entry"
 FIELD_LEVERAGE = "leverage"
 FIELD_MARGIN = "margin"
 FIELD_EXCHANGE = "exchange"
+FIELD_CREATED_AT= "created_at"
 
 FIELD_TP_NUMBER = "tp_number"
 FIELD_TP_VALUE = "tp_value"
@@ -37,27 +39,29 @@ FIELD_SL_AMOUNT = "sl_amount"
 
 async def store_trade(account_id, order_dict):
     # Store trade data in firestore
-    trade_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+    trade_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         order_dict["trade_id"])
-    trade_doc_ref.set({
+    await trade_doc_ref.set({
         FIELD_TRADE_ID: str(order_dict["trade_id"]),
         FIELD_ORDER_ID: order_dict["order_id"],
         FIELD_SYMBOL: order_dict["symbol"],
         FIELD_ORDER_TYPE: order_dict["type"],
-        FIELD_SIDE: order_dict["side"],
+        FIELD_SIDE: order_dict["side"].capitalize(),
         FIELD_QUANTITY: order_dict["quantity"],
         FIELD_ENTRY: order_dict["entry"],
         FIELD_LEVERAGE: order_dict["leverage"],
         FIELD_MARGIN: order_dict["margin"],
-        FIELD_EXCHANGE: order_dict["exchange"]
+        FIELD_EXCHANGE: order_dict["exchange"],
+        FIELD_CREATED_AT: int(time.time())
     })
+
 
 
 # Store take profit data in firestore
 async def store_tp(account_id, tp_dict):
-    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+    tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
-    tp_doc_ref.set({
+    await tp_doc_ref.set({
         FIELD_TP_NUMBER: tp_dict["tp_number"],
         FIELD_TP_VALUE: tp_dict["tp_value"],
         FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
@@ -67,9 +71,9 @@ async def store_tp(account_id, tp_dict):
 
 # Store take profit data in firestore
 async def store_tp_exec(account_id, tp_dict):
-    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+    tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
-    tp_doc_ref.set({
+    await tp_doc_ref.set({
         FIELD_ORDER_ID: str(tp_dict["order_id"]),
         FIELD_EXECUTED: "1",
         FIELD_TP_NUMBER: tp_dict["tp_number"],
@@ -81,20 +85,20 @@ async def store_tp_exec(account_id, tp_dict):
 
 # Store stop loss data in firestore
 async def store_sl(account_id, sl_dict):
-    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+    tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
-    tp_doc_ref.set({
+    await tp_doc_ref.set({
         FIELD_SL_NUMBER: sl_dict["sl_number"],
         FIELD_SL_VALUE: sl_dict["sl_value"],
         FIELD_SL_PERCENTAGE: sl_dict["sl_percentage"],
         FIELD_EXECUTED: "0"
     })
 
-# Store stop loss data in firestore
 async def store_sl_exec(account_id, sl_dict):
-    tp_doc_ref = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+    # Store stop loss data in firestore
+    sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
-    tp_doc_ref.set({
+    await sl_doc_ref.set({
         FIELD_ORDER_ID: str(sl_dict["order_id"]),
         FIELD_EXECUTED: "1",
         FIELD_SL_PERCENTAGE: sl_dict["sl_percentage"],
@@ -103,73 +107,112 @@ async def store_sl_exec(account_id, sl_dict):
         FIELD_SL_AMOUNT: sl_dict['sl_amount']
     })
 
-# Delete single order from firestore
 async def delete_order(account_id, trade_id):
-    db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id).delete()
+    # Delete single order from firestore
+    await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id).delete()
 
 
-# delete single take profit or stop loss from firestore
 async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
+    # Delete single take profit or stop loss from firestore
     if is_tp_or_sl == "tp":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
             trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).delete()
     if is_tp_or_sl == "sl":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
+        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
             trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
 
-
-# get user keys from firestore with account_id and exchange
 async def get_user_keys(account_id, exchange):
-    keys = db.collection(COLLECTION_USERS).document(account_id)
-    exchange_data = keys.get().to_dict()["exchanges"][exchange]
+    # Get user keys from firestore with account_id and exchange
+    keys = db.collection(COLLECTION_TRADERS).document(account_id)
+    exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
     exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
-    
+
     # Decrypt the api_passphrase if encrypted
     if 'api_passphrase' in exchange_data:
         exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
 
     return exchange_data
 
-# get user margin from firestore with account_id and exchange
 async def get_user_margin(account_id, plan_id):
-    plan = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
-    margin = plan.get().to_dict()["margin"]
+    # Get user margin from firestore with account_id and plan_id
+    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
+    margin = (await plan.get()).to_dict()["margin"]
     return margin
 
 
-# get general trade info from firestore with account_id and trade_id
 async def get_trade_info(account_id, trade_id):
-    trade_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-        trade_id).get().to_dict()
+    # Get general trade info from firestore with account_id and trade_id
+    trade_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_id).get()).to_dict()
     return trade_info
 
 
 async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
+    # Get take profit or stop loss info from firestore with account_id, trade_id, document_id, and is_tp_or_sl
     tp_sl_info = ""
     if is_tp_or_sl == "tp":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get().to_dict()
+        tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()
     if is_tp_or_sl == "sl":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get().to_dict()
+        tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
     return tp_sl_info
 
+async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
+    # Check executed status from firestore with account_id, trade_id, document_id, and is_tp_or_sl
+    if is_tp_or_sl == "tp":
+        executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
+    if is_tp_or_sl == "sl":
+        executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
+    return executed_info
+
+async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_or_sl):
+    # Change executed status of take profit or stop loss in firestore with account_id, trade_id, document_id, and is_tp_or_sl
+    if is_tp_or_sl == "tp":
+        tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id)
+        await tp_doc_ref.update({FIELD_EXECUTED: "2"})
+    if is_tp_or_sl == "sl":
+        sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id)
+        await sl_doc_ref.update({
+            FIELD_EXECUTED: "2"
+        })
+
+async def get_tp_sl_orders(account_id, trade_id):
+    # Get take profit and stop loss orders from firestore with account_id and trade_id
+    tp_sl_orders = []
+
+    tp_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_id).collection(COLLECTION_TAKE_PROFITS).get()
+    sl_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_id).collection(COLLECTION_STOP_LOSSES).get()
+
+    tp_collection, sl_collection = await asyncio.gather(tp_collection_task, sl_collection_task)
+
+    for tp_doc in tp_collection:
+        tp_data = tp_doc.to_dict()
+        tp_data['document_id'] = tp_doc.id  # Add document ID to the dictionary
+        tp_data['trade_type'] = "tp"
+        tp_sl_orders.append(tp_data)
+
+    for sl_doc in sl_collection:
+        sl_data = sl_doc.to_dict()
+        sl_data['document_id'] = sl_doc.id  # Add document ID to the dictionary
+        sl_data['trade_type'] = "sl"
+        tp_sl_orders.append(sl_data)
+
+    return tp_sl_orders
 
 async def check_document_exists(account_id, trade_id, document_id, is_tp_or_sl):
     if is_tp_or_sl == "tp":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()
+        tp_sl_info_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id)
+        tp_sl_info = await tp_sl_info_ref.get()
     if is_tp_or_sl == "sl":
-        tp_sl_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()
+        tp_sl_info_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id)
+        tp_sl_info = await tp_sl_info_ref.get()
     return tp_sl_info
-
-
-async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
-    if is_tp_or_sl == "tp":
-        executed_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get().to_dict()["executed"]
-    if is_tp_or_sl == "sl":
-        executed_info = db.collection(COLLECTION_USERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get().to_dict()["executed"]
-    return executed_info

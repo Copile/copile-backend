@@ -1,5 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
-from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status, change_executed_status_tp_sl
+from ..firestore_functions import get_tp_sl_info, delete_order, check_executed_status, change_executed_status_tp_sl, delete_tp_sl_order
 import asyncio
 
 async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info, keys):
@@ -17,12 +17,12 @@ async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info,
             return f"Cancelled potential {trade_type}-order for {account_id}"
     # Cancelling specific order
     try:
-        cancel = client.cancel_order(
+        cancel = await client.cancel_order(
             orderId=int(order_id),
             symbol=symbol
         )
         if trade_type == "tp" or trade_type == "sl":
-            await change_executed_status_tp_sl(account_id, trade_id, document_id, trade_type)
+            await delete_tp_sl_order(account_id, trade_id, document_id, trade_type)
         else:
             await delete_order(account_id, trade_id)
             return f"Cancelled order ID: {str(order_id)} for {account_id}"

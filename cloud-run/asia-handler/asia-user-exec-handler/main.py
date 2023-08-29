@@ -4,12 +4,13 @@ import os
 import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from exchanges import bybit
+from exchanges import binance, bybit
 from exchanges.firestore_functions import get_trade_info, get_tp_sl_orders, change_executed_status_tp_sl, delete_tp_sl_order, get_user_keys
 from exchanges.create_cloud_task import create_task
 from exchanges.partial import distribute_percentages
 
 EXCHANGES = {
+    'binance': binance,
     'bybit': bybit
     # ... add other exchanges here
 }
@@ -239,12 +240,11 @@ async def cancel_all_tps(data: dict):
 
         # Filter the take profit orders
         tp_orders = [order for order in tp_sl_orders if 'tp_number' in order and order['executed'] != '2']
-
+        print(tp_orders)
         # Prepare tasks to cancel orders and delete them from the database
         tasks = []
         for tp_order in tp_orders:
             tasks.append(EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, tp_order["document_id"], "tp", trade_info, keys))
-            tasks.append(delete_tp_sl_order(account_id, trade_id, tp_order["document_id"], "tp"))
 
         # Execute tasks concurrently
         await asyncio.gather(*tasks)

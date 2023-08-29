@@ -14,7 +14,7 @@ async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_valu
         api_secret=keys["api_secret"],
     )
 
-    fetch = session.get_positions(category="linear", symbol=symbol)['result']['list'][0 if side == 'Buy' else 1]
+    fetch = session.get_positions(category="linear", symbol=symbol)['result']['list'][0]
 
     if str(fetch['tpslMode']) != "Partial":
         try:

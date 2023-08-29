@@ -1,29 +1,28 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import store_tp_exec
+from .position import get_position
 import asyncio
 
-async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, trade_info, keys):
-    symbol = trade_info["symbol"]
-    side = trade_info["side"]
-    client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
+async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, position, trade_info, keys):
+    try:    
+        symbol = trade_info["symbol"]
+        side = trade_info["side"]
+        client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    precisions = client.contracts()
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            quantityPrecision = precisions[i]["quantityPrecision"]
-            pricePrecision = precisions[i]["pricePrecision"]
+        precisions = await client.contracts()
+        precisions_dict = {precision["symbol"]: precision for precision in precisions}
 
-    if tp_amount != None:
-        tp_amount = tp_amount
-    else:
-        position = client.positions(
-            symbol=symbol,
-        )
-        quantity = position[0]["positionAmt"]
-        tp_amount = round(float(quantity) * float(tp_percentage), quantityPrecision)
-    # Placing Take-Profit Limit Order
-    try:
-        tp_order = client.trade_order(
+        quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
+        pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
+
+        if tp_amount != None:
+            tp_amount = tp_amount
+        else:
+            quantity = abs(float(position[0]['positionAmt']))
+            
+            tp_amount = round(float(quantity) * float(tp_percentage), quantityPrecision)
+        # Placing Take-Profit Limit Order
+        tp_order = await client.trade_order(
             symbol=symbol,
             type="TAKE_PROFIT_MARKET",
             side="BUY" if side == "Sell" else "BUY",

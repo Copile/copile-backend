@@ -6,10 +6,10 @@ async def get_position(account_id, trade_id, trade_info, keys):
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    position = client.positions(
+    position = await client.positions(
         symbol=symbol,
     )
     if position != []:
-        return position[0]['positionAmt']
+        return abs(float(position[0]['positionAmt']))
     else:
         return 0

@@ -245,7 +245,6 @@ async def cancel_all_tps(data: dict):
         tasks = []
         for tp_order in tp_orders:
             tasks.append(EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, tp_order["document_id"], "tp", trade_info, keys))
-            tasks.append(delete_tp_sl_order(account_id, trade_id, tp_order["document_id"], "tp"))
 
         # Execute tasks concurrently
         await asyncio.gather(*tasks)
@@ -272,7 +271,7 @@ async def bulk_tp(data: dict):
         position_quantity = await EXCHANGES[exchange].position.get_position(account_id, trade_id, trade_info, keys)
 
         new_take_profits = await EXCHANGES[exchange].distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, keys)
-
+        
         if position_quantity != 0:
             tasks = [EXCHANGES[exchange].profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, keys) for tp_data in new_take_profits]
             await asyncio.gather(*tasks)
@@ -407,17 +406,16 @@ async def partial_close(data: dict):
 
         await asyncio.gather(
             *[EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, order["document_id"], "tp", trade_info, keys) for order in tps_data if order['tp_status'] == "active"],
+            *[EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, order["document_id"], "sl", trade_info, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order]
         )
 
         if tps_data != []:
             distributed_tps = await distribute_percentages(tps_data)
 
             new_tps_data = await EXCHANGES[exchange].distribution.calculate_tp_amounts(account_id, trade_id, distributed_tps, trade_info, new_quantity, keys)
-
         if position_quantity != 0:
 
             await asyncio.gather(
-                *[EXCHANGES[exchange].cancel.send_cancel(account_id, trade_id, order["document_id"], "sl", trade_info, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order],
                 *[EXCHANGES[exchange].stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
                 *[EXCHANGES[exchange].profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, keys) for order in new_tps_data]
             )

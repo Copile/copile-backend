@@ -25,4 +25,4 @@ async def check_trade(account_id, trade_id, document_id, payload, trade_info, en
         else:
             await send_stoploss(account_id, trade_id, document_id, payload["sl_number"], payload["sl_value"], payload["sl_percentage"], payload["sl_amount"], trade_info, keys)
     else:
-        create_task(account_id, trade_id, document_id, payload, endpoint, 2)
+        await create_task(account_id, trade_id, document_id, payload, endpoint, 2)

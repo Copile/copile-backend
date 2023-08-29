@@ -1,5 +1,6 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import store_tp
+from .position import get_position
 import asyncio
 
 async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, trade_info, keys):
@@ -8,24 +9,22 @@ async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value,
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    precisions = client.contracts()
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            quantityPrecision = precisions[i]["quantityPrecision"]
-            pricePrecision = precisions[i]["pricePrecision"]
+    precisions = await client.contracts()
+    precisions_dict = {precision["symbol"]: precision for precision in precisions}
+
+    quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
+    pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
 
     if str(tp_amount) != "0":
         tp_amount = tp_amount
     else:
-        position = client.positions(
-            symbol=symbol,
-        )
-        quantity = position[0]["positionAmt"]
+        quantity = await get_position(account_id, trade_id, trade_info, keys)
+        
         tp_amount = round(float(quantity) * float(tp_percentage), quantityPrecision)
 
     # Placing Take-Profit Limit Order
     try:
-        tp_order = client.trade_order(
+        tp_order = await client.trade_order(
             symbol=symbol,
             type="TAKE_PROFIT_MARKET",
             side="BUY" if side == "Sell" else "BUY",

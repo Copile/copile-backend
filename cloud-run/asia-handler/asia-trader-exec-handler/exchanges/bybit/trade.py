@@ -18,12 +18,13 @@ async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price
     
     quantity = round((float(margin) * int(leverage) / float(price)), quantity_precision)
     # Changing leverage or Margin mode to Isolated/Cross
+    
     try:
         leverage_change = session.set_leverage(
             category="linear",
             symbol=symbol,
-            buyLeverage=int(leverage),
-            sellLeverage=int(leverage)
+            buyLeverage=str(leverage),
+            sellLeverage=str(leverage)
         )
     except Exception as error:
         pass

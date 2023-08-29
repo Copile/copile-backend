@@ -18,37 +18,34 @@ steps:
 
   # Cloud Run (Asia)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'asia-trader-exec-handler', 'cloud-run/asia-handler/asia-trader-exec-handler']
+    args: ['build', '-t', 'asia-trader-exec-handler:latest', 'cloud-run/asia-handler/asia-trader-exec-handler']
     id: 'build-asia-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'asia-trader-exec-handler', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler']
+    args: ['tag', 'asia-trader-exec-handler:latest', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
     id: 'tag-asia-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler']
+    args: ['push', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
     id: 'push-asia-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'asia-trader-exec-handler', '--image', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler']
+    args: ['run', 'deploy', 'asia-trader-exec-handler', '--image', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
     id: 'deploy-asia-trader-exec-handler'
 
   # Cloud Run (US)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-trader-exec-handler', 'cloud-run/us-handler/us-trader-exec-handler']
+    args: ['build', '-t', 'us-trader-exec-handler:latest', 'cloud-run/us-handler/us-trader-exec-handler']
     id: 'build-us-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'us-trader-exec-handler', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler']
+    args: ['tag', 'us-trader-exec-handler:latest', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
     id: 'tag-us-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler']
+    args: ['push', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
     id: 'push-us-trader-exec-handler'
 
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'us-trader-exec-handler', '--image', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler']
+    args: ['run', 'deploy', 'us-trader-exec-handler', '--image', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
     id: 'deploy-us-trader-exec-handler'
-
-  # Repeat the Cloud Run steps for other Cloud Run services and regions
-

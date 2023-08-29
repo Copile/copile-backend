@@ -3,15 +3,16 @@ import asyncio
 
 async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
     symbol = trade_info["symbol"]
+    side = trade_info["side"]
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
-
-    position = client.positions(
+    
+    position = await client.positions(
         symbol=symbol,
     )
+    positionSide = position[0]["positionSide"]
     try:
-        positionSide = position[0]["positionSide"]
-        emergency = client.trade_order(
+        emergency = await client.trade_order(
             symbol=symbol,
             type="MARKET",
             side="SELL" if positionSide == "LONG" else "BUY",

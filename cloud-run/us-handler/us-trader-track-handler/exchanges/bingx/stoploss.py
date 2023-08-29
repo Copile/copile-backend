@@ -1,35 +1,32 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import store_sl_exec
+from .position import get_position
 import asyncio
 
-async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, sl_amount, trade_info, keys):
-    symbol = trade_info["symbol"]
-    side = trade_info["side"]
+async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, sl_amount, position, trade_info, keys):
+    try:    
+        symbol = trade_info["symbol"]
+        side = trade_info["side"]
 
-    client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
+        client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    precisions = client.contracts()
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            quantityPrecision = precisions[i]["quantityPrecision"]
-            pricePrecision = precisions[i]["pricePrecision"]
+        precisions = await client.contracts()
+        precisions_dict = {precision["symbol"]: precision for precision in precisions}
 
-    position = client.positions(
-        symbol=symbol,
-    )
-    quantity = position[0]["positionAmt"]
-    
-    if sl_amount == None:
-        sl_amount = round(float(quantity) * float(sl_percentage), quantityPrecision)
+        quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
+        pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
 
-    # Placing Stop-loss Limit Order
-    try:
-        sl_order = client.trade_order(
+        if sl_amount is None:
+            quantity = abs(float(position[0]['positionAmt']))
+            sl_amount = round(float(quantity) * float(sl_percentage), quantityPrecision)
+
+        # Placing Stop-loss Limit Order
+        sl_order = await client.trade_order(
             symbol=symbol,
             type="STOP_MARKET",
             side="SELL" if side == "Buy" else "BUY",
             positionSide="SHORT" if side == "Sell" else "LONG",
-            stopPrice=sl_value,
+            stopPrice=round(float(sl_value), pricePrecision),
             quantity=sl_amount
         )
         order_id = sl_order["order"]['orderId']

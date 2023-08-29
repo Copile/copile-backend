@@ -20,7 +20,7 @@ def balance(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def positions(self,
+async def positions(self,
     symbol: str,
     recvWindow: int = None,
 ) -> dict:

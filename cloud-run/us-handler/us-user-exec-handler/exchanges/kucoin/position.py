@@ -13,6 +13,6 @@ async def get_position(account_id, trade_id, trade_info, keys):
 
     position = position_details['currentQty'] if position_details['currentQty'] > 0 else position_details['currentQty'] * (-1)
     if str(position) != '0':
-        return position
+        return abs(float(position))
     else:
         return 0

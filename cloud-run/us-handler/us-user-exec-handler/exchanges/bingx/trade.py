@@ -13,7 +13,7 @@ async def convert_symbol(symbol):
 
 
 async def send_trade(account_id, trade_id, plan_id, side, symbol, leverage, price, keys):
-    margin = await get_user_margin(account_id, plan_id, keys)    
+    margin = await get_user_margin(account_id, plan_id, keys)
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
@@ -21,22 +21,20 @@ async def send_trade(account_id, trade_id, plan_id, side, symbol, leverage, pric
 
     symbol = await convert_symbol(symbol)
 
-    precisions = client.contracts()
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            quantityPrecision = precisions[i]["quantityPrecision"]
-            pricePrecision = precisions[i]["pricePrecision"]
+    leverage_switch, precisions = await asyncio.gather(
+        client.switch_leverage(symbol=symbol, side=side, leverage=int(leverage)),
+        client.contracts()
+    )
+
+    precisions_dict = {precision["symbol"]: precision for precision in precisions}
+
+    quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
+    pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
 
     quantity = round((float(margin) * int(leverage) / float(price)), quantityPrecision)
 
-    leverage_switch = client.switch_leverage(
-        symbol=symbol,
-        side=side,
-        leverage=int(leverage),
-    )
-
     try:
-        mode = client.switch_margin_mode(
+        mode = await client.switch_margin_mode(
             symbol=symbol,
             marginType="ISOLATED"
         )
@@ -44,7 +42,7 @@ async def send_trade(account_id, trade_id, plan_id, side, symbol, leverage, pric
         pass
 
     try:
-        create_order = client.trade_order(
+        create_order = await client.trade_order(
             symbol=symbol,
             type="LIMIT",
             price=round(float(price), pricePrecision),

@@ -4,8 +4,9 @@ bingX.perpetual.v2.trade
 
 from typing import List
 from ...error import ClientError
+import asyncio
 
-def trade_order(self,
+async def trade_order(self,
     symbol:       str,
     type:         str,
     side:         str,
@@ -69,7 +70,7 @@ def close_all_positions(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def cancel_order(self,
+async def cancel_order(self,
     orderId:    int,
     symbol:     str,
     recvWindow: int = None,
@@ -89,7 +90,7 @@ def cancel_order(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def cancel_orders(self,
+async def cancel_orders(self,
     symbol:      str,
     orderIdList: List[int],
     recvWindow:  int = None,
@@ -183,7 +184,7 @@ def margin_mode(self,
         print("maginType already changed")
     return res['data']
 
-def switch_margin_mode(self,
+async def switch_margin_mode(self,
     symbol:     str,
     marginType: str,
     recvWindow: int = None,
@@ -221,7 +222,7 @@ def leverage(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def switch_leverage(self,
+async def switch_leverage(self,
     symbol:     str,
     side:       str,
     leverage:   int,

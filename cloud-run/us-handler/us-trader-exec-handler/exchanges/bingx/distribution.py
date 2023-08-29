@@ -1,7 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..shuffle import rearrange_tps
-from .position import get_position
-from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status
 import asyncio
 
 async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, quantity, keys):
@@ -12,22 +10,18 @@ async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, q
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    precisions = client.contracts()
-
     tps_amount = []
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            quantityPrecision = precisions[i]["quantityPrecision"]
-            min_qty = float(precisions[i]["size"])
+
+    precisions = {precision["symbol"]: precision for precision in await client.contracts()}
+    quantityPrecision = precisions.get(symbol, {}).get("quantityPrecision")
+    min_qty = float(precisions.get(symbol, {}).get("size"))
 
     if quantity != 0:
         quantity = float(quantity)
     else:
         quantity = float(client.order(symbol=symbol, orderId=int(order_id))["order"]["origQty"])
     
-    for tp in tps_percentage:
-        tp_amount = float(quantity) * float(tp)
-        tps_amount.append(tp_amount)
+    tps_amount = [float(quantity) * float(tp) for tp in tps_percentage]
     tp_amounts = await rearrange_tps(quantity, quantityPrecision, tps_amount, min_qty)
 
     new_take_profits = []
@@ -46,5 +40,4 @@ async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, q
                 'tp_percentage': tp_percentage,
                 'tp_amount': tp_amount
             })
-
     return new_take_profits

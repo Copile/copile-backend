@@ -64,3 +64,4 @@ async def create_task(account_id, trade_id, document_id, payload, endpoint):
     # Create the Cloud Task request with the parent queue, task and schedule time
     response = client.create_task(request={"parent": parent, "task": task})
     print("Created task {}".format(response.name))
+    return

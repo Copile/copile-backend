@@ -1,14 +1,14 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
-from ..firestore_functions import store_trade
-from .trade import convert_symbol
 import asyncio
 
 async def get_precision(account_id, symbol, keys):
+    try:
+        client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
-    client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
+        precisions = await client.contracts()
+        precisions_dict = {precision["symbol"]: precision for precision in precisions}
 
-    precisions = client.contracts()
-    for i in range(len(precisions)):
-        if precisions[i]["symbol"] == symbol:
-            precision = precisions[i]["quantityPrecision"]
-    return precision
+        quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
+        return quantityPrecision
+    except Exception as error:
+        print(error)

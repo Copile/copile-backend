@@ -24,8 +24,8 @@ async def send_trade(account_id, trade_id, plan_id, side, symbol, leverage, pric
         leverage_change = session.set_leverage(
             category="linear",
             symbol=symbol,
-            buyLeverage=int(leverage),
-            sellLeverage=int(leverage)
+            buyLeverage=str(leverage),
+            sellLeverage=str(leverage)
         )
     except Exception as error:
         pass
