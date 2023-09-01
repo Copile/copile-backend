@@ -35,7 +35,8 @@ steps:
         --allow-unauthenticated \
         --region=$region \
         --memory=$memory \
-        --entry-point=$entry_point
+        --entry-point=$entry_point \
+        --source=$name
 
 
   # Cloud Run (Asia)
