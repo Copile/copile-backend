@@ -1,45 +1,42 @@
 steps:
-- name: gcr.io/cloud-builders/gcloud
-  args: ['functions', 'deploy', 'saveUserToFirestore', '--region', 'us-central1', '--runtime', 'nodejs18', '--source', 'cloud-functions/saveUserToFirestore', '--entry-point', 'saveUserToFirestore']
-  id: Deploy_saveUserToFirestore
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      # Install jq
+      apt-get update && apt-get install -y jq
 
-  # - name: 'gcr.io/cloud-builders/gcloud'
-  #   entrypoint: 'bash'
-  #   args:
-  #     - '-c'
-  #     - |
-  #       # Install jq
-  #       apt-get update && apt-get install -y jq
+      # ls and pwd for debugging
+      ls -la
+      pwd
 
-  #       # ls and pwd for debugging
-  #       ls -la
-  #       pwd
+      # Load JSON configuration
+      config_file="/workspace/cloud-function-config.json"
+      functions_config=$(cat $config_file)
 
-  #       # Load JSON configuration
-  #       config_file="/workspace/cloud-function-config.json"
-  #       functions_config=$(cat $config_file)
+      cd cloud-functions  # Change directory to cloud-functions
+      # ls and pwd for debugging
+      ls -la
+      pwd
 
-  #       cd /workspace/cloud-functions
-  #       # ls and pwd for debugging
-  #       ls -la
-  #       pwd
+      # Deploy saveUserToFirestore Cloud Function
+      function_config=$(echo "$functions_config" | jq -c '.[] | select(.name == "saveUserToFirestore")')
+      name=$(echo "$function_config" | jq -r '.name')
+      runtime=$(echo "$function_config" | jq -r '.runtime')
+      memory=$(echo "$function_config" | jq -r '.memory')
+      region=$(echo "$function_config" | jq -r '.region')
+      entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
-  #       # Deploy saveUserToFirestore Cloud Function
-  #       function_config=$(echo "$functions_config" | jq -c '.[] | select(.name == "saveUserToFirestore")')
-  #       name=$(echo "$function_config" | jq -r '.name')
-  #       runtime=$(echo "$function_config" | jq -r '.runtime')
-  #       memory=$(echo "$function_config" | jq -r '.memory')
-  #       region=$(echo "$function_config" | jq -r '.region')
-  #       entry_point=$(echo "$function_config" | jq -r '.entry_point')
+      # Deploy saveUserToFirestore Cloud Function with specified settings
+      gcloud functions deploy $name \
+        --runtime=$runtime \
+        --trigger-http \
+        --allow-unauthenticated \
+        --region=$region \
+        --memory=$memory \
+        --entry-point=$entry_point
 
-  #       # Deploy saveUserToFirestore Cloud Function with specified settings
-  #       gcloud functions deploy $name \
-  #         --runtime=$runtime \
-  #         --trigger-http \
-  #         --allow-unauthenticated \
-  #         --region=$region \
-  #         --memory=$memory \
-  #         --entry-point=$entry_point
 
   # Cloud Run (Asia)
   # - name: 'gcr.io/cloud-builders/docker'
