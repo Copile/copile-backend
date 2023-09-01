@@ -4,14 +4,10 @@ steps:
     args:
       - '-c'
       - |
-        # Install jq tool
-        apt-get update
-        apt-get install -y jq
-
         cd cloud-functions
 
-        # Load JSON configuration
-        config_file="cloud-function-config.json"
+        # Load JSON configuration from the root directory
+        config_file="../cloud-function-config.json"
         functions_config=$(cat $config_file)
 
         # Loop through each Cloud Function configuration
