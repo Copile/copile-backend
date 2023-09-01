@@ -1,6 +1,6 @@
 steps:
 - name: gcr.io/cloud-builders/gcloud
-  args: ['functions', 'deploy', '--region', 'us-central1', '--runtime', 'nodejs16', '--source', 'cloud-functions', '--entry-point', 'saveUserToFirestore', 'saveUserToFirestore']
+  args: ['functions', 'deploy', 'saveUserToFirestore', '--region', 'us-central1', '--runtime', 'nodejs18', '--source', 'cloud-functions', '--entry-point', 'saveUserToFirestore']
   id: Deploy_saveUserToFirestore
 
   # - name: 'gcr.io/cloud-builders/gcloud'
