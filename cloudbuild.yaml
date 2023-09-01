@@ -12,7 +12,7 @@ steps:
       functions_config=$(cat $config_file)
 
       # Loop through each Cloud Function configuration
-      for function_config in $(echo "$functions_config" | jq -c '.[] | select(.name == "saveUserToFirestore" or .name == "salestracker")'); do
+      for function_config in $(echo "$functions_config" | jq -c '.[]'); do
         name=$(echo "$function_config" | jq -r '.name')
         runtime=$(echo "$function_config" | jq -r '.runtime')
         memory=$(echo "$function_config" | jq -r '.memory')

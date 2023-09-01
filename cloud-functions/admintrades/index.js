@@ -2,6 +2,7 @@ const express = require('express');
 const { Firestore } = require('@google-cloud/firestore');
 const api = require("kucoin-futures-node-api");
 const { getPositions, getOrder, getOrders, getBalance } = require('./bingxrequest');
+const { getPositionsBinance,  getOrderBinance, getOpenOrdersBinance, getBalanceBinance } = require('./binancerequest');
 const decryptData = require('./decryption');
 
 const db = new Firestore();
@@ -66,6 +67,12 @@ app.all('/trades/:exchange', async (req, res) => {
         [trades, orders] = await Promise.all([
           getBingXTrades(apiKey, apiSecret, trader),
           getBingXOrders(apiKey, apiSecret, trader)
+        ]);
+        break;
+      case 'binance':
+        [trades, orders] = await Promise.all([
+          getBinanceTrades(apiKey, apiSecret, trader),
+          getBinanceOrders(apiKey, apiSecret, trader)
         ]);
         break;
       default:
@@ -200,6 +207,9 @@ app.all('/balance/:exchange', async (req, res) => {
             case 'bingx':
                 balance = await getBingXBalance(apiKey, apiSecret);
                 break;
+            case 'binance':
+                balance = await getBinanceBalance(apiKey, apiSecret);
+                break;
             default:
                 console.log(`Unknown exchange: ${exchange}`);
                 balance = [];
@@ -217,6 +227,7 @@ app.all('/balance/:exchange', async (req, res) => {
 
 async function mapPositionToTrade(position, trader, symbol, exchange, side) {
   // Fetch the trade id
+  console.log(side);
   const tradeQuerySnapshot = await db
     .collection('traders')
     .doc(trader)
@@ -265,32 +276,34 @@ async function getKucoinTrades(apiKey, apiSecret, apiPassphrase, userId) {
 
     const apiLive = new api();
     apiLive.init(config);
-
+  
     let positions = await apiLive.getAllPositions();
     positions = positions.data;
+    if (positions !== null) {
+      const trades = positions
+        .filter(position => position.size !== 0)
+        .map(async position => {
+          position.side = position.currentQty < 0 ? "Sell" : "Buy";
+          position.margin_mode = position.crossMode === true ? "cross" : "isolated";
+          if (position.currentQty < 0 && position.currentCost < 0) {
+            position.currentQty *= -1;
+            position.currentCost *= -1;
+          }
+          position.leverage = position.realLeverage;
+          position.unrealised_pnl = position.unrealisedPnl;
+          position.margin = position.maintMargin;
+          position.unrealised_pnl_pct = String((parseFloat(position.unrealisedPnlPcnt)*100*parseFloat(position.realLeverage)).toFixed(2));
+          position.entryPrice = position.avgEntryPrice;
+          position.realised_pnl = position.realisedPnl;
+          position.size = position.currentQty;
 
-    const trades = positions
-      .filter(position => position.size !== 0)
-      .map(async position => {
-        position.side = position.currentQty < 0 ? "Sell" : "Buy";
-        position.margin_mode = position.crossMode === true ? "cross" : "isolated";
-        if (position.currentQty < 0 && position.currentCost < 0) {
-          position.currentQty *= -1;
-          position.currentCost *= -1;
-        }
-        position.leverage = position.realLeverage;
-        position.unrealised_pnl = position.unrealisedPnl;
-        position.margin = position.maintMargin;
-        position.unrealised_pnl_pct = String((parseFloat(position.unrealisedPnlPcnt)*100*parseFloat(position.realLeverage)).toFixed(2));
-        position.entryPrice = position.avgEntryPrice;
-        position.realised_pnl = position.realisedPnl;
-        position.size = position.currentQty;
+          return await mapPositionToTrade(position, userId, position.symbol, "kucoin", position.side);
+        });
 
-        return await mapPositionToTrade(position, userId, position.symbol, "kucoin", position.side);
-      });
-
-    return await Promise.all(trades);
-
+      return await Promise.all(trades);
+    } else {
+      return [];
+    }
   } catch (e) {
     console.error(`An error occurred while retrieving trades from KuCoin. Error message: ${e}`);
     return [];
@@ -319,6 +332,31 @@ async function getBingXTrades(apiKey, apiSecret, userId) {
     return await Promise.all(trades);
   } catch (e) {
     console.error(`An error occurred while retrieving trades from BingX. Error message: ${e}`);
+    return [];
+  }
+}
+
+async function getBinanceTrades(apiKey, apiSecret, userId) {
+  try {
+    const positions = await getPositionsBinance(apiKey, apiSecret);
+    const trades = positions
+      .filter(position => position.positionAmt !== 0)
+      .map(async position => {
+        position.side = position.positionSide === "LONG" ? "Buy" : "Sell";
+        position.margin_mode = position.marginType === "isolated" ? "isolated" : "cross";
+        position.unrealised_pnl = position.unRealizedProfit;
+        position.margin = position.isolatedMargin;
+        position.entryPrice = position.entryPrice;
+        position.realised_pnl = "0"; // Binance does not provide realised PnL via API
+        position.size = position.positionAmt;
+        position.unrealised_pnl_pct = String(((parseFloat(position.unRealizedProfit) / (parseFloat(position.positionAmt) * parseFloat(position.entryPrice))) * 100 * parseFloat(position.leverage)).toFixed(2));
+
+        return await mapPositionToTrade(position, userId, position.symbol, "binance", position.side);
+      });
+
+    return await Promise.all(trades);
+  } catch (e) {
+    console.error(`An error occurred while retrieving trades from Binance. Error message: ${e}`);
     return [];
   }
 }
@@ -426,6 +464,9 @@ async function getOrderStatus(exchange, symbol, orderID, apiKey, apiSecret, apiP
     case 'bingx':
       const bingx_order = await getBingXOrderById(symbol, orderID, apiKey, apiSecret);
       return bingx_order === 'NEW' ? 'Active' : bingx_order;
+    case 'binance':
+      const binance_order = await getOrderBinance(symbol, orderID, apiKey, apiSecret);
+      return binance_order === 'NEW' ? 'Active' : binance_order;
     default:
       console.log(`Unknown exchange: ${exchange}`);
       return null;
@@ -496,6 +537,18 @@ async function getBingXBalance(apiKey, apiSecret) {
     }
 }
 
+async function getBinanceBalance(apiKey, apiSecret) {
+  try {
+      const balanceData = await getBalanceBinance(apiKey, apiSecret);
+      const usdtBalance = balanceData.find(asset => asset.asset === 'USDT');
+      return usdtBalance ? String(usdtBalance.availableBalance) : '0';
+  }
+  catch (e) {
+      console.log("Error in getBinanceBalance: ", e);
+      return [];
+  }
+}
+
 async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, trader) {
     try {
         const config = {
@@ -510,34 +563,38 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, trader) {
             status: "active",
         });
 
-        // Filter the orders to only show type "limit", reduceOnly false, and status "open"
-        const filteredOrders = orders.data.items.filter(order => 
-            order.type === "limit" && 
-            order.reduceOnly === false && 
-            order.status === "open"
-        );
+        let filteredOrders = [];
+
+        if (orders.data.items !== null) {
+            // Filter the orders to only show type "limit", reduceOnly false, and status "open"
+            filteredOrders = orders.data.items.filter(order => 
+                order.type === "limit" && 
+                order.reduceOnly === false && 
+                order.status === "open"
+            );
+        }
 
         // Extract matching parameters for KuCoin
         const kucoinMatchingParams = await Promise.all(filteredOrders.map(async order => {
-          const tradeDoc = await getTradeDoc(trader, order.symbol, "kucoin", order.side);
-          const tradeData = tradeDoc.data();
-          return {
-            trade_id: tradeDoc.id,
-            symbol: order.symbol,
-            side: order.side,
-            leverage: tradeData.leverage,
-            margin: tradeData.margin,
-            type: "LIMIT",
-            entry_price: order.price,
-            quantity: order.size,
-            status: "Active",
-            created_at: tradeData.created_at
-          };
+            const tradeDoc = await getTradeDoc(trader, order.symbol, "kucoin", order.side);
+            const tradeData = tradeDoc.data();
+            return {
+                trade_id: tradeDoc.id,
+                symbol: order.symbol,
+                side: order.side,
+                leverage: tradeData.leverage,
+                margin: tradeData.margin,
+                type: "LIMIT",
+                entry_price: order.price,
+                quantity: order.size,
+                status: "Active",
+                created_at: tradeData.created_at
+            };
         }));
 
         return kucoinMatchingParams;
     } catch (e) {
-        console.error(`An error occurred while retrieving active orders from KuCoin. Error message: ${e}`);
+        console.log(`An error occurred while retrieving active orders from KuCoin. Error message: ${e}`);
         return [];
     }
 }
@@ -566,7 +623,35 @@ async function getBingXOrders(apiKey, apiSecret, trader) {
 
     return bingxMatchingParams;
   } catch (e) {
-    console.error(`An error occurred while retrieving active orders from BingX. Error message: ${e}`);
+    console.log(`An error occurred while retrieving active orders from BingX. Error message: ${e}`);
+    return [];
+  }
+}
+
+async function getBinanceOrders(apiKey, apiSecret, trader) {
+  try {
+    const orders = await getOpenOrdersBinance(apiKey, apiSecret);
+
+    const binanceMatchingParams = await Promise.all(orders.map(async order => {
+      const tradeDoc = await getTradeDoc(trader, order.symbol, "binance", order.side);
+      const tradeData = tradeDoc.data();
+      return {
+        trade_id: tradeDoc.id,
+        symbol: order.symbol,
+        side: order.side,
+        leverage: tradeData.leverage,
+        margin: tradeData.margin,
+        type: order.type,
+        entry_price: order.price,
+        quantity: order.origQty,
+        status: order.status,
+        created_at: tradeData.created_at
+      };
+    }));
+
+    return binanceMatchingParams;
+  } catch (e) {
+    console.log(`An error occurred while retrieving active orders from Binance. Error message: ${e}`);
     return [];
   }
 }

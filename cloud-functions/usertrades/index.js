@@ -3,6 +3,7 @@ const { Firestore } = require('@google-cloud/firestore');
 const { ContractClient } = require('bybit-api');
 const api = require("kucoin-futures-node-api");
 const { getPositions, getOrder, getOrders } = require('./bingxrequest');
+const { getPositionsBinance,  getOrderBinance, getOpenOrdersBinance, getBalanceBinance } = require('./binancerequest');
 const decryptData = require('./decryption');
 
 const db = new Firestore();
@@ -70,6 +71,12 @@ app.all('/trades/:exchange', async (req, res) => {
             getBingXOrders(apiKey, apiSecret, user)
             ]);
             break;
+        case 'binance':
+          [trades, orders] = await Promise.all([
+            getBinanceTrades(apiKey, apiSecret, user),
+            getBinanceOrders(apiKey, apiSecret, user)
+          ]);
+          break;
         default:
             console.log(`Unknown exchange: ${exchange}`);
             trades = [];
@@ -274,6 +281,31 @@ async function getBingXTrades(apiKey, apiSecret, userId) {
     }
 }
 
+async function getBinanceTrades(apiKey, apiSecret, userId) {
+  try {
+    const positions = await getPositionsBinance(apiKey, apiSecret);
+    const trades = positions
+      .filter(position => position.positionAmt !== 0)
+      .map(async position => {
+        position.side = position.positionSide === "LONG" ? "Buy" : "Sell";
+        position.margin_mode = position.marginType === "isolated" ? "isolated" : "cross";
+        position.unrealised_pnl = position.unRealizedProfit;
+        position.margin = position.isolatedMargin;
+        position.entryPrice = position.entryPrice;
+        position.realised_pnl = "0"; // Binance does not provide realised PnL via API
+        position.size = position.positionAmt;
+        position.unrealised_pnl_pct = String(((parseFloat(position.unRealizedProfit) / (parseFloat(position.positionAmt) * parseFloat(position.entryPrice))) * 100 * parseFloat(position.leverage)).toFixed(2));
+
+        return await mapPositionToTrade(position, userId, position.symbol, "binance", position.side);
+      });
+
+    return await Promise.all(trades);
+  } catch (e) {
+    console.error(`An error occurred while retrieving trades from Binance. Error message: ${e}`);
+    return [];
+  }
+}
+
 async function getTradeProfitLossDetails(user, tradeId, exchange, symbol, apiKey, apiSecret, apiPassphrase = null) {
   try {
     const tradeDocRef = db.collection('users').doc(user).collection('trades').doc(tradeId);
@@ -374,6 +406,9 @@ async function getOrderStatus(exchange, symbol, orderID, apiKey, apiSecret, apiP
     case 'bingx':
       const bingx_order = await getBingXOrderById(symbol, orderID, apiKey, apiSecret);
       return bingx_order === 'NEW' ? 'Active' : bingx_order;
+    case 'binance':
+      const binance_order = await getOrderBinance(symbol, orderID, apiKey, apiSecret);
+      return binance_order === 'NEW' ? 'Active' : binance_order;
     default:
       console.log(`Unknown exchange: ${exchange}`);
       return null;
@@ -516,6 +551,34 @@ async function getBingXOrders(apiKey, apiSecret, user) {
     return bingxMatchingParams;
   } catch (e) {
     console.error(`An error occurred while retrieving active orders from BingX. Error message: ${e}`);
+    return [];
+  }
+}
+
+async function getBinanceOrders(apiKey, apiSecret, trader) {
+  try {
+    const orders = await getOpenOrdersBinance(apiKey, apiSecret);
+
+    const binanceMatchingParams = await Promise.all(orders.map(async order => {
+      const tradeDoc = await getTradeDoc(trader, order.symbol, "binance", order.side);
+      const tradeData = tradeDoc.data();
+      return {
+        trade_id: tradeDoc.id,
+        symbol: order.symbol,
+        side: order.side,
+        leverage: tradeData.leverage,
+        margin: tradeData.margin,
+        type: order.type,
+        entry_price: order.price,
+        quantity: order.origQty,
+        status: order.status,
+        created_at: tradeData.created_at
+      };
+    }));
+
+    return binanceMatchingParams;
+  } catch (e) {
+    console.log(`An error occurred while retrieving active orders from Binance. Error message: ${e}`);
     return [];
   }
 }
