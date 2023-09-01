@@ -1,0 +1,100 @@
+[
+  {
+    "name": "WhopWebhook",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "createLicense"
+  },
+  {
+    "name": "admintrades",
+    "runtime": "nodejs18",
+    "memory": "1GB",
+    "region": "europe-west2",
+    "entry_point": "trades"
+  },
+  {
+    "name": "bybit",
+    "runtime": "nodejs18",
+    "memory": "1GB",
+    "region": "europe-west2",
+    "entry_point": "trades"
+  },
+  {
+    "name": "checkMember",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "checkMember"
+  },
+  {
+    "name": "createBalances",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "createBalances"
+  },
+  {
+    "name": "get-balance",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "balances"
+  },
+  {
+    "name": "member",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "member"
+  },
+  {
+    "name": "salestracker",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "salestracker"
+  },
+  {
+    "name": "saveUserToFirestore",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "saveUserToFirestore"
+  },
+  {
+    "name": "submitTrade",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "submitTrade"
+  },
+  {
+    "name": "trader",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "trader"
+  },
+  {
+    "name": "traderBalance",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "traderBalance"
+  },
+  {
+    "name": "usertrades",
+    "runtime": "nodejs18",
+    "memory": "1GB",
+    "region": "europe-west2",
+    "entry_point": "trades"
+  },
+  {
+    "name": "watchPositions",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "us-central1",
+    "entry_point": "trades"
+  }
+]

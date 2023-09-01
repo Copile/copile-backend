@@ -7,6 +7,7 @@ const api = {
     protocol: "https",
 };
 
+
 // Generate Binance signature
 function generateSignature(queryString, apiSecret) {
     return CryptoJS.HmacSHA256(queryString, apiSecret).toString(CryptoJS.enc.Hex);

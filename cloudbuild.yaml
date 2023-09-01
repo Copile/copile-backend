@@ -1,51 +1,69 @@
 steps:
-  # Cloud Functions
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
+        # Install jq tool
+        apt-get update
+        apt-get install -y jq
+
         cd cloud-functions
-        for function_dir in */; do
-          function_name=${function_dir%/}
-          gcloud functions deploy $function_name \
-            --runtime=nodejs16 \
+
+        # Load JSON configuration
+        config_file="cloud-function-config.json"
+        functions_config=$(cat $config_file)
+
+        # Loop through each Cloud Function configuration
+        for function_config in $(echo "$functions_config" | jq -c '.[]'); do
+          name=$(echo "$function_config" | jq -r '.name')
+          runtime=$(echo "$function_config" | jq -r '.runtime')
+          memory=$(echo "$function_config" | jq -r '.memory')
+          region=$(echo "$function_config" | jq -r '.region')
+          entry_point=$(echo "$function_config" | jq -r '.entry_point')
+
+          # Deploy Cloud Function with specified settings
+          gcloud functions deploy $name \
+            --runtime=$runtime \
             --trigger-http \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --region=$region \
+            --memory=$memory \
+            --entry-point=$entry_point
         done
     id: 'deploy-cloud-functions'
-    dir: 'cloud-functions'
+    dir: 'cloud-functions''
 
   # Cloud Run (Asia)
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'asia-trader-exec-handler:latest', 'cloud-run/asia-handler/asia-trader-exec-handler']
-    id: 'build-asia-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['build', '-t', 'asia-trader-exec-handler:latest', 'cloud-run/asia-handler/asia-trader-exec-handler']
+  #   id: 'build-asia-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'asia-trader-exec-handler:latest', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    id: 'tag-asia-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['tag', 'asia-trader-exec-handler:latest', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
+  #   id: 'tag-asia-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    id: 'push-asia-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['push', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
+  #   id: 'push-asia-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'asia-trader-exec-handler', '--image', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    id: 'deploy-asia-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   args: ['run', 'deploy', 'asia-trader-exec-handler', '--image', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
+  #   id: 'deploy-asia-trader-exec-handler'
 
-  # Cloud Run (US)
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-trader-exec-handler:latest', 'cloud-run/us-handler/us-trader-exec-handler']
-    id: 'build-us-trader-exec-handler'
+  # # Cloud Run (US)
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['build', '-t', 'us-trader-exec-handler:latest', 'cloud-run/us-handler/us-trader-exec-handler']
+  #   id: 'build-us-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'us-trader-exec-handler:latest', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    id: 'tag-us-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['tag', 'us-trader-exec-handler:latest', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
+  #   id: 'tag-us-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    id: 'push-us-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['push', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
+  #   id: 'push-us-trader-exec-handler'
 
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'us-trader-exec-handler', '--image', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    id: 'deploy-us-trader-exec-handler'
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   args: ['run', 'deploy', 'us-trader-exec-handler', '--image', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
+  #   id: 'deploy-us-trader-exec-handler'
