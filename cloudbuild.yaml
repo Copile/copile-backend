@@ -32,7 +32,7 @@ steps:
             --entry-point=$entry_point
         done
     id: 'deploy-cloud-functions'
-    dir: 'cloud-functions''
+    dir: 'cloud-functions'
 
   # Cloud Run (Asia)
   # - name: 'gcr.io/cloud-builders/docker'
