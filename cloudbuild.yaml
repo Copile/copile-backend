@@ -4,6 +4,7 @@ steps:
     args:
       - '-c'
       - |
+        apt-get update && apt-get install -y jq  # Install jq
         cd cloud-functions
 
         # Load JSON configuration from the root directory
