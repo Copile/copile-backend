@@ -7,7 +7,6 @@ const api = {
     protocol: "https",
 };
 
-
 // Generate Binance signature
 function generateSignature(queryString, apiSecret) {
     return CryptoJS.HmacSHA256(queryString, apiSecret).toString(CryptoJS.enc.Hex);
@@ -21,7 +20,7 @@ async function getBinanceServerTime() {
 }
 
 // Function to send a request to GET /fapi/v2/positionRisk
-async function getPositions(apiKey, apiSecret) {
+async function getPositionsBinance(apiKey, apiSecret) {
     try {
         const timestamp = await getBinanceServerTime();
 
@@ -69,7 +68,7 @@ async function getPositions(apiKey, apiSecret) {
     }
 }
 
-async function getOrder(apiKey, apiSecret, symbol, orderId) {
+async function getOrderBinance(symbol, orderId, apiKey, apiSecret) {
     try {
         const timestamp = await getBinanceServerTime();
 
@@ -98,13 +97,14 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
 
 
 // Function to send a request to GET /fapi/v1/openOrders
-async function getOpenOrders(apiKey, apiSecret) {
+async function getOpenOrdersBinance(apiKey, apiSecret) {
     try {
         const timestamp = await getBinanceServerTime();
 
         // Prepare the payload and parameters
         const payload = {
-            timestamp: timestamp
+            timestamp: timestamp,
+            recvWindow: 5000
         };
         const queryString = querystring.stringify(payload);
         const signature = generateSignature(queryString, apiSecret);
@@ -116,6 +116,12 @@ async function getOpenOrders(apiKey, apiSecret) {
         };
 
         const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
+
+        // Filter the response to only include LIMIT orders
+        response.data = response.data.filter((order) => {
+            return order.type === 'LIMIT';
+        });
+
         return response.data;
     } catch (error) {
         console.log('An error occurred:', error);
@@ -124,7 +130,7 @@ async function getOpenOrders(apiKey, apiSecret) {
 }
 
 // Function to send a request to GET /fapi/v2/balance (HMAC SHA256)
-async function getBalance(apiKey, apiSecret) {
+async function getBalanceBinance(apiKey, apiSecret) {
     try {
         const timestamp = await getBinanceServerTime();
 
@@ -154,18 +160,9 @@ async function getBalance(apiKey, apiSecret) {
     }
 }
 
-keys = {
-    'api_key': "pTDlg8Dg6ACIrJS4pt4tXui2y43WPBv7GbwD9Qp8ry0VY0UWWnv8lhjFS0BV0wsX",
-    'api_secret': "jjYspRkWuaiXulzP5VcjWA8SmkmmHPl2m3MMjYlehWIe1yMqh7GOO477qTgOOp4F"
-}
-
-getOrder(keys.api_key, keys.api_secret, "XRPUSDT", 40200525769).then((response) => {
-    console.log(response);
-});
-
 module.exports = {
-    getBalance,
-    getOpenOrders,
-    getPositions,
-    getOrder
+  getPositionsBinance,
+  getOrderBinance,
+  getOpenOrdersBinance,
+  getBalanceBinance
 };
