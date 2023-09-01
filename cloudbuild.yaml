@@ -5,6 +5,8 @@ steps:
       - '-c'
       - |
         apt-get update && apt-get install -y jq  # Install jq
+        pwd  # Print current working directory
+        ls  # List files in the current directory
         cd cloud-functions
 
         # Load JSON configuration from the root directory
