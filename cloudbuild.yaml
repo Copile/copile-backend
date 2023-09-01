@@ -5,6 +5,9 @@ steps:
       - '-c'
       - |
         apt-get update && apt-get install -y jq  # Install jq
+        
+        ls  # List files in the current directory
+        cat /workspace/cloud-function-config.json  # Print the content of the config file
 
         # Load JSON configuration
         config_file="/workspace/cloud-function-config.json"
