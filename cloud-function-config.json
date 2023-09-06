@@ -63,6 +63,13 @@
     "entry_point": "saveUserToFirestore"
   },
   {
+    "name": "storeOAuthId",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "OAuthCallback"
+  },
+  {
     "name": "submitTrade",
     "runtime": "nodejs18",
     "memory": "256MB",

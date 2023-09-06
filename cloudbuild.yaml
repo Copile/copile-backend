@@ -19,15 +19,21 @@ steps:
         region=$(echo "$function_config" | jq -r '.region')
         entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
-        # Deploy Cloud Function with specified settings
-        gcloud functions deploy $name \
-          --runtime=$runtime \
-          --trigger-http \
-          --allow-unauthenticated \
-          --region=$region \
-          --memory=$memory \
-          --entry-point=$entry_point \
-          --source=cloud-functions/$name
+        # Check if the current function is storeOAuthId before deploying
+        if [ "$name" = "storeOAuthId" ]; then
+          # Deploy Cloud Function with specified settings
+          gcloud functions deploy $name \
+            --runtime=$runtime \
+            --trigger-http \
+            --allow-unauthenticated \
+            --region=$region \
+            --memory=$memory \
+            --entry-point=$entry_point \
+            --source=cloud-functions/$name
+        else
+          # Skip this function and continue to the next one
+          echo "Skipping function: $name"
+        fi
       done
 
 
