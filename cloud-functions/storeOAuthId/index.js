@@ -7,10 +7,10 @@ const axios = require('axios');
 
 applyMiddleware(app);
 
-const DISCORD_CLIENT_ID = '1092448427360653312';
-const DISCORD_CLIENT_SECRET = 'FoVz5mC7igCsnDPcjXhfrtmD1248camG';
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET =  process.env.DISCORD_CLIENT_SECRET;
 // const REDIRECT_URI = 'https://us-central1-copile.cloudfunctions.net/storeOAuthId/OAuthCallback/discord';
-const REDIRECT_URI = "http://localhost:3000/api/functions/discordCallback"
+const REDIRECT_URI = process.env.REDIRECT_URI;
 
 app.get('/discord/connect', (req, res) => {
   const queryParams = new URLSearchParams({
@@ -29,7 +29,6 @@ app.get('/discord/connect', (req, res) => {
 
 app.get('/OAuthCallback/discord', async (req, res) => {
   try {
-    // const { code } = req.query;
     const code = req.get('code')
     const user = req.get('userId');
 
@@ -47,13 +46,13 @@ app.get('/OAuthCallback/discord', async (req, res) => {
       return res.status(500).send('Error exchanging code for token.');
     }
 
-    const discordUserId = await getDiscordUserId(tokenData.access_token);
+    const discordUserData = await getDiscordUserData(tokenData.access_token);
 
-    if (!discordUserId) {
+    if (!discordUserData) {
       return res.status(500).send('Error retrieving Discord user ID.');
     }
 
-    await saveDiscordUserIdToFirestore(user, discordUserId);
+    await saveDiscordUserIdToFirestore(user, discordUserData);
 
     return res.send('Discord ID saved successfully.');
   } catch (error) {
@@ -85,7 +84,7 @@ async function exchangeCodeForToken(code) {
   }
 }
 
-async function getDiscordUserId(accessToken) {
+async function getDiscordUserData(accessToken) {
   try {
     const userResponse = await axios.get('https://discord.com/api/v10/users/@me', {
       headers: {
@@ -93,19 +92,22 @@ async function getDiscordUserId(accessToken) {
       }
     });
 
-    return userResponse.data.id;
+    return {
+      id: userResponse.data.id,
+      username: userResponse.data.username,
+      avatar: `https://cdn.discordapp.com/avatars/${userResponse.data.id}/${userResponse.data.avatar}.png`
+    };
   } catch (error) {
     throw new Error('Error retrieving Discord user data.', error);
   }
 }
 
-async function saveDiscordUserIdToFirestore(user, discordUserId) {
+async function saveDiscordUserIdToFirestore(user, discordUserData) {
   const usersRef = db.collection('users');
   try {
-
     await usersRef.doc(user).update({
-      discord: discordUserId
-    })
+      discord: discordUserData
+    });
   } catch (error) {
     console.error('Error:', error);
   }
