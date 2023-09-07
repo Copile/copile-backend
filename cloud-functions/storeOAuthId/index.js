@@ -28,7 +28,7 @@ app.get("/discord/connect", (req, res) => {
 
 app.get("/OAuthCallback/discord", async (req, res) => {
   try {
-    const code = req.get("code");
+    const code = req.query.code;
     const user = req.get("userId");
 
     if (!code) {
