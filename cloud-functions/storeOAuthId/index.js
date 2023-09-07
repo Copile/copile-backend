@@ -10,7 +10,7 @@ applyMiddleware(app);
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 // const REDIRECT_URI = 'https://us-central1-copile.cloudfunctions.net/storeOAuthId/OAuthCallback/discord';
-const REDIRECT_URI = process.env.REDIRECT_URI;
+const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 
 app.get("/discord/connect", (req, res) => {
   const queryParams = new URLSearchParams({
