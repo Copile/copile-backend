@@ -117,10 +117,14 @@ async function getDiscordUserData(accessToken) {
       }
     );
 
+    const avatarType = userResponse.data.avatar.startsWith("a_")
+      ? "gif"
+      : "png";
+
     return {
       id: userResponse.data.id,
       username: userResponse.data.username,
-      avatar: `https://cdn.discordapp.com/avatars/${userResponse.data.id}/${userResponse.data.avatar}.png`,
+      avatar: `https://cdn.discordapp.com/avatars/${userResponse.data.id}/${userResponse.data.avatar}.${avatarType}`,
     };
   } catch (error) {
     throw new Error("Error retrieving Discord user data.", error);
