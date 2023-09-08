@@ -67,7 +67,7 @@
     "runtime": "nodejs18",
     "memory": "256MB",
     "region": "us-central1",
-    "entry_point": "OAuthCallback"
+    "entry_point": "callback"
   },
   {
     "name": "submitTrade",
