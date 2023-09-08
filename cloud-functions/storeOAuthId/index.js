@@ -28,8 +28,8 @@ app.get("/discord/connect", (req, res) => {
 
 app.get("/OAuthCallback/discord", async (req, res) => {
   try {
-    const code = req.query.code;
     const user = req.get("userId");
+    const code = req.query.code;
 
     if (!code) {
       return res.status(400).send("Code parameter missing.");
