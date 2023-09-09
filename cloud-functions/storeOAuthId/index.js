@@ -63,14 +63,20 @@ app.post("/callback/telegram", async (req, res, next) => {
       throw new AppError(400, "No message received.");
     }
 
+    if(!message.text.startsWith("/notis")) {
+      throw new AppError(400, "Invalid command.");
+    }
+
     const token = message.text.split(" ")[1];
     if (!token) {
       throw new AppError(400, "No token received.");
     }
 
-    const { user_id, chat_id } = await getUserDataFromToken(token);
+    const user_id = await getUserDataFromToken(token);
 
-    await saveUserDataToFirestore(user_id, {id :chat_id }, "telegram");
+    const chat_id = message.chat.id;
+
+    await saveUserDataToFirestore(user_id, {chat_id :chat_id }, "telegram");
 
     await sendTelegramMessage(chat_id, "Notifications enabled.");
 
@@ -187,7 +193,6 @@ async function getDiscordUserData(accessToken) {
 }
 
 async function saveUserDataToFirestore(user, userData, social) {
-  console.log(user);
   const usersRef = db.collection("users");
   try {
     await usersRef.doc(user).update({
@@ -208,9 +213,8 @@ async function getUserDataFromToken(token) {
     }
 
     const user_id = userSnapshot.docs[0].id;
-    console.log(user_id);
-    const chat_id = userSnapshot.docs[0].data().chat_id;
-    return { user_id: user_id, chat_id: chat_id };
+
+    return user_id;
   } catch (error) {
     throw new AppError(500, "Error getting user data from token.");
   }
