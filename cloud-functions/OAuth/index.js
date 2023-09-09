@@ -67,7 +67,7 @@ app.post("/callback/telegram", async (req, res, next) => {
     const status_code = await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
 
     if (status_code === 200) {
-      await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
+      await sendTelegramMessage(chat_id, "Notifications are already enabled.");
       res.status(200).send("User already has chat id saved.");
       return;
     }
@@ -238,7 +238,7 @@ async function generateChatToken(user) {
     const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (userData.exists && userData.data().telegram && userData.data().telegram.token) {
+    if (userData.exists && userData.data().telegram && userData.data().telegram.token !="x") {
       throw new AppError(400, "User already has a token.");
     }
 
