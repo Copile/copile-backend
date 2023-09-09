@@ -76,10 +76,10 @@ app.post("/callback/telegram", async (req, res, next) => {
     const user_id = await getUserDataFromToken(token);
 
     const chat_id = message.chat.id;
-    console.log(chat_id);
+
     await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
 
-    await sendTelegramMessage(chat_id, "Notifications enabled.");
+    await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
 
     res.status(200).send("Telegram user data saved successfully.");
   } catch (error) {
@@ -196,12 +196,28 @@ async function getDiscordUserData(accessToken) {
 async function saveUserDataToFirestore(user, userData, social) {
   const usersRef = db.collection("users");
   try {
+    // check if user already has chat id saved
+    const userRef = usersRef.doc(user);
+    const userSnapshot = await userRef.get();
+
+    if (!userSnapshot.exists) {
+      throw new AppError(404, "User not found.");
+    }
+
+    const userDoc = userSnapshot.data();
+    if (userDoc[social] && userDoc[social].id) {
+      await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
+      throw new AppError(200, "User already has a chat id saved.");
+    }
+
     const updateData = {};
+
     if (social === "telegram") {
       updateData[`${social}.${userData.id ? 'id' : 'token'}`] = userData.id || userData.token;
     } else if (social === "discord") {
       updateData[`${social}`] = userData;
     }
+
     await usersRef.doc(user).update(updateData);
   } catch (error) {
     console.log(error);
