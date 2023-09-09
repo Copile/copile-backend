@@ -63,7 +63,7 @@ app.post("/callback/telegram", async (req, res, next) => {
       throw new AppError(400, "No message received.");
     }
 
-    if(!message.text.startsWith("/notis")) {
+    if(!message.text.startsWith("/start")) {
       throw new AppError(400, "Invalid command.");
     }
 
