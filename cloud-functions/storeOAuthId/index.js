@@ -12,10 +12,23 @@ const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const TELEGRAM_BOT_KEY = process.env.TELEGRAM_BOT_KEY;
 
-// Error handling middleware
+// Custom error class for consistency
+class AppError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// Error handling middleware (should be the last one)
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
-  res.status(err.status || 500).send(err.message);
+
+  if (err instanceof AppError) {
+    res.status(err.status).send(err.message);
+  } else {
+    res.status(500).send("Internal Server Error");
+  }
 });
 
 app.get("/callback/discord", async (req, res, next) => {
@@ -24,11 +37,11 @@ app.get("/callback/discord", async (req, res, next) => {
     const code = req.query.code;
 
     if (!code) {
-      throw { status: 400, message: "Code parameter missing." };
+      throw new AppError(400, "Code parameter missing.");
     }
 
     if (!user) {
-      throw { status: 400, message: "User id missing." };
+      throw new AppError(400, "User id missing.");
     }
 
     const tokenData = await exchangeCodeForToken(code);
@@ -38,7 +51,7 @@ app.get("/callback/discord", async (req, res, next) => {
 
     res.send("Discord User data saved successfully.");
   } catch (error) {
-    next(error); // Pass the error to the error handler middleware
+    next(error);
   }
 });
 
@@ -47,22 +60,19 @@ app.post("/callback/telegram", async (req, res, next) => {
     const { message } = req.body;
 
     if (!message) {
-      throw { status: 400, message: "No message received." };
+      throw new AppError(400, "No message received.");
     }
 
     const token = message.text.split(" ")[1];
     if (!token) {
-      throw { status: 400, message: "No token received." };
+      throw new AppError(400, "No token received.");
     }
 
-    // Get the Firestore user id from the token
     const userData = await getUserDataFromToken(token);
 
-    // Save the userData to Firestore
-    await saveUserDataToFirestore(userData.user_id, message.chat, "telegram");
+    await saveUserDataToFirestore(userData.user_id, userData, "telegram");
 
-    // Send a message back to the user
-    await sendTelegramMessage(message.chat.id, "Notifications enabled.");
+    await sendTelegramMessage(userData.chat.id, "Notifications enabled.");
 
     res.status(200).send("Telegram user data saved successfully.");
   } catch (error) {
@@ -74,7 +84,7 @@ app.post("/storeChatToken", async (req, res, next) => {
   try {
     const user = req.get("userId");
     if (!user) {
-      throw { status: 400, message: "User id missing." };
+      throw new AppError(400, "User id missing.");
     }
 
     const token = await generateChatToken(user);
@@ -91,13 +101,13 @@ app.get("/getChatToken", async (req, res, next) => {
   try {
     const user = req.get("userId");
     if (!user) {
-      throw { status: 400, message: "User id missing." };
+      throw new AppError(400, "User id missing.");
     }
 
     const chatToken = await getChatToken(user);
 
     if (!chatToken) {
-      throw { status: 404, message: "User does not have a token." };
+      throw new AppError(404, "User does not have a token.");
     }
 
     res.send(chatToken);
@@ -112,11 +122,11 @@ app.post("/disconnectSocial", async (req, res, next) => {
     const { social } = req.body;
 
     if (!user) {
-      throw { status: 400, message: "User id missing." };
+      throw new AppError(400, "User id missing.");
     }
 
     if (!social || (social !== "telegram" && social !== "discord")) {
-      throw { status: 400, message: "Invalid social platform specified." };
+      throw new AppError(400, "Invalid social platform specified.");
     }
 
     await disconnectSocial(user, social);
@@ -147,7 +157,7 @@ async function exchangeCodeForToken(code) {
 
     return tokenResponse.data;
   } catch (error) {
-    throw { status: 500, message: "Token exchange failed." };
+    throw new AppError(500, "Token exchange failed.");
   }
 }
 
@@ -172,7 +182,7 @@ async function getDiscordUserData(accessToken) {
       avatar: `https://cdn.discordapp.com/avatars/${userResponse.data.id}/${userResponse.data.avatar}.${avatarType}`,
     };
   } catch (error) {
-    throw { status: 500, message: "Error retrieving Discord user data." };
+    throw new AppError(500, "Error retrieving Discord user data.");
   }
 }
 
@@ -183,7 +193,7 @@ async function saveUserDataToFirestore(user, userData, social) {
       [`${social}`]: userData,
     });
   } catch (error) {
-    throw { status: 500, message: `Error saving ${social} user data to Firestore.` };
+    throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }
 }
 
@@ -193,14 +203,14 @@ async function getUserDataFromToken(token) {
     const userSnapshot = await userRef.get();
 
     if (userSnapshot.empty) {
-      throw { status: 404, message: "No user found." };
+      throw new AppError(404, "No user found.");
     }
 
     const user_id = userSnapshot.docs[0].account;
     const chat_id = userSnapshot.docs[0].data().chat_id;
     return { user_id: user_id, chat_id: chat_id };
   } catch (error) {
-    throw { status: 500, message: "Error getting user data from token." };
+    throw new AppError(500, "Error getting user data from token.");
   }
 }
 
@@ -210,14 +220,14 @@ async function generateChatToken(user) {
     const userData = await userRef.get();
 
     if (userData.exists && userData.data().chatToken) {
-      throw { status: 400, message: "User already has a token." };
+      throw new AppError(400, "User already has a token.");
     }
 
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
     return token;
   } catch (error) {
-    throw { status: 500, message: "Error generating chat token." };
+    throw new AppError(500, "Error generating chat token.");
   }
 }
 
@@ -227,12 +237,12 @@ async function getChatToken(user) {
     const userData = await userRef.get();
 
     if (!userData.exists || !userData.data().chatToken) {
-      throw { status: 404, message: "User does not have a token." };
+      throw new AppError(404, "User does not have a token.");
     }
 
     return userData.data().chatToken;
   } catch (error) {
-    throw { status: 500, message: "Error retrieving chat token." };
+    throw new AppError(500, "Error retrieving chat token.");
   }
 }
 
@@ -243,19 +253,18 @@ async function disconnectSocial(user, social) {
     updateObject[`${social}.id`] = "x";
     await usersRef.doc(user).update(updateObject);
   } catch (error) {
-    throw { status: 500, message: `Error disconnecting ${social}.` };
+    throw new AppError(500, `Error disconnecting ${social}.`);
   }
 }
 
 async function sendTelegramMessage(chat_id, message) {
-
   const sendMessageUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_KEY}/sendMessage?chat_id=${chat_id}&text=${message}`;
-  try{
+  try {
     await axios.post(sendMessageUrl);
-    res.send("Message sent successfully.");
-  }
-  catch(error){
-    throw { status: 500, message: `Error sending message.` };
+    return "Message sent successfully.";
+  } catch (error) {
+    throw new AppError(500, "Error sending message.");
   }
 }
+
 exports.callback = app;
