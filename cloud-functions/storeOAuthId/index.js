@@ -80,7 +80,7 @@ app.post("/callback/telegram", async (req, res, next) => {
   }
 });
 
-app.post("/storeChatToken", async (req, res, next) => {
+app.get("/storeChatToken", async (req, res, next) => {
   try {
     const user = req.get("userId");
     if (!user) {
