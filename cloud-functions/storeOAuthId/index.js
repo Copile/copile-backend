@@ -64,7 +64,7 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const chat_id = message.chat.id;
 
-    await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
+    await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram", res);
 
     await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
 
@@ -180,7 +180,7 @@ async function getDiscordUserData(accessToken) {
   }
 }
 
-async function saveUserDataToFirestore(user, userData, social) {
+async function saveUserDataToFirestore(user, userData, social, res = null) {
   const usersRef = db.collection("users");
   try {
     // check if user already has chat id saved
@@ -252,7 +252,6 @@ async function getChatToken(user) {
     if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
       throw new AppError(404, "User does not have a token.");
     }
-    console.log(userData.data().telegram.token);
     
     return userData.data().telegram.token;
   } catch (error) {
