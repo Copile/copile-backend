@@ -48,18 +48,18 @@ app.post("/callback/telegram", async (req, res, next) => {
   try {
     const { message } = req.body;
     if (!message) {
-      throw new AppError(400, "No message received.");
+      throw new AppError(200, "No message received.");
     }
     console.log(message);
 
     if (!message.text.startsWith("/start")) {
-      throw new AppError(400, "Invalid command.");
+      throw new AppError(200, "Invalid command.");
     }
     console.log(message.text)
 
     const token = message.text.split(" ")[1];
     if (!token) {
-      throw new AppError(400, "No token received.");
+      throw new AppError(200, "No token received.");
     }
 
     const user_id = await getUserDataFromToken(token);
