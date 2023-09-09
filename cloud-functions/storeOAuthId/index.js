@@ -20,17 +20,6 @@ class AppError extends Error {
   }
 }
 
-// Error handling middleware (should be the last one)
-app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
-
-  if (err instanceof AppError) {
-    res.status(err.status).send(err.message);
-  } else {
-    res.status(500).send("Internal Server Error");
-  }
-});
-
 app.get("/callback/discord", async (req, res, next) => {
   try {
     const user = req.get("userId");
