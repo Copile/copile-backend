@@ -193,6 +193,7 @@ async function saveUserDataToFirestore(user, userData, social) {
       [`${social}`]: userData,
     });
   } catch (error) {
+    console.log(error);
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }
 }
