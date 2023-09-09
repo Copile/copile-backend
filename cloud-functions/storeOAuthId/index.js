@@ -63,7 +63,7 @@ app.post("/callback/telegram", async (req, res, next) => {
       throw new AppError(400, "No message received.");
     }
 
-    if(!message.text.startsWith("/start")) {
+    if (!message.text.startsWith("/start")) {
       throw new AppError(400, "Invalid command.");
     }
 
@@ -76,7 +76,7 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const chat_id = message.chat.id;
 
-    await saveUserDataToFirestore(user_id, {chat_id :chat_id }, "telegram");
+    await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
 
     await sendTelegramMessage(chat_id, "Notifications enabled.");
 
@@ -195,9 +195,13 @@ async function getDiscordUserData(accessToken) {
 async function saveUserDataToFirestore(user, userData, social) {
   const usersRef = db.collection("users");
   try {
-    await usersRef.doc(user).update({
-      [`${social}`]: userData
-    });
+    const updateData = {};
+    if (social === "telegram") {
+      updateData[`${social}.${userData.id ? 'id' : 'token'}`] = userData.id || userData.token;
+    } else if (social === "discord") {
+      updateData[`${social}`] = userData;
+    }
+    await usersRef.doc(user).update(updateData);
   } catch (error) {
     console.log(error);
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
@@ -255,7 +259,8 @@ async function getChatToken(user) {
 async function disconnectSocial(user, social) {
   const usersRef = db.collection("users");
   try {
-    const updateObject = { [social === "telegram" ? "telegram.chat_id" : `${social}.id`]: "x" };
+    const updateObject = {};
+    updateObject[`${social}.id`] = "x";
     await usersRef.doc(user).update(updateObject);
   } catch (error) {
     throw new AppError(500, `Error disconnecting ${social}.`);
