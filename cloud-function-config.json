@@ -63,7 +63,7 @@
     "entry_point": "saveUserToFirestore"
   },
   {
-    "name": "storeOAuthId",
+    "name": "OAuth",
     "runtime": "nodejs18",
     "memory": "256MB",
     "region": "us-central1",

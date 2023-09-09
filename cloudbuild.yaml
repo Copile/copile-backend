@@ -20,7 +20,7 @@ steps:
         entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
         # Check if the current function is storeOAuthId before deploying
-        if [ "$name" = "storeOAuthId" ]; then
+        if [ "$name" = "OAuth" ]; then
           # Deploy Cloud Function with specified settings
           gcloud functions deploy $name \
             --runtime=$runtime \

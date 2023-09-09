@@ -18,6 +18,7 @@ const logger = winston.createLogger({
 require('dotenv').config();
 
 const errorHandler = (err, req, res, next) => {
+  console.error(err);  // Log the error for debugging
 
   if (err instanceof AppError) {
     // if its status code 200, then dont treat it as an error
