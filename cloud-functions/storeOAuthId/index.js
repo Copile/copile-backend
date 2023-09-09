@@ -70,9 +70,9 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const userData = await getUserDataFromToken(token);
 
-    await saveUserDataToFirestore(userData.user_id, userData, "telegram");
+    await saveUserDataToFirestore(userData.user_id, userData.chat_id, "telegram");
 
-    await sendTelegramMessage(userData.chat.id, "Notifications enabled.");
+    await sendTelegramMessage(userData.chat_id, "Notifications enabled.");
 
     res.status(200).send("Telegram user data saved successfully.");
   } catch (error) {
@@ -187,6 +187,7 @@ async function getDiscordUserData(accessToken) {
 }
 
 async function saveUserDataToFirestore(user, userData, social) {
+  console.log(user);
   const usersRef = db.collection("users");
   try {
     await usersRef.doc(user).update({
@@ -208,6 +209,7 @@ async function getUserDataFromToken(token) {
     }
 
     const user_id = userSnapshot.docs[0].account;
+    console.log(user_id);
     const chat_id = userSnapshot.docs[0].data().chat_id;
     return { user_id: user_id, chat_id: chat_id };
   } catch (error) {
