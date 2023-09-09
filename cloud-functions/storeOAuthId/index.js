@@ -252,7 +252,8 @@ async function getChatToken(user) {
     if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
       throw new AppError(404, "User does not have a token.");
     }
-
+    console.log(userData.data().telegram.token);
+    
     return userData.data().telegram.token;
   } catch (error) {
     throw new AppError(500, "Error retrieving chat token.");
