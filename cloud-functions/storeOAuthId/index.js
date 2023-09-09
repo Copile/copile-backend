@@ -48,16 +48,16 @@ app.post("/callback/telegram", async (req, res, next) => {
   try {
     const { message } = req.body;
     if (!message) {
-      throw new AppError(200, "No message received.");
+      return res.status(200).send("No message received.");
     }
 
     if (!message.text.startsWith("/start")) {
-      throw new AppError(200, "Invalid command.");
+      return res.status(200).send("Invalid command.");
     }
 
     const token = message.text.split(" ")[1];
     if (!token) {
-      throw new AppError(200, "No token received.");
+      return res.status(200).send("No token received.");
     }
 
     const user_id = await getUserDataFromToken(token);
@@ -194,7 +194,7 @@ async function saveUserDataToFirestore(user, userData, social) {
     const userDoc = userSnapshot.data();
     if (userDoc[social] && userDoc[social].id != "x") {
       await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
-      throw new AppError(200, "User already has a chat id saved.");
+      return res.status(200).send("User already has chat id saved.");
     }
 
     const updateData = {};
@@ -220,7 +220,7 @@ async function getUserDataFromToken(token) {
     }
 
     const user_id = userSnapshot.docs[0].id;
-    
+
     return user_id;
   } catch (error) {
     throw new AppError(500, "Error getting user data from token.");
@@ -229,10 +229,10 @@ async function getUserDataFromToken(token) {
 
 async function generateChatToken(user) {
   try {
-    const userRef = db.collection("users").doc(user).collection("telegram");
+    const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (userData.exists && userData.data().token) {
+    if (userData.exists && userData.data().telegram && userData.data().telegram.token) {
       throw new AppError(400, "User already has a token.");
     }
 
@@ -246,14 +246,14 @@ async function generateChatToken(user) {
 
 async function getChatToken(user) {
   try {
-    const userRef = db.collection("users").doc(user).collection("telegram");
+    const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (!userData.exists || !userData.data().token) {
+    if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
       throw new AppError(404, "User does not have a token.");
     }
 
-    return userData.data().token;
+    return userData.data().telegram.token;
   } catch (error) {
     throw new AppError(500, "Error retrieving chat token.");
   }
