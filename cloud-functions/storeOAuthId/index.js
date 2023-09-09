@@ -194,7 +194,9 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
     const userDoc = userSnapshot.data();
     if (userDoc[social] && userDoc[social].id != "x") {
       await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
-      return res.status(200).send("User already has chat id saved.");
+      if (res) {
+        return res.status(200).send("User already has chat id saved.");
+      }
     }
 
     const updateData = {};
@@ -207,6 +209,9 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
 
     await usersRef.doc(user).update(updateData);
   } catch (error) {
+    if (res && error.status !== 500) {
+      return res.status(error.status).send(error.message);
+    }
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }
 }
