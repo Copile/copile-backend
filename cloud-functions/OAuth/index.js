@@ -64,11 +64,18 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const chat_id = message.chat.id;
 
-    await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram", res);
+    const status_code = await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
 
-    await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
-
-    res.status(200).send("Telegram user data saved successfully.");
+    if (status_code === 200) {
+      await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
+      res.status(200).send("User already has chat id saved.");
+      return;
+    }
+    else if(status_code === 201) {
+      await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
+      res.status(200).send("Telegram user data saved successfully.");
+      return;
+    }
   } catch (error) {
     next(error);
   }
@@ -180,7 +187,7 @@ async function getDiscordUserData(accessToken) {
   }
 }
 
-async function saveUserDataToFirestore(user, userData, social, res = null) {
+async function saveUserDataToFirestore(user, userData, social) {
   const usersRef = db.collection("users");
   try {
     // check if user already has chat id saved
@@ -193,13 +200,8 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
 
     const userDoc = userSnapshot.data();
     if (userDoc[social] && userDoc[social].id != "x") {
-      await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
-      if (res) {
-        res.status(200).send("User already has chat id saved.");
-        return;
-      }
+      return 200;
     }
-
     const updateData = {};
 
     if (social === "telegram") {
@@ -209,6 +211,7 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
     }
 
     await usersRef.doc(user).update(updateData);
+    return 201;
   } catch (error) {
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }

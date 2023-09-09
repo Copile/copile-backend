@@ -21,6 +21,7 @@ steps:
 
         # Check if the current function is storeOAuthId before deploying
         if [ "$name" = "OAuth" ]; then
+          echo "Deploying function: $name"
           # Deploy Cloud Function with specified settings
           gcloud functions deploy $name \
             --runtime=$runtime \
