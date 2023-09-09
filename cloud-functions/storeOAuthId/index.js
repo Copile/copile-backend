@@ -70,7 +70,7 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const { user_id, chat_id } = await getUserDataFromToken(token);
 
-    await saveUserDataToFirestore(user_id, chat_id, "telegram");
+    await saveUserDataToFirestore(user_id, {id :chat_id }, "telegram");
 
     await sendTelegramMessage(chat_id, "Notifications enabled.");
 
@@ -89,7 +89,7 @@ app.get("/storeChatToken", async (req, res, next) => {
 
     const token = await generateChatToken(user);
 
-    await saveUserDataToFirestore(user, token, "telegram");
+    await saveUserDataToFirestore(user, { token: token }, "telegram");
 
     res.send("Chat token saved successfully.");
   } catch (error) {
@@ -201,7 +201,7 @@ async function saveUserDataToFirestore(user, userData, social) {
 
 async function getUserDataFromToken(token) {
   try {
-    const userRef = db.collection("users").where("telegram.chatToken", "==", token);
+    const userRef = db.collection("users").where("telegram.token", "==", token);
     const userSnapshot = await userRef.get();
     if (userSnapshot.empty) {
       throw new AppError(404, "No user found.");
@@ -221,7 +221,7 @@ async function generateChatToken(user) {
     const userRef = db.collection("users").doc(user).collection("telegram");
     const userData = await userRef.get();
 
-    if (userData.exists && userData.data().chatToken) {
+    if (userData.exists && userData.data().token) {
       throw new AppError(400, "User already has a token.");
     }
 
@@ -238,11 +238,11 @@ async function getChatToken(user) {
     const userRef = db.collection("users").doc(user).collection("telegram");
     const userData = await userRef.get();
 
-    if (!userData.exists || !userData.data().chatToken) {
+    if (!userData.exists || !userData.data().token) {
       throw new AppError(404, "User does not have a token.");
     }
 
-    return userData.data().chatToken;
+    return userData.data().token;
   } catch (error) {
     throw new AppError(500, "Error retrieving chat token.");
   }
