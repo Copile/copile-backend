@@ -203,7 +203,8 @@ async function getUserDataFromToken(token) {
   try {
     const userRef = db.collection("users").where("chatToken", "==", token);
     const userSnapshot = await userRef.get();
-    console.log(userSnapshot);
+    console.log(userSnapshot.docs[0].data());
+    console.log(userSnapshot.docs[0].id);
     if (userSnapshot.empty) {
       throw new AppError(404, "No user found.");
     }
