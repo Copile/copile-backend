@@ -50,12 +50,10 @@ app.post("/callback/telegram", async (req, res, next) => {
     if (!message) {
       throw new AppError(200, "No message received.");
     }
-    console.log(message);
 
     if (!message.text.startsWith("/start")) {
       throw new AppError(200, "Invalid command.");
     }
-    console.log(message.text)
 
     const token = message.text.split(" ")[1];
     if (!token) {
@@ -65,7 +63,6 @@ app.post("/callback/telegram", async (req, res, next) => {
     const user_id = await getUserDataFromToken(token);
 
     const chat_id = message.chat.id;
-    console.log(chat_id);
 
     await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
 
@@ -203,7 +200,6 @@ async function saveUserDataToFirestore(user, userData, social) {
     const updateData = {};
 
     if (social === "telegram") {
-      console.log(userData);
       updateData[`${social}.${userData.id ? 'id' : 'token'}`] = userData.id || userData.token;
     } else if (social === "discord") {
       updateData[`${social}`] = userData;
@@ -211,7 +207,6 @@ async function saveUserDataToFirestore(user, userData, social) {
 
     await usersRef.doc(user).update(updateData);
   } catch (error) {
-    console.log(error);
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }
 }
@@ -219,14 +214,13 @@ async function saveUserDataToFirestore(user, userData, social) {
 async function getUserDataFromToken(token) {
   try {
     const userRef = db.collection("users").where("telegram.token", "==", token);
-    console.log(token);
     const userSnapshot = await userRef.get();
     if (userSnapshot.empty) {
       throw new AppError(404, "No user found.");
     }
 
     const user_id = userSnapshot.docs[0].id;
-    console.log(user_id);
+    
     return user_id;
   } catch (error) {
     throw new AppError(500, "Error getting user data from token.");
