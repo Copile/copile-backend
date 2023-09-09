@@ -206,8 +206,7 @@ async function saveUserDataToFirestore(user, userData, social) {
     }
 
     const userDoc = userSnapshot.data();
-    if (userDoc[social] && userDoc[social].id) {
-      console.log("allahu akbar");
+    if (userDoc[social] && userDoc[social].id != "x") {
       await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
       throw new AppError(200, "User already has a chat id saved.");
     }
