@@ -68,11 +68,11 @@ app.post("/callback/telegram", async (req, res, next) => {
       throw new AppError(400, "No token received.");
     }
 
-    const userData = await getUserDataFromToken(token);
+    const { user_id, chat_id } = await getUserDataFromToken(token);
 
-    await saveUserDataToFirestore(userData.user_id, userData.chat_id, "telegram");
+    await saveUserDataToFirestore(user_id, chat_id, "telegram");
 
-    await sendTelegramMessage(userData.chat_id, "Notifications enabled.");
+    await sendTelegramMessage(chat_id, "Notifications enabled.");
 
     res.status(200).send("Telegram user data saved successfully.");
   } catch (error) {
@@ -89,7 +89,7 @@ app.get("/storeChatToken", async (req, res, next) => {
 
     const token = await generateChatToken(user);
 
-    await saveUserDataToFirestore(user, token, "chatToken");
+    await saveUserDataToFirestore(user, token, "telegram");
 
     res.send("Chat token saved successfully.");
   } catch (error) {
@@ -191,7 +191,7 @@ async function saveUserDataToFirestore(user, userData, social) {
   const usersRef = db.collection("users");
   try {
     await usersRef.doc(user).update({
-      [`${social}`]: userData,
+      [`${social}`]: userData
     });
   } catch (error) {
     console.log(error);
@@ -201,15 +201,13 @@ async function saveUserDataToFirestore(user, userData, social) {
 
 async function getUserDataFromToken(token) {
   try {
-    const userRef = db.collection("users").where("chatToken", "==", token);
+    const userRef = db.collection("users").where("telegram.chatToken", "==", token);
     const userSnapshot = await userRef.get();
-    console.log(userSnapshot.docs[0].data());
-    console.log(userSnapshot.docs[0].id);
     if (userSnapshot.empty) {
       throw new AppError(404, "No user found.");
     }
 
-    const user_id = userSnapshot.docs[0].account;
+    const user_id = userSnapshot.docs[0].id;
     console.log(user_id);
     const chat_id = userSnapshot.docs[0].data().chat_id;
     return { user_id: user_id, chat_id: chat_id };
@@ -220,7 +218,7 @@ async function getUserDataFromToken(token) {
 
 async function generateChatToken(user) {
   try {
-    const userRef = db.collection("users").doc(user);
+    const userRef = db.collection("users").doc(user).collection("telegram");
     const userData = await userRef.get();
 
     if (userData.exists && userData.data().chatToken) {
@@ -237,7 +235,7 @@ async function generateChatToken(user) {
 
 async function getChatToken(user) {
   try {
-    const userRef = db.collection("users").doc(user);
+    const userRef = db.collection("users").doc(user).collection("telegram");
     const userData = await userRef.get();
 
     if (!userData.exists || !userData.data().chatToken) {
@@ -253,8 +251,7 @@ async function getChatToken(user) {
 async function disconnectSocial(user, social) {
   const usersRef = db.collection("users");
   try {
-    const updateObject = {};
-    updateObject[`${social}.id`] = "x";
+    const updateObject = { [social === "telegram" ? "telegram.chat_id" : `${social}.id`]: "x" };
     await usersRef.doc(user).update(updateObject);
   } catch (error) {
     throw new AppError(500, `Error disconnecting ${social}.`);
