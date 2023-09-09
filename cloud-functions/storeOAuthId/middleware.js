@@ -17,7 +17,7 @@ const logger = winston.createLogger({
 // for loading environment variables from .env file
 require('dotenv').config();
 
-const errorHandler = (err, req, res) => {
+const errorHandler = (err, req, res, next) => {
 
   if (err instanceof AppError) {
     // if its status code 200, then dont treat it as an error
@@ -40,7 +40,7 @@ const applyMiddleware = (app) => {
   app.use(express.urlencoded({ extended: true }));
 
   // Attach logger to request object
-  app.use((req, next) => {
+  app.use((req, res, next) => {
     req.logger = logger;
     next();
   });
