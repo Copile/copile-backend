@@ -195,7 +195,8 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
     if (userDoc[social] && userDoc[social].id != "x") {
       await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
       if (res) {
-        return res.status(200).send("User already has chat id saved.");
+        res.status(200).send("User already has chat id saved.");
+        return;
       }
     }
 
@@ -209,9 +210,6 @@ async function saveUserDataToFirestore(user, userData, social, res = null) {
 
     await usersRef.doc(user).update(updateData);
   } catch (error) {
-    if (res && error.status !== 500) {
-      return res.status(error.status).send(error.message);
-    }
     throw new AppError(500, `Error saving ${social} user data to Firestore.`);
   }
 }
@@ -257,7 +255,7 @@ async function getChatToken(user) {
     if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
       throw new AppError(404, "User does not have a token.");
     }
-    
+
     return userData.data().telegram.token;
   } catch (error) {
     throw new AppError(500, "Error retrieving chat token.");
