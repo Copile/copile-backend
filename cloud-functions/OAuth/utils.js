@@ -105,6 +105,11 @@ async function disconnectSocial(user, social) {
     try {
         const update_object = {};
         update_object[`${social}.id`] = "x";
+        // If the social platform is Discord, also clear the avatar and username
+        if (social === "discord") {
+            update_object[`${social}.avatar`] = "x";
+            update_object[`${social}.username`] = "x";
+        }
         await user_ref.doc(user).update(update_object);
         return "Social disconnected successfully.";
     } catch (error) {
