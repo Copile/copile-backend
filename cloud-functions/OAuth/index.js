@@ -13,7 +13,14 @@ const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const TELEGRAM_BOT_KEY = process.env.TELEGRAM_BOT_KEY;
 
 // Custom error class for consistency
-class AppError extends Error {
+class TelegramError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+class DiscordError extends Error {
   constructor(status, message) {
     super(message);
     this.status = status;
@@ -26,11 +33,11 @@ app.get("/callback/discord", async (req, res, next) => {
     const code = req.query.code;
 
     if (!code) {
-      throw new AppError(400, "Code parameter missing.");
+      throw new DiscordError(400, "Code parameter missing.");
     }
 
     if (!user) {
-      throw new AppError(400, "User id missing.");
+      throw new DiscordError(400, "User id missing.");
     }
 
     const tokenData = await exchangeCodeForToken(code);
@@ -71,7 +78,7 @@ app.post("/callback/telegram", async (req, res, next) => {
       res.status(200).send("User already has chat id saved.");
       return;
     }
-    else if(status_code === 201) {
+    else if (status_code === 201) {
       await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
       res.status(200).send("Telegram user data saved successfully.");
       return;
@@ -85,7 +92,7 @@ app.get("/storeChatToken", async (req, res, next) => {
   try {
     const user = req.get("userId");
     if (!user) {
-      throw new AppError(400, "User id missing.");
+      throw new TelegramError(400, "User id missing.");
     }
 
     const token = await generateChatToken(user);
@@ -102,13 +109,13 @@ app.get("/getChatToken", async (req, res, next) => {
   try {
     const user = req.get("userId");
     if (!user) {
-      throw new AppError(400, "User id missing.");
+      throw new TelegramError(400, "User id missing.");
     }
 
     const chatToken = await getChatToken(user);
 
     if (!chatToken) {
-      throw new AppError(404, "User does not have a token.");
+      throw new TelegramError(404, "User does not have a token.");
     }
 
     res.send(chatToken);
@@ -123,11 +130,11 @@ app.post("/disconnectSocial", async (req, res, next) => {
     const { social } = req.body;
 
     if (!user) {
-      throw new AppError(400, "User id missing.");
+      throw new TelegramError(400, "User id missing.");
     }
 
     if (!social || (social !== "telegram" && social !== "discord")) {
-      throw new AppError(400, "Invalid social platform specified.");
+      throw new TelegramError(400, "Invalid social platform specified.");
     }
 
     await disconnectSocial(user, social);
@@ -158,7 +165,7 @@ async function exchangeCodeForToken(code) {
 
     return tokenResponse.data;
   } catch (error) {
-    throw new AppError(500, "Token exchange failed.");
+    throw new DiscordError(500, "Token exchange failed.");
   }
 }
 
@@ -183,7 +190,7 @@ async function getDiscordUserData(accessToken) {
       avatar: `https://cdn.discordapp.com/avatars/${userResponse.data.id}/${userResponse.data.avatar}.${avatarType}`,
     };
   } catch (error) {
-    throw new AppError(500, "Error retrieving Discord user data.");
+    throw new DiscordError(500, "Error retrieving Discord user data.");
   }
 }
 
@@ -195,12 +202,18 @@ async function saveUserDataToFirestore(user, userData, social) {
     const userSnapshot = await userRef.get();
 
     if (!userSnapshot.exists) {
-      throw new AppError(404, "User not found.");
+      throw new TelegramError(404, "User not found.");
     }
 
     const userDoc = userSnapshot.data();
     if (userDoc[social] && userDoc[social].id != "x") {
-      return 200;
+      if (social === "telegram") {
+        await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
+        throw new TelegramError(200, "User already has chat id saved.");
+      }
+      else if (social === "discord") {
+        throw new DiscordError(200, "User already has chat id saved.");
+      }
     }
     const updateData = {};
 
@@ -211,9 +224,8 @@ async function saveUserDataToFirestore(user, userData, social) {
     }
 
     await usersRef.doc(user).update(updateData);
-    return 201;
   } catch (error) {
-    throw new AppError(500, `Error saving ${social} user data to Firestore.`);
+    throw error;
   }
 }
 
@@ -222,14 +234,14 @@ async function getUserDataFromToken(token) {
     const userRef = db.collection("users").where("telegram.token", "==", token);
     const userSnapshot = await userRef.get();
     if (userSnapshot.empty) {
-      throw new AppError(404, "No user found.");
+      throw new TelegramError(404, "No user found.");
     }
 
     const user_id = userSnapshot.docs[0].id;
 
     return user_id;
   } catch (error) {
-    throw new AppError(500, "Error getting user data from token.");
+    throw new TelegramError(500, "Error getting user data from token.");
   }
 }
 
@@ -238,15 +250,15 @@ async function generateChatToken(user) {
     const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (userData.exists && userData.data().telegram && userData.data().telegram.token !="x") {
-      throw new AppError(400, "User already has a token.");
+    if (userData.exists && userData.data().telegram && userData.data().telegram.token != "x") {
+      throw new TelegramError(400, "User already has a token.");
     }
 
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
     return token;
   } catch (error) {
-    throw new AppError(500, "Error generating chat token.");
+    throw new TelegramError(500, "Error generating chat token.");
   }
 }
 
@@ -256,12 +268,12 @@ async function getChatToken(user) {
     const userData = await userRef.get();
 
     if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
-      throw new AppError(404, "User does not have a token.");
+      throw new TelegramError(404, "User does not have a token.");
     }
 
     return userData.data().telegram.token;
   } catch (error) {
-    throw new AppError(500, "Error retrieving chat token.");
+    throw new TelegramError(500, "Error retrieving chat token.");
   }
 }
 
@@ -272,7 +284,7 @@ async function disconnectSocial(user, social) {
     updateObject[`${social}.id`] = "x";
     await usersRef.doc(user).update(updateObject);
   } catch (error) {
-    throw new AppError(500, `Error disconnecting ${social}.`);
+    throw new TelegramError(500, `Error disconnecting ${social}.`);
   }
 }
 
@@ -282,7 +294,7 @@ async function sendTelegramMessage(chat_id, message) {
     await axios.post(sendMessageUrl);
     return "Message sent successfully.";
   } catch (error) {
-    throw new AppError(500, "Error sending message.");
+    throw new TelegramError(500, "Error sending message.");
   }
 }
 

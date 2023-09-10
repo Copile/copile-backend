@@ -18,18 +18,16 @@ const logger = winston.createLogger({
 require('dotenv').config();
 
 const errorHandler = (err, req, res, next) => {
-  console.error(err);  // Log the error for debugging
+  console.error(err); // Log the error for debugging
 
-  if (err instanceof AppError) {
-    // if its status code 200, then dont treat it as an error
-    if (err.status === 200) {
-      return res.status(200).send(err.message);
-    }
+  if (err instanceof TelegramError) {
     req.logger.error(err.message); // Log the error using Winston
-    return res.status(err.status).send(err.message);
+    // For the Telegram route, always return a 200 status code
+    res.status(200).send(err.message);
   } else {
     req.logger.error(err); // Log the error using Winston
-    return res.status(500).send("Internal Server Error");
+    // For other routes, return the appropriate status code
+    res.status(err.status || 500).send(err.message || 'Internal Server Error');
   }
 };
 
