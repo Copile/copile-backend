@@ -98,7 +98,7 @@ router.get("/getChatToken", async (req, res, next) => {
     }
 });
 
-app.post("/disconnectSocial", async (req, res, next) => {
+router.post("/disconnectSocial", async (req, res, next) => {
     try {
         const user = req.get("userId");
         const { social } = req.body;
