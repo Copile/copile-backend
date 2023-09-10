@@ -1,5 +1,5 @@
 {
-  "name": "store-oauthid",
+  "name": "store-oauth",
   "version": "1.0.0",
   "description": "GCP Cloud Function",
   "main": "index.js",
