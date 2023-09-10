@@ -71,15 +71,21 @@ app.post("/callback/telegram", async (req, res, next) => {
 
     const chat_id = message.chat.id;
 
-    const status_code = await saveUserDataToFirestore(user_id, { id: chat_id }, "telegram");
+    const status_code = await saveUserDataToFirestore(
+      user_id,
+      { id: chat_id },
+      "telegram"
+    );
 
     if (status_code === 200) {
       await sendTelegramMessage(chat_id, "Notifications are already enabled.");
       res.status(200).send("User already has chat id saved.");
       return;
-    }
-    else if (status_code === 201) {
-      await sendTelegramMessage(chat_id, "Notifications enabled. Please refresh copile settings page.");
+    } else if (status_code === 201) {
+      await sendTelegramMessage(
+        chat_id,
+        "Notifications enabled. Please refresh copile settings page."
+      );
       res.status(200).send("Telegram user data saved successfully.");
       return;
     }
@@ -208,17 +214,20 @@ async function saveUserDataToFirestore(user, userData, social) {
     const userDoc = userSnapshot.data();
     if (userDoc[social] && userDoc[social].id != "x") {
       if (social === "telegram") {
-        await sendTelegramMessage(userDoc[social].id, "Notifications are already enabled.");
+        await sendTelegramMessage(
+          userDoc[social].id,
+          "Notifications are already enabled."
+        );
         throw new TelegramError(200, "User already has chat id saved.");
-      }
-      else if (social === "discord") {
+      } else if (social === "discord") {
         throw new DiscordError(200, "User already has chat id saved.");
       }
     }
     const updateData = {};
 
     if (social === "telegram") {
-      updateData[`${social}.${userData.id ? 'id' : 'token'}`] = userData.id || userData.token;
+      updateData[`${social}.${userData.id ? "id" : "token"}`] =
+        userData.id || userData.token;
     } else if (social === "discord") {
       updateData[`${social}`] = userData;
     }
@@ -250,11 +259,17 @@ async function generateChatToken(user) {
     const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (userData.exists && userData.data().telegram && userData.data().telegram.token != "x") {
+    if (
+      userData.exists &&
+      userData.data().telegram &&
+      userData.data().telegram.token != "x"
+    ) {
       throw new TelegramError(400, "User already has a token.");
     }
 
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
 
     return token;
   } catch (error) {
@@ -267,7 +282,11 @@ async function getChatToken(user) {
     const userRef = db.collection("users").doc(user);
     const userData = await userRef.get();
 
-    if (!userData.exists || !userData.data().telegram || !userData.data().telegram.token) {
+    if (
+      !userData.exists ||
+      !userData.data().telegram ||
+      !userData.data().telegram.token
+    ) {
       throw new TelegramError(404, "User does not have a token.");
     }
 
@@ -282,6 +301,15 @@ async function disconnectSocial(user, social) {
   try {
     const updateObject = {};
     updateObject[`${social}.id`] = "x";
+
+    // If the social platform is Discord, also clear the avatar and username
+    if (social === "discord") {
+      updateObject[`${social}.avatar`] = "x";
+      updateObject[`${social}.username`] = "x";
+    }
+
+    // Also need to deal with telegram details
+
     await usersRef.doc(user).update(updateObject);
   } catch (error) {
     throw new TelegramError(500, `Error disconnecting ${social}.`);
