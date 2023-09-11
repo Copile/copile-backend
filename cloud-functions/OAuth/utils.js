@@ -65,7 +65,7 @@ async function getFirestoreDataFromChatToken(token) {
 
         return user_id;
     } catch (error) {
-        throw new ApiError(500, "Error getting user data from chat token.", "telegramWebhook");
+        return error;
     }
 }
 
@@ -82,7 +82,7 @@ async function generateChatToken(user) {
 
         return token;
     } catch (error) {
-        throw new ApiError(500, "Error generating chat token.", "telegram");
+        return error;
     }
 }
 
@@ -96,7 +96,7 @@ async function getChatToken(user) {
         }
         return user_data.data().telegram.token;
     } catch (error) {
-        throw new ApiError(500, "Error retrieving chat token.", "telegram");
+        return error;
     }
 }
 
@@ -139,6 +139,9 @@ async function saveUserDataToFirestore(user, user_data, social) {
             await sendTelegramMessage(user_data.id, "Notifications enabled. Please refresh copile settings page.");
         }
     } catch (error) {
+        if(error.source === "telegramWebhook") {
+            return error;
+        };
         throw new ApiError(500, `Error saving ${social} user data to firestore.`, social);
     }
 }
