@@ -1,6 +1,7 @@
 const errorHandler = (err, req, res, next) => {
     req.logger.error(`Error from ${err.source || 'Unknown source'}: ${err.message}`);
-  
+    console.log(err);
+    req.logger.info(err.stack);
     // Check if the error is from the telegramWebhook and respond with 200.
     if (err.source === "telegramWebhook") {
       console.log("telegramWebhook");
