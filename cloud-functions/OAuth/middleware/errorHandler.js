@@ -3,9 +3,11 @@ const errorHandler = (err, req, res, next) => {
     
     // Check if the error is from the telegramWebhook and respond with 200.
     if (err.source === "telegramWebhook") {
-        return res.status(200).send('Acknowledged'); // You can adjust the response message as per your needs.
+        console.log("telegramWebhook");
+        return res.status(200);
     }
     
+    console.log("normal error");
     res.status(err.status || 500).send(err.message || 'Internal Server Error');
 };
 
