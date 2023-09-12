@@ -48,8 +48,8 @@ router.post("/callback/telegram", async (req, res, next) => {
         }
 
         const token = message.text.split(" ")[1];
-        if (!token && token.length != 16) {
-            res.status(200).send("No token received.");
+        if (!token || token.length != 16) {
+            res.status(200).send("No token or invalid token received.");
             throw new ApiError(400, "No token received.", "telegramWebhook");
         }
 
