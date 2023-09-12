@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimiter = require('./rateLimiter');
 const logger = require('./logger');
-//const errorHandler = require('./errorHandler');
+const errorHandler = require('./errorHandler');
 
 // for loading environment variables from .env file
 require('dotenv').config();
@@ -25,7 +25,7 @@ const applyMiddleware = (app) => {
   app.use(compression());
 
   // Apply the error handling middleware last
-app.use(errorHandler);
+  app.use(errorHandler);
   return app;
 };
 
