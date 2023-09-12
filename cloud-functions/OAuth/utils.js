@@ -54,11 +54,12 @@ async function sendTelegramMessage(chat_id, message) {
     }
 }
 
-async function getFirestoreDataFromChatToken(token) {
+async function getFirestoreDataFromChatToken(token, res) {
     try {
         const user_ref = db.collection("users").where("telegram.token", "==", token);
         const user_snapshot = await user_ref.get();
         if (user_snapshot.empty) {
+            res.status(200).send("No user found.");
             throw new ApiError(404, "No user found.", "telegramWebhook");
         }
         const user_id = user_snapshot.docs[0].id;
@@ -78,7 +79,8 @@ async function generateChatToken(user) {
             throw new ApiError(400, "User already has a token.", "telegram");
         }
 
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        // generate chatToken, 16 characters, alphanumeric
+        const token = Math.random().toString(36).substring(2, 18);
 
         return token;
     } catch (error) {
@@ -139,7 +141,7 @@ async function saveUserDataToFirestore(user, user_data, social) {
             await sendTelegramMessage(user_data.id, "Notifications enabled. Please refresh copile settings page.");
         }
     } catch (error) {
-        if(error.source === "telegramWebhook") {
+        if (error.source === "telegramWebhook") {
             return error;
         };
         throw new ApiError(500, `Error saving ${social} user data to firestore.`, social);
