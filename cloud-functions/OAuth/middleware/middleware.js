@@ -9,7 +9,6 @@ const errorHandler = require('./errorHandler');
 // for loading environment variables from .env file
 require('dotenv').config();
 
-
 // This function will apply the middleware to an Express app
 const applyMiddleware = (app) => {
   app.use(express.json());
@@ -27,7 +26,6 @@ const applyMiddleware = (app) => {
 
   // Apply the error handling middleware last
   app.use(errorHandler);
-
   return app;
 };
 
