@@ -50,7 +50,7 @@ router.post("/callback/telegram", async (req, res, next) => {
         const token = message.text.split(" ")[1];
         if (!token || token.length != 16) {
             res.status(200).send("No token or invalid token received.");
-            throw new ApiError(400, "No token received.", "telegramWebhook");
+            throw new ApiError(400, "No token or invalid received.", "telegramWebhook");
         }
 
         const user_id = await getFirestoreDataFromChatToken(token, res);
