@@ -38,22 +38,22 @@ router.post("/callback/telegram", async (req, res, next) => {
     try {
         const { message } = req.body;
         if (!message) {
-            res.status(200).send("Telegram User data saved successfully.");
+            res.status(200).send("No message received.");
             throw new ApiError(400, "No message received.", "telegramWebhook");
         }
 
         if (!message.text.startsWith("/start")) {
-            res.status(200).send("Telegram User data saved successfully.");
+            res.status(200).send("Invalid Command.");
             throw new ApiError(400, "Invalid command.", "telegramWebhook");
         }
 
         const token = message.text.split(" ")[1];
-        if (!token) {
-            res.status(200).send("Telegram User data saved successfully.");
+        if (!token && token.length != 16) {
+            res.status(200).send("No token received.");
             throw new ApiError(400, "No token received.", "telegramWebhook");
         }
 
-        const user_id = await getFirestoreDataFromChatToken(token);
+        const user_id = await getFirestoreDataFromChatToken(token, res);
 
         const chat_id = message.chat.id;
 

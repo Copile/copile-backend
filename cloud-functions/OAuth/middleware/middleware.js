@@ -25,7 +25,7 @@ const applyMiddleware = (app) => {
   app.use(compression());
 
   // Apply the error handling middleware last
-  app.use(errorHandler);
+app.use(errorHandler);
   return app;
 };
 
