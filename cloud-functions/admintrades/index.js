@@ -474,7 +474,7 @@ async function getTradeProfitLossDetails(trader, tradeId, exchange, symbol, apiK
 }
 
 async function checkOrderStatusUsingFetchedOrders(activeOrders, orderID, fallbackFunction, ...fallbackArgs) {
-  const foundOrder = activeOrders.find(order => order.order_id === orderID);
+  const foundOrder = await activeOrders.find(order => order.order_id === orderID);
   if (foundOrder) {
     return foundOrder.status;
   }
@@ -498,11 +498,11 @@ async function checkTakeProfitStatus(exchange, symbol, takeProfitData, apiKey, a
       return [];
   }
 
-  const promises = takeProfitData.map(tp => {
+  const promises = takeProfitData.map(async tp => {
     if (tp.executed === "0") {
       tp.tp_status = "Queued";
     } else if (tp.executed === "1") {
-      tp.tp_status = checkOrderStatusUsingFetchedOrders(activeOrders, tp.orderID, getOrderStatus, exchange, symbol, tp.orderID, apiKey, apiSecret, apiPassphrase);
+      tp.tp_status = await checkOrderStatusUsingFetchedOrders(activeOrders, tp.orderID, getOrderStatus, exchange, symbol, tp.orderID, apiKey, apiSecret, apiPassphrase);
     } else if (tp.executed === "2") {
       tp.tp_status = "Cancelled";
     }
@@ -531,11 +531,11 @@ async function checkStopLossStatus(exchange, symbol, stopLossData, apiKey, apiSe
       return [];
   }
 
-  const promises = stopLossData.map(sl => {
+  const promises = stopLossData.map(async sl => {
     if (sl.executed === "0") {
       sl.sl_status = "Queued";
     } else if (sl.executed === "1") {
-      sl.sl_status = checkOrderStatusUsingFetchedOrders(activeOrders, sl.orderID, getOrderStatus, exchange, symbol, sl.orderID, apiKey, apiSecret, apiPassphrase);
+      sl.sl_status = await checkOrderStatusUsingFetchedOrders(activeOrders, sl.orderID, getOrderStatus, exchange, symbol, sl.orderID, apiKey, apiSecret, apiPassphrase);
     } else if (sl.executed === "2") {
       sl.sl_status = "Cancelled";
     }

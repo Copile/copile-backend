@@ -123,7 +123,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     // Send the request
     const response = await axios.get(url, { headers, timeout: 5000 });
 
-    const orders = response.data.data.orders;
+    let orders = response.data.data.orders;
     if(!checkStatus) {
       // Filter orders of type "LIMIT" only
       orders = response.data.data.orders.filter(order => order.type === 'LIMIT');

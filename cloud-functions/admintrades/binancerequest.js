@@ -117,7 +117,7 @@ async function getOpenOrdersBinance(apiKey, apiSecret, checkStatus = false) {
 
         const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
 
-        const orders = response.data;
+        let orders = response.data;
         if (!checkStatus) {
             // Filter the response to only include LIMIT order 
             orders = orders.filter((order) => {
