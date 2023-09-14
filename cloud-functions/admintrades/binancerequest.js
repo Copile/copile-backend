@@ -97,7 +97,7 @@ async function getOrderBinance(symbol, orderId, apiKey, apiSecret) {
 
 
 // Function to send a request to GET /fapi/v1/openOrders
-async function getOpenOrdersBinance(apiKey, apiSecret) {
+async function getOpenOrdersBinance(apiKey, apiSecret, checkStatus = false) {
     try {
         const timestamp = await getBinanceServerTime();
 
@@ -117,12 +117,14 @@ async function getOpenOrdersBinance(apiKey, apiSecret) {
 
         const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
 
-        // Filter the response to only include LIMIT orders
-        response.data = response.data.filter((order) => {
-            return order.type === 'LIMIT';
-        });
-
-        return response.data;
+        const orders = response.data;
+        if (!checkStatus) {
+            // Filter the response to only include LIMIT order 
+            orders = orders.filter((order) => {
+                return order.type === 'LIMIT';
+            });
+        }
+        return orders;
     } catch (error) {
         console.log('An error occurred:', error);
         return null;
@@ -161,8 +163,8 @@ async function getBalanceBinance(apiKey, apiSecret) {
 }
 
 module.exports = {
-  getPositionsBinance,
-  getOrderBinance,
-  getOpenOrdersBinance,
-  getBalanceBinance
+    getPositionsBinance,
+    getOrderBinance,
+    getOpenOrdersBinance,
+    getBalanceBinance
 };

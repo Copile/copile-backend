@@ -376,10 +376,10 @@ async function fetchAllActiveOrdersForTrader(apiKey, apiSecret, apiPassphrase) {
 
 async function fetchActiveOrderStatusesBingX(apiKey, apiSecret) {
   try {
-    const rawOrders = await getOrders(apiKey, apiSecret);
+    const rawOrders = await getOrders(apiKey, apiSecret, true);
     return rawOrders.map(order => ({
       order_id: order.orderId,  // Assuming the orderId field exists based on your previous snippets
-      status: order.status
+      status: order.status === 'NEW' ? 'Active' : order.status
     }));
   } catch (e) {
     console.log(`Error fetching BingX active orders: ${e}`);
@@ -389,10 +389,10 @@ async function fetchActiveOrderStatusesBingX(apiKey, apiSecret) {
 
 async function fetchActiveOrderStatusesBinance(apiKey, apiSecret) {
   try {
-    const rawOrders = await getOpenOrdersBinance(apiKey, apiSecret);
+    const rawOrders = await getOpenOrdersBinance(apiKey, apiSecret, true);
     return rawOrders.map(order => ({
       order_id: order.orderId,
-      status: order.status
+      status: order.status === 'NEW' ? 'Active' : order.status
     }));
   } catch (e) {
     console.log(`Error fetching Binance active orders: ${e}`);
@@ -415,7 +415,7 @@ async function fetchActiveOrderStatusesKuCoin(apiKey, apiSecret, apiPassphrase) 
     });
     return (rawOrders.data.items || []).map(order => ({
       order_id: order.id,
-      status: order.status === "open" ? "Active" : order.status
+      status: order.status === "done" ? "Filled" : "Active"
     }));
   } catch (e) {
     console.log(`Error fetching KuCoin active orders: ${e}`);

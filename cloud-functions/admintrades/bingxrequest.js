@@ -101,7 +101,7 @@ async function getBalance(apiKey, apiSecret) {
 }
 
 // Function to send a request to GET /openApi/swap/v2/trade/openOrders
-async function getOrders(apiKey, apiSecret) {
+async function getOrders(apiKey, apiSecret, checkStatus = false) {
   try {
     const timestamp = await generateTimestamp();
 
@@ -123,9 +123,11 @@ async function getOrders(apiKey, apiSecret) {
     // Send the request
     const response = await axios.get(url, { headers, timeout: 5000 });
 
-    // Filter orders of type "LIMIT" only
-    const orders = response.data.data.orders.filter(order => order.type === 'LIMIT');
-
+    const orders = response.data.data.orders;
+    if(!checkStatus) {
+      // Filter orders of type "LIMIT" only
+      orders = response.data.data.orders.filter(order => order.type === 'LIMIT');
+    }
     return orders;
   } catch (error) {
     console.log('An error occurred:', error);
