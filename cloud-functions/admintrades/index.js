@@ -2,7 +2,7 @@ const express = require('express');
 const { Firestore } = require('@google-cloud/firestore');
 const api = require("kucoin-futures-node-api");
 const { getPositions, getOrder, getOrders, getBalance } = require('./bingxrequest');
-const { getPositionsBinance,  getOrderBinance, getOpenOrdersBinance, getBalanceBinance } = require('./binancerequest');
+const { getPositionsBinance, getOrderBinance, getOpenOrdersBinance, getBalanceBinance } = require('./binancerequest');
 const decryptData = require('./decryption');
 
 const db = new Firestore();
@@ -42,7 +42,7 @@ app.all('/trades/:exchange', async (req, res) => {
 
     const apiKey = keys.api_key;
     const apiSecret = await decryptData(keys.api_secret, trader) || null;
-    
+
     let apiPassphrase = null;
     if ('api_passphrase' in keys) {
       apiPassphrase = await decryptData(keys.api_passphrase, trader);
@@ -96,6 +96,7 @@ app.all('/trades/:exchange', async (req, res) => {
 app.all('/order/:exchange/:symbol/:tradeId', async (req, res) => {
   try {
     const trader = req.get('traderId');
+
     if (!trader) {
       return res.status(400).json({ success: false, error: 'Trader name is missing' });
     }
@@ -115,7 +116,7 @@ app.all('/order/:exchange/:symbol/:tradeId', async (req, res) => {
     const symbol = req.params.symbol;
 
     if (exchange === "bybit") {
-      return res.status(404).json({ success: false, error: 'Bybit is not supported by this endpoint'})
+      return res.status(404).json({ success: false, error: 'Bybit is not supported by this endpoint' })
     }
 
     if (!exchangesData || !(exchange in exchangesData)) {
@@ -140,7 +141,7 @@ app.all('/order/:exchange/:symbol/:tradeId', async (req, res) => {
     }
 
     const details = await getTradeProfitLossDetails(trader, tradeId, exchange, symbol, apiKey, apiSecret, apiPassphrase);
-    
+
     if (details) {
       res.json(details);
     } else {
@@ -153,81 +154,80 @@ app.all('/order/:exchange/:symbol/:tradeId', async (req, res) => {
 });
 
 app.all('/balance/:exchange', async (req, res) => {
-    const trader = req.get('traderId');
+  const trader = req.get('traderId');
 
-    if (!trader) {
-        return res.status(400).json({ success: false, error: 'Trader ID is missing' });
+  if (!trader) {
+    return res.status(400).json({ success: false, error: 'Trader ID is missing' });
+  }
+
+  const exchange = req.params.exchange;
+
+  if (exchange === "bybit") {
+    return res.status(404).json({ success: false, error: 'Bybit is not supported by this endpoint' })
+  }
+
+  try {
+    const startTime = Date.now();
+
+    const traderRef = db.collection('traders').doc(trader);
+    const traderDoc = await traderRef.get();
+
+    if (!traderDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Trader not found' });
     }
 
-    const exchange = req.params.exchange;
+    const exchangesData = traderDoc.data().exchanges || {};
 
-    if (exchange === "bybit") {
-      return res.status(404).json({ success: false, error: 'Bybit is not supported by this endpoint'})
+    if (!exchangesData || !(exchange in exchangesData)) {
+      return res.status(404).json({ success: false, error: 'No exchange found' });
     }
 
-    try {
-        const startTime = Date.now();
-
-        const traderRef = db.collection('traders').doc(trader);
-        const traderDoc = await traderRef.get();
-
-        if (!traderDoc.exists) {
-            return res.status(404).json({ success: false, error: 'Trader not found' });
-        }
-
-        const exchangesData = traderDoc.data().exchanges || {};
-
-        if (!exchangesData || !(exchange in exchangesData)) {
-            return res.status(404).json({ success: false, error: 'No exchange found' });
-        }
-
-        const keys = exchangesData[exchange];
-        if (!('api_key' in keys && keys.api_key !== 'x')) {
-            return res.status(404).json({ success: false, error: 'API key not found for the exchange' });
-        }
-
-        const apiKey = keys.api_key;
-        const apiSecret = await decryptData(keys.api_secret, trader) || null;
-        
-        let apiPassphrase = null;
-        if ('api_passphrase' in keys) {
-        apiPassphrase = await decryptData(keys.api_passphrase, trader);
-        }
-        
-        if (exchange === 'kucoin' && apiPassphrase === null) {
-            return res.status(400).json({ success: false, error: 'Kucoin requires a passphrase' });
-        }
-
-        let balance;
-
-        switch (exchange) {
-            case 'kucoin':
-                balance = await getKucoinBalance(apiKey, apiSecret, apiPassphrase);
-                break;
-            case 'bingx':
-                balance = await getBingXBalance(apiKey, apiSecret);
-                break;
-            case 'binance':
-                balance = await getBinanceBalance(apiKey, apiSecret);
-                break;
-            default:
-                console.log(`Unknown exchange: ${exchange}`);
-                balance = [];
-        }
-
-        const endTime = Date.now();
-        const executionTime = endTime - startTime;
-
-        return res.status(200).json({ success: true, balance: balance, executionTime });
-
-    } catch (e) {
-        return res.status(500).json({ success: false, error: 'An error occurred while fetching the balance details.' });
+    const keys = exchangesData[exchange];
+    if (!('api_key' in keys && keys.api_key !== 'x')) {
+      return res.status(404).json({ success: false, error: 'API key not found for the exchange' });
     }
+
+    const apiKey = keys.api_key;
+    const apiSecret = await decryptData(keys.api_secret, trader) || null;
+
+    let apiPassphrase = null;
+    if ('api_passphrase' in keys) {
+      apiPassphrase = await decryptData(keys.api_passphrase, trader);
+    }
+
+    if (exchange === 'kucoin' && apiPassphrase === null) {
+      return res.status(400).json({ success: false, error: 'Kucoin requires a passphrase' });
+    }
+
+    let balance;
+
+    switch (exchange) {
+      case 'kucoin':
+        balance = await getKucoinBalance(apiKey, apiSecret, apiPassphrase);
+        break;
+      case 'bingx':
+        balance = await getBingXBalance(apiKey, apiSecret);
+        break;
+      case 'binance':
+        balance = await getBinanceBalance(apiKey, apiSecret);
+        break;
+      default:
+        console.log(`Unknown exchange: ${exchange}`);
+        balance = [];
+    }
+
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+
+    return res.status(200).json({ success: true, balance: balance, executionTime });
+
+  } catch (e) {
+    return res.status(500).json({ success: false, error: 'An error occurred while fetching the balance details.' });
+  }
 });
 
 async function mapPositionToTrade(position, trader, symbol, exchange, side) {
   // Fetch the trade id
-  console.log(side);
   const tradeQuerySnapshot = await db
     .collection('traders')
     .doc(trader)
@@ -252,7 +252,7 @@ async function mapPositionToTrade(position, trader, symbol, exchange, side) {
   return {
     trade_id: tradeDoc.id, // Use the fetched trade id
     symbol: position.symbol,
-    side: position.side,
+    side: position.side.charAt(0).toUpperCase() + position.side.slice(1).toLowerCase(),
     margin_mode: isIsolated,
     leverage: position.leverage,
     quantity: String(position.size),
@@ -276,7 +276,7 @@ async function getKucoinTrades(apiKey, apiSecret, apiPassphrase, userId) {
 
     const apiLive = new api();
     apiLive.init(config);
-  
+
     let positions = await apiLive.getAllPositions();
     positions = positions.data;
     if (positions !== null) {
@@ -292,7 +292,7 @@ async function getKucoinTrades(apiKey, apiSecret, apiPassphrase, userId) {
           position.leverage = position.realLeverage;
           position.unrealised_pnl = position.unrealisedPnl;
           position.margin = position.maintMargin;
-          position.unrealised_pnl_pct = String((parseFloat(position.unrealisedPnlPcnt)*100*parseFloat(position.realLeverage)).toFixed(2));
+          position.unrealised_pnl_pct = String((parseFloat(position.unrealisedPnlPcnt) * 100 * parseFloat(position.realLeverage)).toFixed(2));
           position.entryPrice = position.avgEntryPrice;
           position.realised_pnl = position.realisedPnl;
           position.size = position.currentQty;
@@ -361,6 +361,68 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
   }
 }
 
+// Function to fetch all active orders for a trader
+async function fetchAllActiveOrdersForTrader(apiKey, apiSecret, apiPassphrase) {
+  const bingXOrders = await fetchActiveOrderStatusesBingX(apiKey, apiSecret);
+  const binanceOrders = await fetchActiveOrderStatusesBinance(apiKey, apiSecret);
+  const kucoinOrders = await fetchActiveOrderStatusesKuCoin(apiKey, apiSecret, apiPassphrase);
+
+  return {
+    bingx: bingXOrders,
+    binance: binanceOrders,
+    kucoin: kucoinOrders
+  };
+}
+
+async function fetchActiveOrderStatusesBingX(apiKey, apiSecret) {
+  try {
+    const rawOrders = await getOrders(apiKey, apiSecret);
+    return rawOrders.map(order => ({
+      order_id: order.orderId,  // Assuming the orderId field exists based on your previous snippets
+      status: order.status
+    }));
+  } catch (e) {
+    console.log(`Error fetching BingX active orders: ${e}`);
+    return [];
+  }
+}
+
+async function fetchActiveOrderStatusesBinance(apiKey, apiSecret) {
+  try {
+    const rawOrders = await getOpenOrdersBinance(apiKey, apiSecret);
+    return rawOrders.map(order => ({
+      order_id: order.orderId,
+      status: order.status
+    }));
+  } catch (e) {
+    console.log(`Error fetching Binance active orders: ${e}`);
+    return [];
+  }
+}
+
+async function fetchActiveOrderStatusesKuCoin(apiKey, apiSecret, apiPassphrase) {
+  try {
+    const config = {
+      apiKey: apiKey,
+      secretKey: apiSecret,
+      passphrase: apiPassphrase,
+      environment: "live",
+    };
+    const apiLive = new api();
+    apiLive.init(config);
+    const rawOrders = await apiLive.getOrders({
+      status: "active",
+    });
+    return (rawOrders.data.items || []).map(order => ({
+      order_id: order.id,
+      status: order.status === "open" ? "Active" : order.status
+    }));
+  } catch (e) {
+    console.log(`Error fetching KuCoin active orders: ${e}`);
+    return [];
+  }
+}
+
 async function getTradeProfitLossDetails(trader, tradeId, exchange, symbol, apiKey, apiSecret, apiPassphrase = null) {
   try {
     const tradeDocRef = db.collection('traders').doc(trader).collection('trades').doc(tradeId);
@@ -411,13 +473,36 @@ async function getTradeProfitLossDetails(trader, tradeId, exchange, symbol, apiK
   }
 }
 
+async function checkOrderStatusUsingFetchedOrders(activeOrders, orderID, fallbackFunction, ...fallbackArgs) {
+  const foundOrder = activeOrders.find(order => order.order_id === orderID);
+  if (foundOrder) {
+    return foundOrder.status;
+  }
+  return await fallbackFunction(...fallbackArgs);
+}
+
 async function checkTakeProfitStatus(exchange, symbol, takeProfitData, apiKey, apiSecret, apiPassphrase = null) {
-  const promises = takeProfitData.map(async (tp) => {
+  let activeOrders = [];
+  switch (exchange) {
+    case 'kucoin':
+      activeOrders = await fetchActiveOrderStatusesKuCoin(apiKey, apiSecret, apiPassphrase);
+      break;
+    case 'bingx':
+      activeOrders = await fetchActiveOrderStatusesBingX(apiKey, apiSecret);
+      break;
+    case 'binance':
+      activeOrders = await fetchActiveOrderStatusesBinance(apiKey, apiSecret);
+      break;
+    default:
+      console.log(`Unknown exchange: ${exchange}`);
+      return [];
+  }
+
+  const promises = takeProfitData.map(tp => {
     if (tp.executed === "0") {
       tp.tp_status = "Queued";
     } else if (tp.executed === "1") {
-      let status = await getOrderStatus(exchange, symbol, tp.orderID, apiKey, apiSecret, apiPassphrase);
-      tp.tp_status = status;
+      tp.tp_status = checkOrderStatusUsingFetchedOrders(activeOrders, tp.orderID, getOrderStatus, exchange, symbol, tp.orderID, apiKey, apiSecret, apiPassphrase);
     } else if (tp.executed === "2") {
       tp.tp_status = "Cancelled";
     }
@@ -428,13 +513,29 @@ async function checkTakeProfitStatus(exchange, symbol, takeProfitData, apiKey, a
 }
 
 
+
 async function checkStopLossStatus(exchange, symbol, stopLossData, apiKey, apiSecret, apiPassphrase = null) {
-  const promises = stopLossData.map(async (sl) => {
+  let activeOrders = [];
+  switch (exchange) {
+    case 'kucoin':
+      activeOrders = await fetchActiveOrderStatusesKuCoin(apiKey, apiSecret, apiPassphrase);
+      break;
+    case 'bingx':
+      activeOrders = await fetchActiveOrderStatusesBingX(apiKey, apiSecret);
+      break;
+    case 'binance':
+      activeOrders = await fetchActiveOrderStatusesBinance(apiKey, apiSecret);
+      break;
+    default:
+      console.log(`Unknown exchange: ${exchange}`);
+      return [];
+  }
+
+  const promises = stopLossData.map(sl => {
     if (sl.executed === "0") {
       sl.sl_status = "Queued";
     } else if (sl.executed === "1") {
-      let status = await getOrderStatus(exchange, symbol, sl.orderID, apiKey, apiSecret, apiPassphrase);
-      sl.sl_status = status;
+      sl.sl_status = checkOrderStatusUsingFetchedOrders(activeOrders, sl.orderID, getOrderStatus, exchange, symbol, sl.orderID, apiKey, apiSecret, apiPassphrase);
     } else if (sl.executed === "2") {
       sl.sl_status = "Cancelled";
     }
@@ -443,6 +544,7 @@ async function checkStopLossStatus(exchange, symbol, stopLossData, apiKey, apiSe
 
   return Promise.all(promises);
 }
+
 
 async function getOrderById(exchange, orderID, apiKey, apiSecret, apiPassphrase = null) {
   switch (exchange) {
@@ -503,100 +605,101 @@ async function getBingXOrderById(symbol, orderID, apiKey, apiSecret) {
 }
 
 async function getKucoinBalance(apiKey, apiSecret, apiPassphrase) {
-    try {
-        const config = {
-            apiKey: apiKey,
-            secretKey: apiSecret,
-            passphrase: apiPassphrase,
-            environment: "live",
-        };
-        const apiLive = new api();
-        apiLive.init(config);
+  try {
+    const config = {
+      apiKey: apiKey,
+      secretKey: apiSecret,
+      passphrase: apiPassphrase,
+      environment: "live",
+    };
+    const apiLive = new api();
+    apiLive.init(config);
 
-        params = {
-            currency: "USDT"
-        }
-        
-        const balance = await apiLive.getAccountOverview(params);
-        return String(balance.data.availableBalance);
+    params = {
+      currency: "USDT"
     }
-    catch (e) {
-        console.log("Error in getKucoinBalance: ", e);
-        return [];
-    }
+
+    const balance = await apiLive.getAccountOverview(params);
+    return String(balance.data.availableBalance);
+  }
+  catch (e) {
+    console.log("Error in getKucoinBalance: ", e);
+    return [];
+  }
 }
 
 async function getBingXBalance(apiKey, apiSecret) {
-    try {
-        const balance = await getBalance(apiKey, apiSecret);
-        return balance.data.data.balance.availableMargin;
-    }
-    catch (e) {
-        console.log("Error in getBingXBalance: ", e);
-        return [];
-    }
+  try {
+    const balance = await getBalance(apiKey, apiSecret);
+    return balance.data.data.balance.availableMargin;
+  }
+  catch (e) {
+    console.log("Error in getBingXBalance: ", e);
+    return [];
+  }
 }
 
 async function getBinanceBalance(apiKey, apiSecret) {
   try {
-      const balanceData = await getBalanceBinance(apiKey, apiSecret);
-      const usdtBalance = balanceData.find(asset => asset.asset === 'USDT');
-      return usdtBalance ? String(usdtBalance.availableBalance) : '0';
+    const balanceData = await getBalanceBinance(apiKey, apiSecret);
+    const usdtBalance = balanceData.find(asset => asset.asset === 'USDT');
+    return usdtBalance ? String(usdtBalance.availableBalance) : '0';
   }
   catch (e) {
-      console.log("Error in getBinanceBalance: ", e);
-      return [];
+    console.log("Error in getBinanceBalance: ", e);
+    return [];
   }
 }
 
 async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, trader) {
-    try {
-        const config = {
-            apiKey: apiKey,
-            secretKey: apiSecret,
-            passphrase: apiPassphrase,
-            environment: "live",
-        };
-        const apiLive = new api();
-        apiLive.init(config);
-        let orders = await apiLive.getOrders({
-            status: "active",
-        });
+  try {
+    const config = {
+      apiKey: apiKey,
+      secretKey: apiSecret,
+      passphrase: apiPassphrase,
+      environment: "live",
+    };
+    const apiLive = new api();
+    apiLive.init(config);
+    let orders = await apiLive.getOrders({
+      status: "active",
+    });
 
-        let filteredOrders = [];
+    let filteredOrders = [];
 
-        if (orders.data.items !== null) {
-            // Filter the orders to only show type "limit", reduceOnly false, and status "open"
-            filteredOrders = orders.data.items.filter(order => 
-                order.type === "limit" && 
-                order.reduceOnly === false && 
-                order.status === "open"
-            );
-        }
-
-        // Extract matching parameters for KuCoin
-        const kucoinMatchingParams = await Promise.all(filteredOrders.map(async order => {
-            const tradeDoc = await getTradeDoc(trader, order.symbol, "kucoin", order.side);
-            const tradeData = tradeDoc.data();
-            return {
-                trade_id: tradeDoc.id,
-                symbol: order.symbol,
-                side: order.side,
-                leverage: tradeData.leverage,
-                margin: tradeData.margin,
-                type: "LIMIT",
-                entry_price: order.price,
-                quantity: order.size,
-                status: "Active",
-                created_at: tradeData.created_at
-            };
-        }));
-
-        return kucoinMatchingParams;
-    } catch (e) {
-        console.log(`An error occurred while retrieving active orders from KuCoin. Error message: ${e}`);
-        return [];
+    if (orders.data.items !== null) {
+      // Filter the orders to only show type "limit", reduceOnly false, and status "open"
+      filteredOrders = orders.data.items.filter(order =>
+        order.type === "limit" &&
+        order.reduceOnly === false &&
+        order.status === "open"
+      );
     }
+
+    // Extract matching parameters for KuCoin
+    const kucoinMatchingParams = await Promise.all(filteredOrders.map(async order => {
+      const tradeDoc = await getTradeDoc(trader, order.symbol, "kucoin", order.side);
+      const tradeData = tradeDoc.data();
+      return {
+        trade_id: tradeDoc.id,
+        order_id: order.id,
+        symbol: order.symbol,
+        side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
+        leverage: tradeData.leverage,
+        margin: tradeData.margin,
+        type: "LIMIT",
+        entry_price: order.price,
+        quantity: order.size,
+        status: "Active",
+        created_at: tradeData.created_at
+      };
+    }));
+
+    return kucoinMatchingParams;
+  } catch (e) {
+    console.log(`An error occurred while retrieving active orders from KuCoin. Error message: ${e}`);
+    return [];
+  }
 }
 
 
@@ -609,8 +712,9 @@ async function getBingXOrders(apiKey, apiSecret, trader) {
       const tradeData = tradeDoc.data();
       return {
         trade_id: tradeDoc.id,
+        order_id: order.orderId,
         symbol: order.symbol,
-        side: order.side,
+        side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
         leverage: tradeData.leverage,
         margin: tradeData.margin,
         type: "LIMIT",
@@ -637,8 +741,9 @@ async function getBinanceOrders(apiKey, apiSecret, trader) {
       const tradeData = tradeDoc.data();
       return {
         trade_id: tradeDoc.id,
+        order_id: order.orderId,
         symbol: order.symbol,
-        side: order.side,
+        side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
         leverage: tradeData.leverage,
         margin: tradeData.margin,
         type: order.type,

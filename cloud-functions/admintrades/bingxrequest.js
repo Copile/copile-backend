@@ -33,7 +33,7 @@ async function getPositions(apiKey, apiSecret) {
     };
 
     // Send the request
-    const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
+    const response = await axios.get(url, { headers, timeout: 5000 });
 
     return response.data.data;
   } catch (error) {
@@ -65,7 +65,7 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
     };
 
     // Send the request
-    const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
+    const response = await axios.get(url, { headers, timeout: 5000 });
 
     return response.data["data"]["order"]["status"];
   } catch (error) {
@@ -92,7 +92,7 @@ async function getBalance(apiKey, apiSecret) {
         };
 
         // Send the request
-        const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
+        const response = await axios.get(url, { headers, timeout: 5000 });
         return response;
     } catch (error) {
         console.error('An error occurred:', error.message);
@@ -121,7 +121,7 @@ async function getOrders(apiKey, apiSecret) {
     };
 
     // Send the request
-    const response = await axios.get(url, { headers, timeout: 1000 * 60 * 3 });
+    const response = await axios.get(url, { headers, timeout: 5000 });
 
     // Filter orders of type "LIMIT" only
     const orders = response.data.data.orders.filter(order => order.type === 'LIMIT');

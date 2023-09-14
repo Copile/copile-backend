@@ -19,8 +19,8 @@ steps:
         region=$(echo "$function_config" | jq -r '.region')
         entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
-        # Check if the current function is storeOAuthId before deploying
-        if [ "$name" = "OAuth" ]; then
+        # Check if the current function is admintrades before deploying
+        if [ "$name" = "admintrades" ]; then
           echo "Deploying function: $name"
           # Deploy Cloud Function with specified settings
           gcloud functions deploy $name \
