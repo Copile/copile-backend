@@ -24,6 +24,20 @@ async function getBinancePositions(apiKey, apiSecret, user_id) {
             parseFloat(position.leverage)
           ).toFixed(2)
         );
+
+        let unrealised_pnl_pct = (
+          (parseFloat(position.unRealizedProfit) /
+            (parseFloat(position.positionAmt) *
+              parseFloat(position.entryPrice))) *
+          100 *
+          parseFloat(position.leverage)
+        ).toFixed(2);
+
+        position.unrealised_pnl_pct_v2 = String(
+          parseFloat(position.unRealizedProfit) < 0
+            ? -unrealised_pnl_pct
+            : unrealised_pnl_pct
+        );
         return await mapPositionToTrade(
           position,
           user_id,
