@@ -1,8 +1,8 @@
 const express = require("express");
 
-const middleware = require("./middleware/middleware");
+const middleware = require("./middleware/middleware.js");
 
-const tradesRoutes = require("./routes/tradeRoutes");
+const tradeRoutes = require("./routes/tradeRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const balanceRoutes = require("./routes/balanceRoutes");
 
@@ -10,8 +10,6 @@ const app = express();
 middleware(app);
 
 // Apply routes
-tradesRoutes(app);
-orderRoutes(app);
-balanceRoutes(app);
+app.use(tradeRoutes, orderRoutes, balanceRoutes);
 
 exports.callback = app;
