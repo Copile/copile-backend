@@ -117,12 +117,10 @@ app.all("/trades/:exchange", async (req, res) => {
       orders,
     });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the trade details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the trade details.",
+    });
   }
 });
 
@@ -157,12 +155,10 @@ app.all("/order/:exchange/:symbol/:tradeId", async (req, res) => {
     const symbol = req.params.symbol;
 
     if (exchange === "bybit") {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "Bybit is not supported by this endpoint",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "Bybit is not supported by this endpoint",
+      });
     }
 
     if (!exchangesData || !(exchange in exchangesData)) {
@@ -209,12 +205,10 @@ app.all("/order/:exchange/:symbol/:tradeId", async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the trade details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the trade details.",
+    });
   }
 });
 
@@ -230,12 +224,10 @@ app.all("/balance/:exchange", async (req, res) => {
   const exchange = req.params.exchange;
 
   if (exchange === "bybit") {
-    return res
-      .status(404)
-      .json({
-        success: false,
-        error: "Bybit is not supported by this endpoint",
-      });
+    return res.status(404).json({
+      success: false,
+      error: "Bybit is not supported by this endpoint",
+    });
   }
 
   try {
@@ -303,12 +295,10 @@ app.all("/balance/:exchange", async (req, res) => {
       .status(200)
       .json({ success: true, balance: balance, executionTime });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the balance details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the balance details.",
+    });
   }
 });
 
@@ -478,7 +468,8 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
         position.size = position.positionAmt;
         // position.unrealised_pnl_pct = String(((parseFloat(position.unRealizedProfit) / (parseFloat(position.positionAmt) * parseFloat(position.entryPrice))) * 100 * parseFloat(position.leverage)).toFixed(2));
         position.unrealised_pnl_pct = String(
-          Math.sign(parseFloat(position.unRealizedProfit)) *
+          -1 *
+            Math.sign(parseFloat(position.unRealizedProfit)) *
             (
               (Math.abs(parseFloat(position.unRealizedProfit)) /
                 (parseFloat(position.positionAmt) *
