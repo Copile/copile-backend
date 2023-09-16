@@ -12,4 +12,4 @@ middleware(app);
 // Apply routes
 app.use(tradeRoutes, orderRoutes, balanceRoutes);
 
-exports.callback = app;
+exports.trades = app;
