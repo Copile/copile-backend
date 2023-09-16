@@ -25,3 +25,5 @@ class KuCoinSession extends ExchangeSession {
     return await getKucoinOrderStatuses(this.apiKey, this.apiSecret, this.apiPassphrase);
   }
 }
+
+module.exports = KuCoinSession;

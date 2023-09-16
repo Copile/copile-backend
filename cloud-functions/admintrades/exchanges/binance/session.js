@@ -24,3 +24,5 @@ class BinanceSession extends ExchangeSession {
     return await getBinanceOrderStatuses(this.apiKey, this.apiSecret);
   }
 }
+
+module.exports = BinanceSession;

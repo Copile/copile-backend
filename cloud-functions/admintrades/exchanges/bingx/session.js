@@ -3,7 +3,7 @@ const { getBingXOrders, getBingXOrderStatuses } = require("./orders");
 const { getBingXPositions } = require("./positions");
 const { getBingXBalance } = require("./balance");
 
-class Bybit extends ExchangeSession {
+class BingXSession extends ExchangeSession {
   constructor({ apiKey, apiSecret }) {
     super({ apiKey, apiSecret });
   }
@@ -24,3 +24,5 @@ class Bybit extends ExchangeSession {
     return await getBingXOrderStatuses(this.apiKey, this.apiSecret);
   }
 }
+
+module.exports = BingXSession;
