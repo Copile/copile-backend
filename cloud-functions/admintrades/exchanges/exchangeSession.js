@@ -20,3 +20,5 @@ class ExchangeSession {
     throw new Error("Method getOrderStatuses must be implemented by subclass");
   }
 }
+
+module.exports = ExchangeSession;
