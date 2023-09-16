@@ -466,15 +466,15 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
         position.entryPrice = position.entryPrice;
         position.realised_pnl = "0"; // Binance does not provide realised PnL via API
         position.size = position.positionAmt;
-        // position.unrealised_pnl_pct = String(
-        //   (
-        //     (parseFloat(position.unRealizedProfit) /
-        //       (parseFloat(position.positionAmt) *
-        //         parseFloat(position.entryPrice))) *
-        //     100 *
-        //     parseFloat(position.leverage)
-        //   ).toFixed(2)
-        // );
+        position.unrealised_pnl_pct = String(
+          (
+            (parseFloat(position.unRealizedProfit) /
+              (parseFloat(position.positionAmt) *
+                parseFloat(position.entryPrice))) *
+            100 *
+            parseFloat(position.leverage)
+          ).toFixed(2)
+        );
 
         let unrealised_pnl_pct = (
           (parseFloat(position.unRealizedProfit) /
@@ -484,7 +484,7 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
           parseFloat(position.leverage)
         ).toFixed(2);
 
-        position.unrealised_pnl_pct = String(
+        position.unrealised_pnl_pct_v2 = String(
           parseFloat(position.unRealizedProfit) < 0
             ? -unrealised_pnl_pct
             : unrealised_pnl_pct
