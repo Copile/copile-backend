@@ -1,5 +1,5 @@
 const { getOrders , getOrder } = require("./request");
-const { getTradeDoc } = require("../../utils/utils");
+const { getTradeDoc } = require("../../utils/firestore");
 
 async function getBingXOrderStatuses(apiKey, apiSecret) {
     try {

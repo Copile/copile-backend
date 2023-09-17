@@ -1,5 +1,5 @@
 const kucoinAPI = require("kucoin-futures-node-api");
-const { getTradeDoc } = require("../../utils/utils");
+const { getTradeDoc } = require("../../utils/firestore");
 
 async function getKucoinOrderStatuses(apiKey, apiSecret, apiPassphrase) {
   try {

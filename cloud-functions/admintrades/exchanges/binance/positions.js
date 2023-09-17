@@ -1,5 +1,5 @@
 const { getPositions } = require("./request");
-const { mapPositionToTrade } = require("../../utils/utils");
+const { mapPositionToTrade } = require("../../utils/firestore");
 
 async function getBinancePositions(apiKey, apiSecret, user_id) {
   try {

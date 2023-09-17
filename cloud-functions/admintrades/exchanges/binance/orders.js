@@ -1,5 +1,5 @@
 const { getOrders } = require("./request");
-const { getTradeDoc } = require("../../utils/utils");
+const { getTradeDoc } = require("../../utils/firestore");
 
 async function getBinanceOrderStatuses(apiKey, apiSecret) {
   try {

@@ -1,5 +1,5 @@
 const kucoinAPI = require("kucoin-futures-node-api");
-const { mapPositionToTrade } = require("../../utils/utils");
+const { mapPositionToTrade } = require("../../utils/firestore");
 
 async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, user_id) {
   try {
