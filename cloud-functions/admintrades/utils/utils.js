@@ -1,8 +1,8 @@
 const { Firestore } = require("@google-cloud/firestore");
 
-const { BinanceSession } = require("../exchanges/binance/session");
-const { KuCoinSession } = require("../exchanges/kucoin/session");
-const { BingXSession } = require("../exchanges/bingx/session");
+const BinanceSession = require("../exchanges/binance/session");
+const KuCoinSession = require("../exchanges/kucoin/session");
+const BingXSession = require("../exchanges/bingx/session");
 
 const db = new Firestore();
 

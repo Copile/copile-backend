@@ -4,8 +4,8 @@ const { getBinancePositions } = require("./positions");
 const { getBinanceBalance } = require("./balance");
 
 class BinanceSession extends ExchangeSession {
-  constructor({ apiKey, apiSecret }) {
-    super({ apiKey, apiSecret });
+  constructor(apiKey, apiSecret) {
+    super(apiKey, apiSecret);
   }
 
   async getOrders(trader_id) {

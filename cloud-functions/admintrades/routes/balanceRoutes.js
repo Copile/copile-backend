@@ -1,9 +1,9 @@
 const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
 const { decryptData } = require("../utils/decryption");
-const { BinanceSession } = require("../exchanges/binance/session");
-const { KuCoinSession } = require("../exchanges/kucoin/session");
-const { BingXSession } = require("../exchanges/bingx/session");
+const BinanceSession = require("../exchanges/binance/session");
+const KuCoinSession = require("../exchanges/kucoin/session");
+const BingXSession = require("../exchanges/bingx/session");
 
 const router = express.Router();
 const db = new Firestore();

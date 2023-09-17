@@ -1,5 +1,5 @@
 class ExchangeSession {
-  constructor({ apiKey, apiSecret }) {
+  constructor(apiKey, apiSecret) {
     this.apiKey = apiKey;
     this.apiSecret = apiSecret;
   }

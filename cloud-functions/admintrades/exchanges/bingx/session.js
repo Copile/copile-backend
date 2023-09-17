@@ -4,8 +4,8 @@ const { getBingXPositions } = require("./positions");
 const { getBingXBalance } = require("./balance");
 
 class BingXSession extends ExchangeSession {
-  constructor({ apiKey, apiSecret }) {
-    super({ apiKey, apiSecret });
+  constructor(apiKey, apiSecret) {
+    super(apiKey, apiSecret);
   }
 
   async getOrders(trader_id) {
