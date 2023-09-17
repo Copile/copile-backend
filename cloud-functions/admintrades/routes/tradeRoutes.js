@@ -11,6 +11,7 @@ const db = new Firestore();
 router.get("/trades/:exchange", async (req, res) => {
   try {
     console.log("Fetching trades...");
+    console.log("Decrypt Data function: ", decryptData);
     const trader_id = req.get("traderId");
     const exchange = req.params.exchange;
     const page = req.query.page || 1;

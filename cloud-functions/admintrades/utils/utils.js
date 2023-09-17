@@ -16,7 +16,7 @@ async function getTradeProfitLossDetails(
   apiPassphrase = null
 ) {
   try {
-    const tradeDocRef = db
+    const tradeDocRef = await db
       .collection("traders")
       .doc(trader)
       .collection("trades")
