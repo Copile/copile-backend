@@ -121,6 +121,7 @@ async function checkTakeProfitStatus(
     case "binance":
       const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
+      console.log("Active Orders:", activeOrders);
       break;
     default:
       console.log(`Unknown exchange: ${exchange}`);
