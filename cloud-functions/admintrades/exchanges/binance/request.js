@@ -22,8 +22,7 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
       `${url}?${queryString}&signature=${signature}`,
       { headers, timeout: 1000 * 60 * 3 }
     );
-    const parsedData = JSONbig.parse(response.data);
-    return parsedData;
+    return response.data;
   } catch (error) {
     throw new Error(`Request to ${url} failed: ${error.message}`);
   }
@@ -79,6 +78,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     if (!checkStatus) {
       orders = orders.filter((order) => order.type === "LIMIT");
     }
+      
     return orders;
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);
