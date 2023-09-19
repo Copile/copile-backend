@@ -79,7 +79,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     }
     return orders.map((order) => ({
       ...order,
-      orderId: (order.orderId).toString(),
+      orderId: BigInt(order.orderId).toString(),
     }));
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);
