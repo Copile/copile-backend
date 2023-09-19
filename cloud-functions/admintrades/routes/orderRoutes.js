@@ -9,6 +9,7 @@ const db = new Firestore();
 
 router.get("/order/:exchange/:symbol/:tradeId", async (req, res) => {
   try {
+    console.log("Decrypt Data function: ", decryptData);
     const trader = req.get("traderId");
 
     if (!trader) {
@@ -60,7 +61,8 @@ router.get("/order/:exchange/:symbol/:tradeId", async (req, res) => {
 
     const apiKey = keys.api_key;
     const apiSecret = (await decryptData(keys.api_secret, trader)) || null;
-
+    console.log("apiKey: ", apiKey);
+    console.log("apiSecret: ", apiSecret);
     let apiPassphrase = null;
     if ("api_passphrase" in keys) {
       apiPassphrase = await decryptData(keys.api_passphrase, trader);
