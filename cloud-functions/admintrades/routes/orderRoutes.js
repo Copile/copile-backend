@@ -9,7 +9,6 @@ const db = new Firestore();
 
 router.get("/order/:exchange/:symbol/:tradeId", async (req, res) => {
   try {
-    console.log("Decrypt Data function: ", decryptData);
     const trader = req.get("traderId");
 
     if (!trader) {

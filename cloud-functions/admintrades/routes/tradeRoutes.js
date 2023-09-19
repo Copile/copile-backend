@@ -10,8 +10,6 @@ const db = new Firestore();
 
 router.get("/trades/:exchange", async (req, res) => {
   try {
-    console.log("Fetching trades...");
-    console.log("Decrypt Data function: ", decryptData);
     const trader_id = req.get("traderId");
     const exchange = req.params.exchange;
     const page = req.query.page || 1;
@@ -91,15 +89,11 @@ router.get("/trades/:exchange", async (req, res) => {
         ]);
         break;
       case "binance":
-        console.log("Fetching Binance trades...");
         const binanceSession = new BinanceSession(apiKey, apiSecret);
         [trades, orders] = await Promise.all([
           binanceSession.getPositions(trader_id),
           binanceSession.getOrders(trader_id),
         ]);
-        console.log("Binance trades fetched");
-        console.log(trades);
-        console.log(orders);
         break;
       default:
         console.log(`Unknown exchange: ${exchange}`);
