@@ -4,6 +4,7 @@ const { getTradeDoc } = require("../../utils/firestore");
 async function getBinanceOrderStatuses(apiKey, apiSecret) {
   try {
     const rawOrders = await getOrders(apiKey, apiSecret, true);
+    console.log(rawOrders);
     return rawOrders.map((order) => ({
       ...order,
       status: order.status === "NEW" ? "Active" : order.status,
