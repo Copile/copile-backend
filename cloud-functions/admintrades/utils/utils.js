@@ -87,12 +87,21 @@ async function getTradeProfitLossDetails(
 }
 
 async function checkOrderStatus(activeOrders, orderID) {
+  console.log(activeOrders.orderId);
   console.log(orderID);
-  const foundOrder = await activeOrders.find(
-    (order) => String(order.orderId) === String(orderID)
-  );
-  console.log(foundOrder);
-  return foundOrder.status;
+  let foundOrder = null;
+  for (const order of activeOrders) {
+    if (String(order.orderId) === String(orderID)) {
+      foundOrder = order;
+      break;
+    }
+  }
+  if (foundOrder) {
+    console.log(foundOrder.orderId);
+    console.log(orderID);
+    return foundOrder.status;
+  }
+  return "Unknown";
 }
 
 async function checkTakeProfitStatus(
