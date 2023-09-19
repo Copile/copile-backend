@@ -1,6 +1,7 @@
 const CryptoJS = require("crypto-js");
 const axios = require("axios");
 const querystring = require("querystring");
+const JSONbig = require("json-bigint");
 
 const api = {
   host: "fapi.binance.com",
@@ -79,7 +80,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     }
     return orders.map((order) => ({
       ...order,
-      orderId: BigInt(order.orderId).toString(),
+      orderId: JSONbig.parse(order.orderId).toString(),
     }));
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);
