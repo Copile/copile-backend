@@ -93,7 +93,6 @@ router.get("/trades/:exchange", async (req, res) => {
       case "binance":
         console.log("Fetching Binance trades...");
         const binanceSession = new BinanceSession(apiKey, apiSecret);
-        console.log("Binanace session created" + binanceSession);
         [trades, orders] = await Promise.all([
           binanceSession.getPositions(trader_id),
           binanceSession.getOrders(trader_id),
