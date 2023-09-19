@@ -77,7 +77,10 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     if (!checkStatus) {
       orders = orders.filter((order) => order.type === "LIMIT");
     }
-    return orders;
+    return orders.map((order) => ({
+      ...order,
+      orderId: order.orderId.toString()
+    }));
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);
   }
