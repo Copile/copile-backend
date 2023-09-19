@@ -90,9 +90,9 @@ async function checkOrderStatus(activeOrders, orderID) {
   console.log(activeOrders);
   console.log(orderID);
   const foundOrder = await activeOrders.find(
-    (order) => order.order_id === orderID
+    (order) => String(order.order_id) === String(orderID)
   );
-  console.log(foundOrder);	
+  console.log(foundOrder);
   return foundOrder.status;
 }
 
