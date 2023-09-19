@@ -104,19 +104,15 @@ async function checkTakeProfitStatus(
   let activeOrders = [];
   switch (exchange) {
     case "kucoin":
-      const kucoinSession = new KuCoinSession({
-        apiKey,
-        apiSecret,
-        apiPassphrase,
-      });
+      const kucoinSession = new KuCoinSession(apiKey, apiSecret, apiPassphrase);
       activeOrders = await kucoinSession.getOrderStatuses();
       break;
     case "bingx":
-      const bingxSession = new BingXSession({ apiKey, apiSecret });
+      const bingxSession = new BingXSession(apiKey, apiSecret);
       activeOrders = await bingxSession.getOrderStatuses();
       break;
     case "binance":
-      const binanceSession = new BinanceSession({ apiKey, apiSecret });
+      const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
       break;
     default:
@@ -128,10 +124,7 @@ async function checkTakeProfitStatus(
     if (tp.executed === "0") {
       tp.tp_status = "Queued";
     } else if (tp.executed === "1") {
-      tp.tp_status = await checkOrderStatus(
-        activeOrders,
-        tp.orderID
-      );
+      tp.tp_status = await checkOrderStatus(activeOrders, tp.orderID);
     } else if (tp.executed === "2") {
       tp.tp_status = "Cancelled";
     }
@@ -152,19 +145,15 @@ async function checkStopLossStatus(
   let activeOrders = [];
   switch (exchange) {
     case "kucoin":
-      const kucoinSession = new KuCoinSession({
-        apiKey,
-        apiSecret,
-        apiPassphrase,
-      });
+      const kucoinSession = new KuCoinSession(apiKey, apiSecret, apiPassphrase);
       activeOrders = await kucoinSession.getOrderStatuses();
       break;
     case "bingx":
-      const bingxSession = new BingXSession({ apiKey, apiSecret });
+      const bingxSession = new BingXSession(apiKey, apiSecret);
       activeOrders = await bingxSession.getOrderStatuses();
       break;
     case "binance":
-      const binanceSession = new BinanceSession({ apiKey, apiSecret });
+      const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
       break;
     default:
@@ -176,10 +165,7 @@ async function checkStopLossStatus(
     if (sl.executed === "0") {
       sl.sl_status = "Queued";
     } else if (sl.executed === "1") {
-      sl.sl_status = await checkOrderStatus(
-        activeOrders,
-        sl.orderID
-      );
+      sl.sl_status = await checkOrderStatus(activeOrders, sl.orderID);
     } else if (sl.executed === "2") {
       sl.sl_status = "Cancelled";
     }
@@ -188,7 +174,6 @@ async function checkStopLossStatus(
 
   return Promise.all(promises);
 }
-
 
 module.exports = {
   getTradeProfitLossDetails,

@@ -72,19 +72,19 @@ router.get("/balance/:exchange", async (req, res) => {
 
     switch (exchange) {
       case "kucoin":
-        const kucoinSession = new KuCoinSession({
+        const kucoinSession = new KuCoinSession(
           apiKey,
           apiSecret,
-          apiPassphrase,
-        });
+          apiPassphrase
+        );
         balance = await kucoinSession.getBalance();
         break;
       case "bingx":
-        const bingxSession = new BingXSession({ apiKey, apiSecret });
+        const bingxSession = new BingXSession(apiKey, apiSecret);
         balance = await bingxSession.getBalance();
         break;
       case "binance":
-        const binanceSession = new BinanceSession({ apiKey, apiSecret });
+        const binanceSession = new BinanceSession(apiKey, apiSecret);
         balance = await binanceSession.getBalance();
         break;
       default:

@@ -60,9 +60,9 @@ router.get("/order/:exchange/:symbol/:tradeId", async (req, res) => {
     }
 
     const apiKey = keys.api_key;
-    const apiSecret = (await decryptData(keys.api_secret, trader)) || null;
-    console.log("apiKey: ", apiKey);
-    console.log("apiSecret: ", apiSecret);
+    const apiSecret = (await decryptData(keys.api_secret, trader));
+    console.log(apiKey);
+    console.log(apiSecret);
     let apiPassphrase = null;
     if ("api_passphrase" in keys) {
       apiPassphrase = await decryptData(keys.api_passphrase, trader);
