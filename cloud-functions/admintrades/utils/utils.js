@@ -87,10 +87,10 @@ async function getTradeProfitLossDetails(
 }
 
 async function checkOrderStatus(activeOrders, orderID) {
-  console.log("Active Orders ID:", activeOrders.orderId);
   console.log("Firestore Order ID:", orderID);
   let foundOrder = null;
   for (const order of activeOrders) {
+    console.log("Active Orders ID:", order.orderId);
     if (String(order.orderId) === String(orderID)) {
       foundOrder = order;
       console.log("Found Order:", foundOrder);
