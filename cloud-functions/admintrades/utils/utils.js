@@ -87,10 +87,10 @@ async function getTradeProfitLossDetails(
 }
 
 async function checkOrderStatus(activeOrders, orderID) {
-  console.log(activeOrders);
+  console.log(activeOrders.orderId);
   console.log(orderID);
   const foundOrder = await activeOrders.find(
-    (order) => String(order.order_id) === String(orderID)
+    (order) => String(order.orderId) === String(orderID)
   );
   console.log(foundOrder);
   return foundOrder.status;
