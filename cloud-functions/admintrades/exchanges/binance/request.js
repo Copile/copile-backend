@@ -1,7 +1,7 @@
 const CryptoJS = require("crypto-js");
 const axios = require("axios");
 const querystring = require("querystring");
-const JSONbig = require('json-bigint')({ storeAsString: true });
+const JSONbig = require("json-bigint")({ storeAsString: true });
 
 const api = {
   host: "fapi.binance.com",
@@ -22,7 +22,8 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
       `${url}?${queryString}&signature=${signature}`,
       { headers, timeout: 1000 * 60 * 3 }
     );
-    return response.data;
+    const parsedData = JSONbig.parse(response.data);
+    return parsedData;
   } catch (error) {
     throw new Error(`Request to ${url} failed: ${error.message}`);
   }
@@ -78,10 +79,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     if (!checkStatus) {
       orders = orders.filter((order) => order.type === "LIMIT");
     }
-    return orders.map((order) => ({
-      ...order,
-      orderId: JSONbig.parse(order.orderId)
-    }));
+    return orders;
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);
   }
