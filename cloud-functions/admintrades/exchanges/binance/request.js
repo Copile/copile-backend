@@ -68,7 +68,6 @@ async function getOrder(symbol, orderId, apiKey, apiSecret) {
 
 async function getOrders(apiKey, apiSecret, checkStatus = false) {
   try {
-    console.log("Getting Binance orders");
     const timestamp = await getServerTime();
     const url = `${api.protocol}://${api.host}/fapi/v1/openOrders`;
     const payload = { timestamp, recvWindow: 5000 };
@@ -78,7 +77,6 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     if (!checkStatus) {
       orders = orders.filter((order) => order.type === "LIMIT");
     }
-    console.log(orders);
     return orders;
   } catch (error) {
     throw new Error(`Failed to get Binance open orders: ${error.message}`);

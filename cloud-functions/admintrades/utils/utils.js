@@ -90,6 +90,7 @@ async function checkOrderStatus(activeOrders, orderID) {
   const foundOrder = await activeOrders.find(
     (order) => order.order_id === orderID
   );
+  console.log(foundOrder);	
   return foundOrder.status;
 }
 
@@ -114,6 +115,7 @@ async function checkTakeProfitStatus(
     case "binance":
       const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
+      console.log(activeOrders);
       break;
     default:
       console.log(`Unknown exchange: ${exchange}`);
