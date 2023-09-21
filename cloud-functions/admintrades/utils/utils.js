@@ -86,14 +86,19 @@ async function getTradeProfitLossDetails(
   }
 }
 
-async function checkOrderStatus(activeOrders, orderID) {
-  console.log("Firestore Order ID:", orderID);
+async function checkOrderStatus(activeOrders, orderID, price, exchange) {
   let foundOrder = null;
   for (const order of activeOrders) {
-    console.log("Active Orders ID:", order.orderId);
-    if (String(order.orderId) === String(orderID)) {
+    // if order is ETHUSDT, use price to match
+    if (exchange === "binance" && order.symbol === "ETHUSDT") {
+      if (String(order.stopPrice) === String(price)) {
+        foundOrder = order;
+        return foundOrder.status;
+      }
+    }
+    // else use orderID to match
+    else if (order.orderId === orderID) {
       foundOrder = order;
-      console.log("Found Order:", foundOrder);
       return foundOrder.status;
     }
   }
@@ -121,7 +126,6 @@ async function checkTakeProfitStatus(
     case "binance":
       const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
-      console.log("Active Orders:", activeOrders);
       break;
     default:
       console.log(`Unknown exchange: ${exchange}`);
@@ -132,7 +136,12 @@ async function checkTakeProfitStatus(
     if (tp.executed === "0") {
       tp.tp_status = "Queued";
     } else if (tp.executed === "1") {
-      tp.tp_status = await checkOrderStatus(activeOrders, tp.orderID);
+      tp.tp_status = await checkOrderStatus(
+        activeOrders,
+        tp.orderID,
+        tp.tp_price,
+        exchange
+      );
     } else if (tp.executed === "2") {
       tp.tp_status = "Cancelled";
     }
@@ -173,7 +182,12 @@ async function checkStopLossStatus(
     if (sl.executed === "0") {
       sl.sl_status = "Queued";
     } else if (sl.executed === "1") {
-      sl.sl_status = await checkOrderStatus(activeOrders, sl.orderID);
+      sl.sl_status = await checkOrderStatus(
+        activeOrders,
+        sl.orderID,
+        sl.sl_price,
+        exchange
+      );
     } else if (sl.executed === "2") {
       sl.sl_status = "Cancelled";
     }

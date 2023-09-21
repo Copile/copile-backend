@@ -67,7 +67,7 @@ async function getOrder(symbol, orderId, apiKey, apiSecret) {
   }
 }
 
-async function getOrders(apiKey, apiSecret, checkStatus = false) {
+async function getOrders(apiKey, apiSecret, getTPSLs = false) {
   try {
     const timestamp = await getServerTime();
     const url = `${api.protocol}://${api.host}/fapi/v1/openOrders`;
@@ -75,7 +75,7 @@ async function getOrders(apiKey, apiSecret, checkStatus = false) {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
 
     let orders = data;
-    if (!checkStatus) {
+    if (!getTPSLs) {
       orders = orders.filter((order) => order.type === "LIMIT");
     }
       

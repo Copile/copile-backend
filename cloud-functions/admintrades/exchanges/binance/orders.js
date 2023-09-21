@@ -5,7 +5,7 @@ async function getBinanceOrderStatuses(apiKey, apiSecret) {
   try {
     const rawOrders = await getOrders(apiKey, apiSecret, true);
     return rawOrders.map((order) => ({
-      orderId: order.orderId,
+      ...order,
       status: order.status === "NEW" ? "Active" : order.status,
     }));
   } catch (e) {
