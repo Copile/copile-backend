@@ -15,6 +15,15 @@ async function getBinancePositions(apiKey, apiSecret, user_id) {
         position.entryPrice = position.entryPrice;
         position.realised_pnl = "0"; // Binance does not provide realised PnL via API
         position.size = position.positionAmt;
+        // position.unrealised_pnl_pct = String(
+        //   (
+        //     (parseFloat(position.unRealizedProfit) /
+        //       (parseFloat(position.positionAmt) *
+        //         parseFloat(position.entryPrice))) *
+        //     100 *
+        //     parseFloat(position.leverage)
+        //   ).toFixed(2)
+        // );
         position.unrealised_pnl_pct = String(
           (
             (parseFloat(position.unRealizedProfit) /
@@ -22,22 +31,9 @@ async function getBinancePositions(apiKey, apiSecret, user_id) {
                 parseFloat(position.entryPrice))) *
             100 *
             parseFloat(position.leverage)
-          ).toFixed(2)
+          ).toFixed(2) * -1 // Multiply by -1 to flip the sign
         );
 
-        let unrealised_pnl_pct = (
-          (parseFloat(position.unRealizedProfit) /
-            (parseFloat(position.positionAmt) *
-              parseFloat(position.entryPrice))) *
-          100 *
-          parseFloat(position.leverage)
-        ).toFixed(2);
-
-        position.unrealised_pnl_pct_v2 = String(
-          parseFloat(position.unRealizedProfit) < 0
-            ? -unrealised_pnl_pct
-            : unrealised_pnl_pct
-        );
         return await mapPositionToTrade(
           position,
           user_id,
