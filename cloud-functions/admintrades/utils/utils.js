@@ -3,16 +3,14 @@ const { Firestore } = require("@google-cloud/firestore");
 const BinanceSession = require("../exchanges/binance/session");
 const KuCoinSession = require("../exchanges/kucoin/session");
 const BingXSession = require("../exchanges/bingx/session");
-
 const db = new Firestore();
 
 async function getTradeProfitLossDetails(
   trader,
   tradeId,
   exchange,
-  symbol,
-  apiKey,
-  apiSecret,
+  apiKey = null,
+  apiSecret = null,
   apiPassphrase = null
 ) {
   try {
@@ -51,7 +49,6 @@ async function getTradeProfitLossDetails(
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(
         exchange,
-        symbol,
         takeProfitData,
         apiKey,
         apiSecret,
@@ -59,7 +56,6 @@ async function getTradeProfitLossDetails(
       ),
       checkStopLossStatus(
         exchange,
-        symbol,
         stopLossData,
         apiKey,
         apiSecret,
@@ -107,10 +103,9 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
 
 async function checkTakeProfitStatus(
   exchange,
-  symbol,
   takeProfitData,
-  apiKey,
-  apiSecret,
+  apiKey = null,
+  apiSecret = null,
   apiPassphrase = null
 ) {
   let activeOrders = [];
@@ -127,6 +122,9 @@ async function checkTakeProfitStatus(
       const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
       break;
+    case "testnet":
+      activeOrders = [];
+      break;
     default:
       console.log(`Unknown exchange: ${exchange}`);
       return [];
@@ -136,12 +134,14 @@ async function checkTakeProfitStatus(
     if (tp.executed === "0") {
       tp.tp_status = "Queued";
     } else if (tp.executed === "1") {
-      tp.tp_status = await checkOrderStatus(
-        activeOrders,
-        tp.orderID,
-        tp.tp_price,
-        exchange
-      );
+      if (exchange != "testnet") {
+        tp.tp_status = await checkOrderStatus(
+          activeOrders,
+          tp.orderID,
+          tp.tp_price,
+          exchange
+        );
+      }
     } else if (tp.executed === "2") {
       tp.tp_status = "Cancelled";
     }
@@ -153,10 +153,9 @@ async function checkTakeProfitStatus(
 
 async function checkStopLossStatus(
   exchange,
-  symbol,
   stopLossData,
-  apiKey,
-  apiSecret,
+  apiKey = null,
+  apiSecret = null,
   apiPassphrase = null
 ) {
   let activeOrders = [];
@@ -173,6 +172,9 @@ async function checkStopLossStatus(
       const binanceSession = new BinanceSession(apiKey, apiSecret);
       activeOrders = await binanceSession.getOrderStatuses();
       break;
+    case "testnet":
+      activeOrders = [];
+      break;
     default:
       console.log(`Unknown exchange: ${exchange}`);
       return [];
@@ -182,12 +184,14 @@ async function checkStopLossStatus(
     if (sl.executed === "0") {
       sl.sl_status = "Queued";
     } else if (sl.executed === "1") {
-      sl.sl_status = await checkOrderStatus(
-        activeOrders,
-        sl.orderID,
-        sl.sl_price,
-        exchange
-      );
+      if (exchange != "testnet") {
+        sl.sl_status = await checkOrderStatus(
+          activeOrders,
+          sl.orderID,
+          sl.sl_price,
+          exchange
+        );
+      }
     } else if (sl.executed === "2") {
       sl.sl_status = "Cancelled";
     }

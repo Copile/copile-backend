@@ -4,6 +4,8 @@ const { decryptData } = require("../utils/decryption");
 const KuCoinSession = require("../exchanges/kucoin/session");
 const BingXSession = require("../exchanges/bingx/session");
 const BinanceSession = require("../exchanges/binance/session");
+const { getTestnetPositions } = require("../exchanges/testnet/positions");
+
 
 const router = express.Router();
 const db = new Firestore();
@@ -94,6 +96,10 @@ router.get("/trades/:exchange", async (req, res) => {
           binanceSession.getPositions(trader_id),
           binanceSession.getOrders(trader_id),
         ]);
+        break;
+      case "testnet":
+        trades = await getTestnetPositions(trader_id);
+        orders = [];
         break;
       default:
         console.log(`Unknown exchange: ${exchange}`);
