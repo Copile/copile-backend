@@ -8,7 +8,7 @@ const CustomError = require("../utils/error");
 const router = express.Router();
 const db = new Firestore();
 
-router.get("/trades/:exchange", async (req, res, next) => {
+router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
   try {
     const traderId = req.get("traderId");
     const exchange = req.params.exchange;
@@ -86,7 +86,6 @@ router.get("/trades/:exchange", async (req, res, next) => {
       orders,
     });
   } catch (e) {
-    console.log(e);
     if (e instanceof CustomError) {
       next(e);
     } else {

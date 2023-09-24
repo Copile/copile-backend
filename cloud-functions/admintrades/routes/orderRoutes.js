@@ -9,7 +9,7 @@ const validateTrader = require("../middleware/validation");
 const router = express.Router();
 const db = new Firestore();
 
-router.get("/order/:exchange/:symbol/:tradeId", async (req, res, next) => {
+router.get("/order/:exchange/:symbol/:tradeId", validateTrader, async (req, res, next) => {
   try {
     const traderId = req.get("traderId");
 
@@ -103,7 +103,6 @@ router.get("/order/:exchange/:symbol/:tradeId", async (req, res, next) => {
       });
     }
   } catch (e) {
-    console.log(e);
     if (e instanceof CustomError) {
       next(e);
     } else {
