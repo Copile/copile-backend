@@ -149,7 +149,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     }
     console.log("orderID", orderID);
     console.log("order.orderId", order.orderId);
-    return order.orderId === orderID;
+    return String(order.orderId) === String(orderID);
   });
   console.log("foundOrder", foundOrder);
 
