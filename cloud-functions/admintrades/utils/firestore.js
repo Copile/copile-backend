@@ -25,11 +25,12 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
       .get();
 
     if (tradeQuerySnapshot.empty) {
-      throw new CustomError({
-        message: `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`,
-        status: 404,
-        source: "fetchLatestTradeDoc",
-      });
+      return res
+        .status(200)
+        .json({
+          message: `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`,
+          source: "fetchLatestTradeDoc",
+        });
     }
 
     return tradeQuerySnapshot.docs[0];
@@ -42,10 +43,14 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   }
 }
 
-
 async function mapPositionToTrade(position, traderId, symbol, exchange, side) {
   try {
-    const tradeDoc = await fetchLatestTradeDoc(traderId, symbol, exchange, side);
+    const tradeDoc = await fetchLatestTradeDoc(
+      traderId,
+      symbol,
+      exchange,
+      side
+    );
 
     if (tradeDoc === null) return;
 
