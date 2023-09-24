@@ -77,7 +77,6 @@ async function getTradeProfitLossDetails(
       apiSecret,
       apiPassphrase
     );
-    console.log("activeOrders", activeOrders);
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
@@ -152,6 +151,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     console.log("order.orderId", order.orderId);
     return order.orderId === orderID;
   });
+  console.log("foundOrder", foundOrder);
 
   return foundOrder ? foundOrder.status : STATUS.UNKNOWN;
 }
