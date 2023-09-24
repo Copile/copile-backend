@@ -103,6 +103,7 @@ router.get("/order/:exchange/:symbol/:tradeId", async (req, res, next) => {
       });
     }
   } catch (e) {
+    console.log(e);
     if (e instanceof CustomError) {
       next(e);
     } else {

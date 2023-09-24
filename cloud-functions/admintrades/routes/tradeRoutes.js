@@ -86,6 +86,7 @@ router.get("/trades/:exchange", async (req, res, next) => {
       orders,
     });
   } catch (e) {
+    console.log(e);
     if (e instanceof CustomError) {
       next(e);
     } else {

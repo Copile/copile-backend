@@ -71,6 +71,7 @@ router.get("/balance/:exchange", async (req, res, next) => {
 
     return res.status(200).json({ success: true, balance: balance });
   } catch (e) {
+    console.log(e);
     if (e instanceof CustomError) {
       next(e);
     } else {
