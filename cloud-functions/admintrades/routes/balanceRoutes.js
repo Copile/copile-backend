@@ -66,12 +66,7 @@ router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
       });
     }
 
-    const session = createSession(
-      exchange,
-      apiKey,
-      apiSecret,
-      apiPassphrase
-    );
+    const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
     const balance = await session.getBalance();
 
     return res.status(200).json({ success: true, balance: balance });
@@ -80,11 +75,11 @@ router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
       next(e);
     } else {
       next(
-        new CustomError(
-          "An error occurred while fetching the balance details.",
-          500,
-          "balanceRoutes"
-        )
+        new CustomError({
+          message: "An error occurred while fetching the balance details.",
+          status: 500,
+          source: "balanceRoutes",
+        })
       );
     }
   }

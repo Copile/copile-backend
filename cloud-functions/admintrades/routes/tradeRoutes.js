@@ -8,7 +8,7 @@ const CustomError = require("../utils/error");
 const router = express.Router();
 const db = new Firestore();
 
-router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
+router.get("/trades/:exchange", async (req, res, next) => {
   try {
     const traderId = req.get("traderId");
     const exchange = req.params.exchange;
@@ -58,12 +58,7 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
     }
 
     // Use factory pattern to create sessions
-    const session = createSession(
-      exchange,
-      apiKey,
-      apiSecret,
-      apiPassphrase
-    );
+    const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
 
     if (!session) {
       throw new CustomError({
@@ -95,11 +90,11 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
       next(e);
     } else {
       next(
-        new CustomError(
-          "An error occurred while fetching the trade details.",
-          500,
-          "traderRoutes"
-        )
+        new CustomError({
+          message: "An error occurred while fetching the trade details.",
+          status: 500,
+          source: "traderRoutes",
+        })
       );
     }
   }
