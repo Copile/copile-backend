@@ -148,6 +148,8 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       return String(order.stopPrice) === String(price);
     }
+    console.log("orderID", orderID);
+    console.log("order.orderId", order.orderId);
     return order.orderId === orderID;
   });
 
