@@ -1,108 +1,85 @@
 const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
 const { decryptData } = require("../utils/decryption");
-const BinanceSession = require("../exchanges/binance/session");
-const KuCoinSession = require("../exchanges/kucoin/session");
-const BingXSession = require("../exchanges/bingx/session");
+const sessionFactory = require("../exchanges/sessionFactory");
+const { validateTrader } = require("../middleware/validation");
+const CustomError = require("../utils/error");
 
 const router = express.Router();
 const db = new Firestore();
 
-router.get("/balance/:exchange", async (req, res) => {
-  const trader_id = req.get("traderId");
-
-  if (!trader_id) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Trader ID is missing" });
-  }
-
+router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
+  const traderId = req.get("traderId");
   const exchange = req.params.exchange;
 
   if (exchange === "bybit") {
-    return res.status(404).json({
-      success: false,
-      error: "Bybit is not supported by this endpoint",
-    });
+    throw new CustomError(
+      "Bybit is not supported by this endpoint.",
+      400,
+      "balanceRoutes"
+    );
   }
 
   try {
-    const startTime = Date.now();
-
-    const traderRef = db.collection("traders").doc(trader_id);
+    const traderRef = db.collection("traders").doc(traderId);
     const traderDoc = await traderRef.get();
 
     if (!traderDoc.exists) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Trader not found" });
+      throw new CustomError("Trader not found", 404, "balanceRoutes");
     }
 
     const exchangesData = traderDoc.data().exchanges || {};
 
     if (!exchangesData || !(exchange in exchangesData)) {
-      return res
-        .status(404)
-        .json({ success: false, error: "No exchange found" });
+      throw new CustomError("No exchange found", 404, "balanceRoutes");
     }
 
     const keys = exchangesData[exchange];
     if (!("api_key" in keys && keys.api_key !== "x")) {
-      return res.status(404).json({
-        success: false,
-        error: "API key not found for the exchange",
-      });
+      throw new CustomError(
+        "API key not found for the exchange",
+        404,
+        "balanceRoutes"
+      );
     }
 
     const apiKey = keys.api_key;
-    const apiSecret = (await decryptData(keys.api_secret, trader_id)) || null;
+    const apiSecret = (await decryptData(keys.api_secret, traderId)) || null;
 
     let apiPassphrase = null;
     if ("api_passphrase" in keys) {
-      apiPassphrase = await decryptData(keys.api_passphrase, trader_id);
+      apiPassphrase = await decryptData(keys.api_passphrase, traderId);
     }
 
     if (exchange === "kucoin" && apiPassphrase === null) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Kucoin requires a passphrase" });
+      throw new CustomError(
+        "Kucoin requires a passphrase",
+        400,
+        "balanceRoutes"
+      );
     }
 
-    let balance;
+    const session = sessionFactory.createSession(
+      exchange,
+      apiKey,
+      apiSecret,
+      apiPassphrase
+    );
+    const balance = await session.getBalance();
 
-    switch (exchange) {
-      case "kucoin":
-        const kucoinSession = new KuCoinSession(
-          apiKey,
-          apiSecret,
-          apiPassphrase
-        );
-        balance = await kucoinSession.getBalance();
-        break;
-      case "bingx":
-        const bingxSession = new BingXSession(apiKey, apiSecret);
-        balance = await bingxSession.getBalance();
-        break;
-      case "binance":
-        const binanceSession = new BinanceSession(apiKey, apiSecret);
-        balance = await binanceSession.getBalance();
-        break;
-      default:
-        console.log(`Unknown exchange: ${exchange}`);
-        balance = [];
-    }
-
-    const endTime = Date.now();
-    const executionTime = endTime - startTime;
-
-    return res
-      .status(200)
-      .json({ success: true, balance: balance, executionTime });
+    return res.status(200).json({ success: true, balance: balance });
   } catch (e) {
-    return res.status(500).json({
-      success: false,
-      error: "An error occurred while fetching the balance details.",
-    });
+    if (e instanceof CustomError) {
+      next(e);
+    } else {
+      next(
+        new CustomError(
+          "An error occurred while fetching the balance details.",
+          500,
+          "balanceRoutes"
+        )
+      );
+    }
   }
 });
 

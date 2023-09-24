@@ -2,26 +2,98 @@ const ExchangeSession = require("../exchangeSession");
 const { getBinanceOrders, getBinanceOrderStatuses } = require("./orders");
 const { getBinancePositions } = require("./positions");
 const { getBinanceBalance } = require("./balance");
+const CustomError = require("../../utils/error");
 
+/**
+ * Class representing a Binance exchange session.
+ * @extends ExchangeSession
+ */
 class BinanceSession extends ExchangeSession {
+  /**
+   * Create a new BinanceSession.
+   * @param {string} apiKey - User's API key for Binance.
+   * @param {string} apiSecret - User's API secret for Binance.
+   */
   constructor(apiKey, apiSecret) {
     super(apiKey, apiSecret);
   }
 
-  async getOrders(trader_id) {
-    return await getBinanceOrders(this.apiKey, this.apiSecret, trader_id);
+  /**
+   * Get orders from Binance for a specific trader.
+   * @param {string} traderId - Trader's unique ID.
+   * @returns {Promise<Array>} - Array of order objects.
+   */
+  async getOrders(traderId) {
+    try {
+      return await getBinanceOrders(this.apiKey, this.apiSecret, traderId);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch Binance orders: ${error.message}`,
+        status: 500,
+        source: "getOrders",
+      });
+    }
   }
 
-  async getPositions(user_id) {
-    return await getBinancePositions(this.apiKey, this.apiSecret, user_id);
+  /**
+   * Get positions from Binance for a specific user.
+   * @param {string} userId - User's unique ID.
+   * @returns {Promise<Array>} - Array of position objects.
+   */
+  async getPositions(userId) {
+    try {
+      return await getBinancePositions(this.apiKey, this.apiSecret, userId);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch Binance positions: ${error.message}`,
+        status: 500,
+        source: "getPositions",
+      });
+    }
   }
 
+  /**
+   * Get balance information from Binance.
+   * @returns {Promise<Array>} - Array containing balance information.
+   */
   async getBalance() {
-    return await getBinanceBalance(this.apiKey, this.apiSecret);
+    try {
+      return await getBinanceBalance(this.apiKey, this.apiSecret);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch Binance balance: ${error.message}`,
+        status: 500,
+        source: "getBalance",
+      });
+    }
   }
 
+  /**
+   * Get the statuses of various orders.
+   * @returns {Promise<Array>} - Array containing order statuses.
+   */
   async getOrderStatuses() {
-    return await getBinanceOrderStatuses(this.apiKey, this.apiSecret);
+    try {
+      return await getBinanceOrderStatuses(this.apiKey, this.apiSecret);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch Binance order statuses: ${error.message}`,
+        status: 500,
+        source: "getOrderStatuses",
+      });
+    }
   }
 }
 

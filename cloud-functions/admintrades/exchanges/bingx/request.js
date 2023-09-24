@@ -1,88 +1,103 @@
-const CryptoJS = require("crypto-js");
-const axios = require('axios');
+const cryptoJs = require("crypto-js");
+const axios = require("axios");
+const CustomError = require("../../utils/error");
 
-const api = {
+const apiConfig = {
   host: "open-api.bingx.com",
   protocol: "https",
 };
 
+/**
+ * Constructs the URL and sends the signed API request.
+ * @param {string} path API endpoint path.
+ * @param {Object} payload API request payload.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @return {Promise<Object>} API response data.
+ */
+async function makeSignedRequest(path, payload, apiKey, apiSecret) {
+  const params = new URLSearchParams(payload).toString();
+  const signature = cryptoJs.HmacSHA256(params, apiSecret).toString();
+  const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
+  const headers = { "X-BX-APIKEY": apiKey };
+
+  try {
+    const response = await axios.get(url, { headers, timeout: 5000 });
+    return response.data.data;
+  } catch (error) {
+    throw new CustomError({
+      message: `Failed to send BingX API request to ${path}: ${error.message}`,
+      source: "makeSignedRequest",
+      status: 500,
+    });
+  }
+}
+
+/**
+ * Fetches the current server time from BingX API.
+ * @return {Promise<number>} Server time.
+ */
 async function getServerTime() {
-  try {
-    const url = `${api.protocol}://${api.host}/openApi/swap/v2/server/time`;
-    const response = await axios.get(url);
-    return response.data.data.serverTime;
-  } catch (error) {
-    throw new Error(`Failed to get BingX server time: ${error.message}`);
-  }
+  const path = "/openApi/swap/v2/server/time";
+  const { serverTime } = await makeSignedRequest(path, {}, "", "");
+  return serverTime;
 }
 
+/**
+ * Fetches positions from BingX API.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @return {Promise<Array>} Positions.
+ */
 async function getPositions(apiKey, apiSecret) {
-  try {
-    const timestamp = await getServerTime();
-    const payload = { timestamp };
-    const parameters = new URLSearchParams(payload).toString();
-    const signature = CryptoJS.HmacSHA256(parameters, apiSecret).toString();
-    const url = `${api.protocol}://${api.host}/openApi/swap/v2/user/positions?${parameters}&signature=${signature}`;
-    const headers = { 'X-BX-APIKEY': apiKey };
-    const response = await axios.get(url, { headers, timeout: 5000 });
-    return response.data.data;
-  } catch (error) {
-    throw new Error(`Failed to get BingX positions: ${error.message}`);
-  }
+  const path = "/openApi/swap/v2/user/positions";
+  const payload = { timestamp: await getServerTime() };
+  return makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
+/**
+ * Fetches an order by its symbol and order ID.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @param {string} symbol The symbol for which the order should be retrieved.
+ * @param {string} orderId The order ID.
+ * @return {Promise<Object>} The order.
+ */
 async function getOrder(apiKey, apiSecret, symbol, orderId) {
-  try {
-    const timestamp = await getServerTime();
-    const payload = {
-      symbol,
-      orderId: BigInt(orderId),
-      timestamp,
-    };
-    const parameters = new URLSearchParams(payload).toString();
-    const signature = CryptoJS.HmacSHA256(parameters, apiSecret).toString();
-    const url = `${api.protocol}://${api.host}/openApi/swap/v2/trade/order?${parameters}&signature=${signature}`;
-    const headers = { 'X-BX-APIKEY': apiKey };
-    const response = await axios.get(url, { headers, timeout: 5000 });
-    return response.data.data.order.status;
-  } catch (error) {
-    throw new Error(`Failed to get BingX order: ${error.message}`);
-  }
+  const path = "/openApi/swap/v2/trade/order";
+  const payload = {
+    symbol,
+    orderId: BigInt(orderId),
+    timestamp: await getServerTime(),
+  };
+  return makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
+/**
+ * Fetches the balance for an account.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @return {Promise<Object>} The balance.
+ */
 async function getBalance(apiKey, apiSecret) {
-  try {
-    const timestamp = await getServerTime();
-    const payload = { timestamp };
-    const parameters = new URLSearchParams(payload).toString();
-    const signature = CryptoJS.HmacSHA256(parameters, apiSecret).toString();
-    const url = `${api.protocol}://${api.host}/openApi/swap/v2/user/balance?${parameters}&signature=${signature}`;
-    const headers = { 'X-BX-APIKEY': apiKey };
-    const response = await axios.get(url, { headers, timeout: 5000 });
-    return response.data.data;
-  } catch (error) {
-    throw new Error(`Failed to get BingX balance: ${error.message}`);
-  }
+  const path = "/openApi/swap/v2/user/balance";
+  const payload = { timestamp: await getServerTime() };
+  return makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
-async function getOrders(apiKey, apiSecret, checkStatus = false) {
-  try {
-    const timestamp = await getServerTime();
-    const payload = { timestamp };
-    const parameters = new URLSearchParams(payload).toString();
-    const signature = CryptoJS.HmacSHA256(parameters, apiSecret).toString();
-    const url = `${api.protocol}://${api.host}/openApi/swap/v2/trade/openOrders?${parameters}&signature=${signature}`;
-    const headers = { 'X-BX-APIKEY': apiKey };
-    const response = await axios.get(url, { headers, timeout: 5000 });
+/**
+ * Fetches open orders.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @param {boolean} checkStatus Flag to check the status of the orders.
+ * @return {Promise<Array>} The orders.
+ */
+async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
+  const path = "/openApi/swap/v2/trade/openOrders";
+  const payload = { timestamp: await getServerTime() };
+  const orders = await makeSignedRequest(path, payload, apiKey, apiSecret);
 
-    let orders = response.data.data.orders;
-    if (!checkStatus) {
-      orders = orders.filter(order => order.type === 'LIMIT');
-    }
-    return orders;
-  } catch (error) {
-    throw new Error(`Failed to get BingX open orders: ${error.message}`);
-  }
+  return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");
 }
 
 module.exports = {
@@ -90,5 +105,4 @@ module.exports = {
   getOrder,
   getOrders,
   getBalance,
-  getServerTime
 };

@@ -1,10 +1,45 @@
 const kucoinAPI = require("kucoin-futures-node-api");
 const { mapPositionToTrade } = require("../../utils/firestore");
+const CustomError = require("../../utils/error");
 
-async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, user_id) {
+/**
+ * Transforms the position object according to specified rules.
+ * @param {Object} position - The position object from KuCoin API.
+ * @returns {Object} - The transformed position object.
+ */
+const transformPosition = (position) => {
+  return {
+    ...position,
+    side: position.currentQty < 0 ? "Sell" : "Buy",
+    marginMode: position.crossMode ? "cross" : "isolated",
+    currentQty: Math.abs(position.currentQty),
+    currentCost: Math.abs(position.currentCost),
+    leverage: position.realLeverage,
+    unrealisedPnl: position.unrealisedPnl,
+    margin: position.maintMargin,
+    unrealisedPnlPct: (
+      parseFloat(position.unrealisedPnlPcnt) *
+      100 *
+      parseFloat(position.realLeverage)
+    ).toFixed(2),
+    entryPrice: position.avgEntryPrice,
+    realisedPnl: position.realisedPnl,
+    size: Math.abs(position.currentQty),
+  };
+};
+
+/**
+ * Gets KuCoin positions.
+ * @param {string} apiKey - The API key.
+ * @param {string} apiSecret - The API secret.
+ * @param {string} apiPassphrase - The API passphrase.
+ * @param {string} userId - The user ID.
+ * @returns {Promise<Array>} - A promise that resolves to an array of positions.
+ */
+async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, userId) {
   try {
     const config = {
-      apiKey: apiKey,
+      apiKey,
       secretKey: apiSecret,
       passphrase: apiPassphrase,
       environment: "live",
@@ -15,37 +50,18 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, user_id) {
 
     let positions = await apiLive.getAllPositions();
     positions = positions.data;
+
     if (positions !== null) {
       const trades = positions
         .filter((position) => position.size !== 0)
         .map(async (position) => {
-          position.side = position.currentQty < 0 ? "Sell" : "Buy";
-          position.margin_mode =
-            position.crossMode === true ? "cross" : "isolated";
-          if (position.currentQty < 0 && position.currentCost < 0) {
-            position.currentQty *= -1;
-            position.currentCost *= -1;
-          }
-          position.leverage = position.realLeverage;
-          position.unrealised_pnl = position.unrealisedPnl;
-          position.margin = position.maintMargin;
-          position.unrealised_pnl_pct = String(
-            (
-              parseFloat(position.unrealisedPnlPcnt) *
-              100 *
-              parseFloat(position.realLeverage)
-            ).toFixed(2)
-          );
-          position.entryPrice = position.avgEntryPrice;
-          position.realised_pnl = position.realisedPnl;
-          position.size = position.currentQty;
-
+          const transformedPosition = transformPosition(position);
           return await mapPositionToTrade(
-            position,
-            user_id,
-            position.symbol,
+            transformedPosition,
+            userId,
+            transformedPosition.symbol,
             "kucoin",
-            position.side
+            transformedPosition.side
           );
         });
 
@@ -54,10 +70,16 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, user_id) {
       return [];
     }
   } catch (e) {
-    console.error(
-      `An error occurred while retrieving trades from KuCoin. Error message: ${e}`
-    );
-    return [];
+    // If it's already a custom error, throw it as-is
+    if (e instanceof CustomError) {
+      throw e;
+    }
+    // Otherwise, wrap it in a CustomError and specify the source
+    throw new CustomError({
+      message: `Failed to fetch KuCoin positions: ${e.message}`,
+      status: 500,
+      source: "getKucoinPositions",
+    });
   }
 }
 

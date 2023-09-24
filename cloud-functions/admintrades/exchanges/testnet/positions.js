@@ -1,23 +1,31 @@
 const { Firestore } = require("@google-cloud/firestore");
+const CustomError = require("../../utils/error"); // Assuming the CustomError is in this path
 const db = new Firestore();
 
-async function getTestnetPositions(trader_id) {
+/**
+ * Retrieves active positions for a given trader ID from Firestore in a testnet environment.
+ *
+ * @async
+ * @param {string} traderId - The unique ID of the trader.
+ * @returns {Promise<Array<Object>>} An array of active trade data objects.
+ * @throws {CustomError} Throws a custom error if database operation fails.
+ */
+async function getTestnetPositions(traderId) {
   try {
-    const tradesData = await db
+    const querySnapshot = await db
       .collection("traders")
-      .doc(trader_id)
+      .doc(traderId)
       .collection("trades")
       .where("status", "==", "active")
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.docs.map((doc) => doc.data());
-      });
-    return tradesData;
+      .get();
+
+    return querySnapshot.docs.map((doc) => doc.data());
   } catch (e) {
-    console.error(
-      `An error occurred while retrieving trades from Binance. Error message: ${e}`
-    );
-    return [];
+    throw new CustomError({
+      message: `Failed to fetch testnet positions: ${e.message}`,
+      status: 500,
+      source: "getTestnetPositions",
+    });
   }
 }
 

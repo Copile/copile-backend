@@ -1,11 +1,21 @@
 const { Firestore } = require("@google-cloud/firestore");
+const CustomError = require("./error");
 const db = new Firestore();
 
-async function mapPositionToTrade(position, trader, symbol, exchange, side) {
-    // Fetch the trade id
+/**
+ * Utility function to fetch the latest trade document.
+ *
+ * @param {string} traderId Trader ID.
+ * @param {string} symbol Symbol of the trade.
+ * @param {string} exchange Exchange name.
+ * @param {string} side Trade side (e.g., "Buy" or "Sell").
+ * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
+ */
+async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
+  try {
     const tradeQuerySnapshot = await db
       .collection("traders")
-      .doc(trader)
+      .doc(traderId)
       .collection("trades")
       .where("symbol", "==", symbol)
       .where("exchange", "==", exchange)
@@ -13,19 +23,36 @@ async function mapPositionToTrade(position, trader, symbol, exchange, side) {
       .orderBy("created_at", "desc")
       .limit(1)
       .get();
-  
-    if (tradeQuerySnapshot.empty != false) {
-      console.log(
-        `No trade document found for trader ${trader}, symbol ${symbol}, exchange ${exchange}, and side ${side}`
-      );
-      return;
+
+    if (tradeQuerySnapshot.empty) {
+      throw new CustomError({
+        message: `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`,
+        status: 404,
+        source: "fetchLatestTradeDoc",
+      });
     }
-    const tradeDoc = tradeQuerySnapshot.docs[0];
-    const tradeData = tradeDoc.data(); // Get data from the trade document
-  
-    // Fetch details from the position object
+
+    return tradeQuerySnapshot.docs[0];
+  } catch (error) {
+    throw new CustomError({
+      message: `Error fetching trade document: ${error.message}`,
+      status: 500,
+      source: "fetchLatestTradeDoc",
+    });
+  }
+}
+
+
+async function mapPositionToTrade(position, traderId, symbol, exchange, side) {
+  try {
+    const tradeDoc = await fetchLatestTradeDoc(traderId, symbol, exchange, side);
+
+    if (tradeDoc === null) return;
+
+    const tradeData = tradeDoc.data();
+
     let isIsolated = position.tradeMode === 1 ? "isolated" : "cross";
-  
+
     return {
       trade_id: tradeDoc.id, // Use the fetched trade id
       symbol: position.symbol,
@@ -42,38 +69,28 @@ async function mapPositionToTrade(position, trader, symbol, exchange, side) {
       realised_pnl: position.realised_pnl,
       created_at: tradeData.created_at, // Include the 'created_at' field from the trade document
     };
+  } catch (error) {
+    throw new CustomError({
+      message: `Error mapping position to trade: ${error.message}`,
+      status: 500,
+      source: "mapPositionToTrade",
+    });
   }
+}
 
-  async function getTradeDoc(trader, symbol, exchange, side) {
-    // Reformat the side variable to have the first letter capital and the rest lowercase
-    const formattedSide =
-      side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
-  
-    try {
-      const tradeQuerySnapshot = await db
-        .collection("traders")
-        .doc(trader)
-        .collection("trades")
-        .where("symbol", "==", symbol)
-        .where("exchange", "==", exchange)
-        .where("side", "==", formattedSide) // Use the reformatted side in the query
-        .orderBy("created_at", "desc")
-        .limit(1)
-        .get();
-  
-      if (tradeQuerySnapshot.empty) {
-        console.log(
-          `No trade document found for trader ${trader}, symbol ${symbol}, exchange ${exchange}, and side ${formattedSide}`
-        );
-        return null;
-      }
-  
-      const tradeDoc = tradeQuerySnapshot.docs[0];
-      return tradeDoc;
-    } catch (error) {
-      console.error("Error fetching trade document:", error);
-      return null;
-    }
-  }
+/**
+ * Fetches the latest trade document based on provided parameters.
+ *
+ * @param {string} traderId Trader ID.
+ * @param {string} symbol Symbol of the trade.
+ * @param {string} exchange Exchange name.
+ * @param {string} side Trade side.
+ * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
+ */
+async function getTradeDoc(traderId, symbol, exchange, side) {
+  const formattedSide =
+    side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
+  return await fetchLatestTradeDoc(traderId, symbol, exchange, formattedSide);
+}
 
-  module.exports = { mapPositionToTrade, getTradeDoc };
+module.exports = { mapPositionToTrade, getTradeDoc };

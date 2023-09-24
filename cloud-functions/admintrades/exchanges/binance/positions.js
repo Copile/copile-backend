@@ -1,54 +1,79 @@
 const { getPositions } = require("./request");
 const { mapPositionToTrade } = require("../../utils/firestore");
+const CustomError = require("../../utils/error");
 
+/**
+ * Fetches and maps active Binance positions to trades.
+ * @async
+ * @param {string} apiKey - Binance API key.
+ * @param {string} apiSecret - Binance API secret.
+ * @param {string} user_id - User ID.
+ * @returns {Promise<Array>} An array of mapped trades.
+ * @throws {CustomError} Throws a custom error if the operation fails.
+ */
 async function getBinancePositions(apiKey, apiSecret, user_id) {
   try {
     const positions = await getPositions(apiKey, apiSecret);
     const trades = positions
-      .filter((position) => position.positionAmt !== 0)
+      .filter(({ positionAmt }) => positionAmt !== 0)
       .map(async (position) => {
-        position.side = position.positionSide === "LONG" ? "Buy" : "Sell";
-        position.margin_mode =
-          position.marginType === "isolated" ? "isolated" : "cross";
-        position.unrealised_pnl = position.unRealizedProfit;
-        position.margin = position.isolatedMargin;
-        position.entryPrice = position.entryPrice;
-        position.realised_pnl = "0"; // Binance does not provide realised PnL via API
-        position.size = position.positionAmt;
-        // position.unrealised_pnl_pct = String(
-        //   (
-        //     (parseFloat(position.unRealizedProfit) /
-        //       (parseFloat(position.positionAmt) *
-        //         parseFloat(position.entryPrice))) *
-        //     100 *
-        //     parseFloat(position.leverage)
-        //   ).toFixed(2)
-        // );
-        position.unrealised_pnl_pct = String(
+        const {
+          positionSide,
+          marginType,
+          unRealizedProfit,
+          isolatedMargin,
+          entryPrice,
+          positionAmt,
+          symbol,
+          leverage,
+        } = position;
+
+        const side = positionSide === "LONG" ? "Buy" : "Sell";
+        const margin_mode = marginType === "isolated" ? "isolated" : "cross";
+        const unrealised_pnl = unRealizedProfit;
+        const margin = isolatedMargin;
+        const size = positionAmt;
+
+        // Calculate unrealized profit and loss percentage
+        const unrealised_pnl_pct = String(
           (
-            (parseFloat(position.unRealizedProfit) /
-              (parseFloat(position.positionAmt) *
-                parseFloat(position.entryPrice))) *
+            (parseFloat(unRealizedProfit) /
+              (parseFloat(positionAmt) * parseFloat(entryPrice))) *
             100 *
-            parseFloat(position.leverage)
+            parseFloat(leverage)
           ).toFixed(2) * -1 // Multiply by -1 to flip the sign
         );
 
         return await mapPositionToTrade(
-          position,
+          {
+            ...position,
+            side,
+            margin_mode,
+            unrealised_pnl,
+            margin,
+            entryPrice,
+            realised_pnl: "0",
+            size,
+            unrealised_pnl_pct,
+          },
           user_id,
-          position.symbol,
+          symbol,
           "binance",
-          position.side
+          side
         );
       });
 
     return await Promise.all(trades);
-  } catch (e) {
-    console.error(
-      `An error occurred while retrieving trades from Binance. Error message: ${e}`
-    );
-    return [];
+  } catch (error) {
+    // If it's already a custom error, throw it as-is
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError({
+      message: `Error fetching Binance positions: ${error.message}`,
+      status: 400,
+      source: "getBinancePositions",
+    });
   }
 }
 

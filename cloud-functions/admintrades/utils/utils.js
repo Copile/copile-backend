@@ -1,12 +1,36 @@
 const { Firestore } = require("@google-cloud/firestore");
+const CustomError = require("./error");
+const sessionFactory = require("../exchanges/sessionFactory");
 
-const BinanceSession = require("../exchanges/binance/session");
-const KuCoinSession = require("../exchanges/kucoin/session");
-const BingXSession = require("../exchanges/bingx/session");
 const db = new Firestore();
 
+const STATUS = {
+  QUEUED: "Queued",
+  CANCELLED: "Cancelled",
+  UNKNOWN: "Unknown",
+};
+
+const EXCHANGE = {
+  BINANCE: "binance",
+  KUCOIN: "kucoin",
+  BINGX: "bingx",
+  TESTNET: "testnet",
+};
+
+/**
+ * Retrieves detailed information on trade profits and losses for a specific trader and trade.
+ * @async
+ * @param {string} traderId - The identifier for the trader.
+ * @param {string} tradeId - The identifier for the trade.
+ * @param {string} exchange - The name of the exchange platform.
+ * @param {string} [apiKey] - The API key for the exchange.
+ * @param {string} [apiSecret] - The API secret for the exchange.
+ * @param {string} [apiPassphrase] - The API passphrase for the exchange.
+ * @returns {Promise<Object>} An object containing arrays of take profit and stop loss details.
+ * @throws {CustomError} Throws a custom error if the operation fails.
+ */
 async function getTradeProfitLossDetails(
-  trader,
+  traderId,
   tradeId,
   exchange,
   apiKey = null,
@@ -16,51 +40,46 @@ async function getTradeProfitLossDetails(
   try {
     const tradeDocRef = db
       .collection("traders")
-      .doc(trader)
+      .doc(traderId)
       .collection("trades")
       .doc(tradeId);
 
-    const takeProfitQuerySnapshot = await tradeDocRef
-      .collection("take-profits")
-      .get();
+    // Fetch take-profits and stop-losses
+    const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
+      tradeDocRef.collection("take-profits").get(),
+      tradeDocRef.collection("stop-losses").get(),
+    ]);
+
     let takeProfitData = [];
+    let stopLossData = [];
 
     takeProfitQuerySnapshot.forEach((doc) => {
       const data = doc.data();
-      data.tp_price = data.tp_value; // Rename tp_value to tp_price
-      delete data.tp_value; // Remove tp_value field
-      data.tp_id = doc.id; // Add tp_id field with the document ID
+      data.tp_price = data.tp_value;
+      delete data.tp_value;
+      data.tp_id = doc.id;
       takeProfitData.push(data);
     });
 
-    const stopLossQuerySnapshot = await tradeDocRef
-      .collection("stop-losses")
-      .get();
-    let stopLossData = [];
-
     stopLossQuerySnapshot.forEach((doc) => {
       const data = doc.data();
-      data.sl_price = data.sl_value; // Rename sl_value to sl_price
-      delete data.sl_value; // Remove sl_value field
-      data.sl_id = doc.id; // Add sl_id field with the document ID
+      data.sl_price = data.sl_value;
+      delete data.sl_value;
+      data.sl_id = doc.id;
       stopLossData.push(data);
     });
 
+    // Get active orders once for both takeProfit and stopLoss
+    const activeOrders = await getActiveOrders(
+      exchange,
+      apiKey,
+      apiSecret,
+      apiPassphrase
+    );
+
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
-      checkTakeProfitStatus(
-        exchange,
-        takeProfitData,
-        apiKey,
-        apiSecret,
-        apiPassphrase
-      ),
-      checkStopLossStatus(
-        exchange,
-        stopLossData,
-        apiKey,
-        apiSecret,
-        apiPassphrase
-      ),
+      checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
+      checkStopLossStatus(exchange, stopLossData, activeOrders),
     ]);
 
     // Remove orderID field
@@ -77,73 +96,83 @@ async function getTradeProfitLossDetails(
       stop_losses: stopLossNewData,
     };
   } catch (error) {
-    console.error("Error retrieving trade document:", error);
-    return null;
+    if (e instanceof CustomError) {
+      throw e;
+    }
+    throw new CustomError({
+      message: `Failed to get trade profit/loss details: ${error.message}`,
+      status: 400,
+      source: "getTradeProfitLossDetails",
+    });
+  }
+}
+
+/**
+ * Retrieves active orders for a specific exchange.
+ * @async
+ * @param {string} exchange - The name of the exchange platform.
+ * @param {string} apiKey - The API key for the exchange.
+ * @param {string} apiSecret - The API secret for the exchange.
+ * @param {string} apiPassphrase - The API passphrase for the exchange.
+ * @returns {Promise<Array>} An array of active orders.
+ * @throws {CustomError} Throws a custom error if the operation fails.
+ */
+async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
+  try {
+    const session = sessionFactory.createSession(
+      exchange,
+      apiKey,
+      apiSecret,
+      apiPassphrase
+    );
+    return await session.getOrderStatuses();
+  } catch (error) {
+    if (e instanceof CustomError) {
+      throw e;
+    }
+    throw new CustomError({
+      message: `Failed to get active orders: ${error.message}`,
+      status: 400,
+      source: "getActiveOrders",
+    });
   }
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
-  let foundOrder = null;
-  for (const order of activeOrders) {
-    // if order is ETHUSDT, use price to match
-    if (exchange === "binance" && order.symbol === "ETHUSDT") {
-      if (String(order.stopPrice) === String(price)) {
-        foundOrder = order;
-        return foundOrder.status;
-      }
-    }
-    // else use orderID to match
-    else if (order.orderId === orderID) {
-      foundOrder = order;
-      return foundOrder.status;
-    }
+  if (exchange === EXCHANGE.TESTNET) {
+    return STATUS.UNKNOWN;
   }
-  return "Unknown";
+  let foundOrder = activeOrders.find((order) => {
+    if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
+      return String(order.stopPrice) === String(price);
+    }
+    return order.orderId === orderID;
+  });
+
+  return foundOrder ? foundOrder.status : STATUS.UNKNOWN;
 }
 
-async function checkTakeProfitStatus(
-  exchange,
-  takeProfitData,
-  apiKey = null,
-  apiSecret = null,
-  apiPassphrase = null
-) {
-  let activeOrders = [];
-  switch (exchange) {
-    case "kucoin":
-      const kucoinSession = new KuCoinSession(apiKey, apiSecret, apiPassphrase);
-      activeOrders = await kucoinSession.getOrderStatuses();
-      break;
-    case "bingx":
-      const bingxSession = new BingXSession(apiKey, apiSecret);
-      activeOrders = await bingxSession.getOrderStatuses();
-      break;
-    case "binance":
-      const binanceSession = new BinanceSession(apiKey, apiSecret);
-      activeOrders = await binanceSession.getOrderStatuses();
-      break;
-    case "testnet":
-      activeOrders = [];
-      break;
-    default:
-      console.log(`Unknown exchange: ${exchange}`);
-      return [];
-  }
-
+/**
+ * Checks the status of take profit orders and returns updated data.
+ * @async
+ * @param {string} exchange - The name of the exchange platform.
+ * @param {Array} takeProfitData - An array of take profit orders.
+ * @param {Array} activeOrders - An array of active orders fetched once.
+ * @returns {Promise<Array>} An updated array of take profit orders with status.
+ */
+async function checkTakeProfitStatus(exchange, takeProfitData, activeOrders) {
   const promises = takeProfitData.map(async (tp) => {
     if (tp.executed === "0") {
-      tp.tp_status = "Queued";
+      tp.tp_status = STATUS.QUEUED;
     } else if (tp.executed === "1") {
-      if (exchange != "testnet") {
-        tp.tp_status = await checkOrderStatus(
-          activeOrders,
-          tp.orderID,
-          tp.tp_price,
-          exchange
-        );
-      }
+      tp.tp_status = await checkOrderStatus(
+        activeOrders,
+        tp.orderID,
+        tp.tp_price,
+        exchange
+      );
     } else if (tp.executed === "2") {
-      tp.tp_status = "Cancelled";
+      tp.tp_status = STATUS.CANCELLED;
     }
     return tp;
   });
@@ -151,49 +180,27 @@ async function checkTakeProfitStatus(
   return Promise.all(promises);
 }
 
-async function checkStopLossStatus(
-  exchange,
-  stopLossData,
-  apiKey = null,
-  apiSecret = null,
-  apiPassphrase = null
-) {
-  let activeOrders = [];
-  switch (exchange) {
-    case "kucoin":
-      const kucoinSession = new KuCoinSession(apiKey, apiSecret, apiPassphrase);
-      activeOrders = await kucoinSession.getOrderStatuses();
-      break;
-    case "bingx":
-      const bingxSession = new BingXSession(apiKey, apiSecret);
-      activeOrders = await bingxSession.getOrderStatuses();
-      break;
-    case "binance":
-      const binanceSession = new BinanceSession(apiKey, apiSecret);
-      activeOrders = await binanceSession.getOrderStatuses();
-      break;
-    case "testnet":
-      activeOrders = [];
-      break;
-    default:
-      console.log(`Unknown exchange: ${exchange}`);
-      return [];
-  }
-
+/**
+ * Checks the status of stop loss orders and returns updated data.
+ * @async
+ * @param {string} exchange - The name of the exchange platform.
+ * @param {Array} stopLossData - An array of stop loss orders.
+ * @param {Array} activeOrders - An array of active orders fetched once.
+ * @returns {Promise<Array>} An updated array of stop loss orders with status.
+ */
+async function checkStopLossStatus(exchange, stopLossData, activeOrders) {
   const promises = stopLossData.map(async (sl) => {
     if (sl.executed === "0") {
-      sl.sl_status = "Queued";
+      sl.sl_status = STATUS.QUEUED;
     } else if (sl.executed === "1") {
-      if (exchange != "testnet") {
-        sl.sl_status = await checkOrderStatus(
-          activeOrders,
-          sl.orderID,
-          sl.sl_price,
-          exchange
-        );
-      }
+      sl.sl_status = await checkOrderStatus(
+        activeOrders,
+        sl.orderID,
+        sl.sl_price,
+        exchange
+      );
     } else if (sl.executed === "2") {
-      sl.sl_status = "Cancelled";
+      sl.sl_status = STATUS.CANCELLED;
     }
     return sl;
   });

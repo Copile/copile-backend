@@ -21,7 +21,6 @@
     "express-validator": "^6.12.1",
     "helmet": "^4.6.0",
     "kucoin-futures-node-api": "^1.0.8",
-    "json-bigint": "^1.0.0",
     "node-cache": "^5.1.2",
     "compression": "^1.7.4",
     "@google-cloud/kms": "^3.6.0",
