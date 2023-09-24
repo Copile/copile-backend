@@ -33,6 +33,7 @@ async function getTradeProfitLossDetails(
   traderId,
   tradeId,
   exchange,
+  symbol,
   apiKey = null,
   apiSecret = null,
   apiPassphrase = null
