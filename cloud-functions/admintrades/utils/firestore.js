@@ -25,12 +25,8 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
       .get();
 
     if (tradeQuerySnapshot.empty) {
-      return res
-        .status(200)
-        .json({
-          message: `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`,
-          source: "fetchLatestTradeDoc",
-        });
+      console.log(`No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`);
+      return null;
     }
 
     return tradeQuerySnapshot.docs[0];
