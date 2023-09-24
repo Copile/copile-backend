@@ -1,8 +1,8 @@
 const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
-const { decryptData } = require("../utils/decryption");
-const { validateTrader } = require("../middleware/validation");
-const { createSession } = require("../exchanges/sessionFactory");
+const decryptData = require("../utils/decryption");
+const validateTrader = require("../middleware/validation");
+const createSession = require("../exchanges/sessionFactory");
 const CustomError = require("../utils/error");
 
 const router = express.Router();

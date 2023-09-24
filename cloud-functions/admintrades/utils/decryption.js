@@ -28,4 +28,4 @@ async function decryptData(ciphertext, traderName) {
   }
 }
 
-module.exports = { decryptData };
+module.exports = decryptData;
