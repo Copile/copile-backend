@@ -96,8 +96,15 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const path = "/openApi/swap/v2/trade/openOrders";
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
-
-  return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
+  try {
+    return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
+  } catch (error) {
+    throw new CustomError({
+      message: `Failed to get BingX open orders: ${error.message}`,
+      status: 400,
+      source: "getOrders",
+    });
+  }
 }
 
 module.exports = {
