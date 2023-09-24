@@ -5,7 +5,7 @@ const kms = new KeyManagementServiceClient();
 
 /**
  * Decrypts the given ciphertext using Google's KMS and a trader-specific key.
- * 
+ *
  * @param {string} ciphertext - The data to be decrypted.
  * @param {string} traderName - The name of the trader, used for key identification.
  * @throws {CustomError} When decryption fails.
@@ -20,7 +20,11 @@ async function decryptData(ciphertext, traderName) {
 
     return result.plaintext.toString();
   } catch (error) {
-    throw new CustomError(`Failed to decrypt data: ${error.message}`, 500, "decryption");
+    throw new CustomError({
+      message: `Failed to decrypt data: ${error.message}`,
+      status: 500,
+      source: "decryption",
+    });
   }
 }
 

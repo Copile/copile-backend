@@ -1,7 +1,7 @@
 const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
 const { decryptData } = require("../utils/decryption");
-const sessionFactory = require("../exchanges/sessionFactory");
+const { createSession } = require("../exchanges/sessionFactory");
 const { validateTrader } = require("../middleware/validation");
 const CustomError = require("../utils/error");
 
@@ -13,11 +13,11 @@ router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
   const exchange = req.params.exchange;
 
   if (exchange === "bybit") {
-    throw new CustomError(
-      "Bybit is not supported by this endpoint.",
-      400,
-      "balanceRoutes"
-    );
+    throw new CustomError({
+      message: "Bybit is not supported by this endpoint.",
+      status: 400,
+      source: "balanceRoutes",
+    });
   }
 
   try {
@@ -25,22 +25,29 @@ router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
     const traderDoc = await traderRef.get();
 
     if (!traderDoc.exists) {
-      throw new CustomError("Trader not found", 404, "balanceRoutes");
+      throw new CustomError({
+        message: `Trader ${traderId} not found`,
+        status: 404,
+        source: "balanceRoutes",
+      });
     }
 
     const exchangesData = traderDoc.data().exchanges || {};
 
     if (!exchangesData || !(exchange in exchangesData)) {
-      throw new CustomError("No exchange found", 404, "balanceRoutes");
+      throw new CustomError({
+        message: `Exchange ${exchange} not found`,
+        status: 404,
+        source: "balanceRoutes",
+      });
     }
-
     const keys = exchangesData[exchange];
     if (!("api_key" in keys && keys.api_key !== "x")) {
-      throw new CustomError(
-        "API key not found for the exchange",
-        404,
-        "balanceRoutes"
-      );
+      throw new CustomError({
+        message: `API key not found for ${exchange}`,
+        status: 404,
+        source: "balanceRoutes",
+      });
     }
 
     const apiKey = keys.api_key;
@@ -52,14 +59,14 @@ router.get("/balance/:exchange", validateTrader, async (req, res, next) => {
     }
 
     if (exchange === "kucoin" && apiPassphrase === null) {
-      throw new CustomError(
-        "Kucoin requires a passphrase",
-        400,
-        "balanceRoutes"
-      );
+      throw new CustomError({
+        message: "Kucoin requires a passphrase",
+        status: 400,
+        source: "balanceRoutes",
+      });
     }
 
-    const session = sessionFactory.createSession(
+    const session = createSession(
       exchange,
       apiKey,
       apiSecret,

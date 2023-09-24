@@ -2,7 +2,7 @@ const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
 const { decryptData } = require("../utils/decryption");
 const { validateTrader } = require("../middleware/validation");
-const sessionFactory = require("../exchanges/sessionFactory");
+const { createSession } = require("../exchanges/sessionFactory");
 const CustomError = require("../utils/error");
 
 const router = express.Router();
@@ -26,20 +26,28 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
     ]);
 
     if (!userDoc.exists) {
-      throw new CustomError("Trader not found", 404, "traderRoutes");
+      throw new CustomError({
+        message: `Trader ${traderId} not found`,
+        status: 404,
+        source: "traderRoutes",
+      });
     }
 
     if (!exchangesData || !(exchange in exchangesData)) {
-      throw new CustomError("No exchange found", 404, "traderRoutes");
+      throw new CustomError({
+        message: `Exchange ${exchange} not found`,
+        status: 404,
+        source: "traderRoutes",
+      });
     }
 
     const keys = exchangesData[exchange];
     if (!("api_key" in keys && keys.api_key !== "x")) {
-      throw new CustomError(
-        "API key not found for the exchange",
-        401,
-        "traderRoutes"
-      );
+      throw new CustomError({
+        message: `API key not found for ${exchange}`,
+        status: 401,
+        source: "traderRoutes",
+      });
     }
 
     const apiKey = keys.api_key;
@@ -50,7 +58,7 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
     }
 
     // Use factory pattern to create sessions
-    const session = sessionFactory.createSession(
+    const session = createSession(
       exchange,
       apiKey,
       apiSecret,
@@ -58,11 +66,11 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
     );
 
     if (!session) {
-      throw new CustomError(
-        `Unknown exchange: ${exchange}`,
-        400,
-        "traderRoutes"
-      );
+      throw new CustomError({
+        message: `Unknown exchange: ${exchange}`,
+        status: 400,
+        source: "traderRoutes",
+      });
     }
 
     // Fetch trades and orders

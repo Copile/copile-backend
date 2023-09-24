@@ -1,6 +1,6 @@
 const { Firestore } = require("@google-cloud/firestore");
 const CustomError = require("./error");
-const sessionFactory = require("../exchanges/sessionFactory");
+const { createSession } = require("../exchanges/sessionFactory");
 
 const db = new Firestore();
 
@@ -119,7 +119,7 @@ async function getTradeProfitLossDetails(
  */
 async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
   try {
-    const session = sessionFactory.createSession(
+    const session = createSession(
       exchange,
       apiKey,
       apiSecret,

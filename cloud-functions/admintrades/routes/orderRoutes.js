@@ -17,7 +17,11 @@ router.get(
       const traderId = req.get("traderId");
 
       if (!traderId) {
-        throw new CustomError("Trader name missing", 400, "orderRoutes");
+        throw new CustomError({
+          message: "trader name missing.",
+          status: 400,
+          source: "orderRoutes",
+        });
       }
 
       // Fetch userDoc and exchangesData in parallel
@@ -31,7 +35,11 @@ router.get(
       ]);
 
       if (!userDoc.exists) {
-        throw new CustomError("Trader not found.", 404, "orderRoutes");
+        throw new CustomError({
+          message: `Trader ${traderId} not found`,
+          status: 404,
+          source: "orderRoutes",
+        });
       }
 
       const tradeId = req.params.tradeId;
@@ -39,24 +47,28 @@ router.get(
       const symbol = req.params.symbol;
 
       if (exchange === "bybit") {
-        throw new CustomError(
-          "Bybit is not supported by this endpoint.",
-          400,
-          "orderRoutes"
-        );
+        throw new CustomError({
+          message: `Bybit is not supported by this endpoint.`,
+          status: 400,
+          source: "orderRoutes",
+        });
       }
 
       if (!exchangesData || !(exchange in exchangesData)) {
-        throw new CustomError("No exchange found.", 404, "orderRoutes");
+        throw new CustomError({
+          message: `Exchange ${exchange} not found`,
+          status: 404,
+          source: "orderRoutes",
+        });
       }
 
       const keys = exchangesData[exchange];
       if (!("api_key" in keys && keys.api_key !== "x")) {
-        throw new CustomError(
-          "API key not found for the exchange.",
-          404,
-          "orderRoutes"
-        );
+        throw new CustomError({
+          message: `API key not found for ${exchange}`,
+          status: 404,
+          source: "orderRoutes",
+        });
       }
 
       const apiKey = keys.api_key;
@@ -67,11 +79,11 @@ router.get(
       }
 
       if (exchange === "kucoin" && !apiPassphrase) {
-        throw new CustomError(
-          "Kucoin requires a passphrase",
-          400,
-          "orderRoutes"
-        );
+        throw new CustomError({
+          message: `Kucoin requires a passphrase`,
+          status: 400,
+          source: "orderRoutes",
+        });
       }
 
       const details = await getTradeProfitLossDetails(
@@ -87,22 +99,22 @@ router.get(
       if (details) {
         res.json(details);
       } else {
-        throw new CustomError(
-          `Trade with ID ${tradeId} not found.`,
-          404,
-          "orderRoutes"
-        );
+        throw new CustomError({
+          message: `Trade with ID ${tradeId} not found.`,
+          status: 404,
+          source: "orderRoutes",
+        });
       }
     } catch (e) {
       if (e instanceof CustomError) {
         next(e);
       } else {
         next(
-          new CustomError(
-            "An error occurred while fetching the trade details.",
-            500,
-            "orderRoutes"
-          )
+          new CustomError({
+            message: `An error occurred while fetching the trade details: ${e.message}`,
+            status: 500,
+            source: "orderRoutes",
+          })
         );
       }
     }
