@@ -1,6 +1,7 @@
 const ExchangeSession = require("../exchangeSession");
 const { getTestnetPositions } = require("./positions");
 const CustomError = require('../../utils/error');
+const { getTestnetOrders } = require("./orders");
 
 /**
  * Represents an exchange session for the testnet.
@@ -19,7 +20,18 @@ class TestnetSession extends ExchangeSession {
    * @throws {CustomError} Throws a custom error if operation fails.
    */
   async getOrders(traderId) {
-    // Implement the logic here, throw a CustomError if it fails
+    try {
+      return await getTestnetOrders(traderId);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch testnet orders: ${e.message}`,
+        status: 500,
+        source: 'getOrders',
+      });
+    }
   }
 
   /**

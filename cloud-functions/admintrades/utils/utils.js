@@ -96,8 +96,8 @@ async function getTradeProfitLossDetails(
       stop_losses: stopLossNewData,
     };
   } catch (error) {
-    if (e instanceof CustomError) {
-      throw e;
+    if (error instanceof CustomError) {
+      throw error;
     }
     throw new CustomError({
       message: `Failed to get trade profit/loss details: ${error.message}`,
@@ -127,8 +127,8 @@ async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
     );
     return await session.getOrderStatuses();
   } catch (error) {
-    if (e instanceof CustomError) {
-      throw e;
+    if (error instanceof CustomError) {
+      throw error;
     }
     throw new CustomError({
       message: `Failed to get active orders: ${error.message}`,
