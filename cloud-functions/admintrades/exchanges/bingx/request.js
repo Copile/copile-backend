@@ -95,9 +95,9 @@ async function getBalance(apiKey, apiSecret) {
 async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const path = "/openApi/swap/v2/trade/openOrders";
   const payload = { timestamp: await getServerTime() };
-  const orders = await makeSignedRequest(path, payload, apiKey, apiSecret);
+  const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
 
-  return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");
+  return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
 }
 
 module.exports = {
