@@ -100,7 +100,7 @@ app.post("/trade", async (req, res) => {
               {
                 name: `Stop Losses ${tradeData.stop_losses.length}`,
                 value: tradeData.stop_losses
-                  .map((sl, index) => `\`SL${index + 1}:\` ${tp.sl_value}`)
+                  .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
                   .join("\n"),
               },
             ],
