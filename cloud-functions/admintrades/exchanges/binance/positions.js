@@ -35,14 +35,29 @@ async function getBinancePositions(apiKey, apiSecret, user_id) {
         const size = positionAmt;
 
         // Calculate unrealized profit and loss percentage
-        const unrealised_pnl_pct = String(
-          (
-            (parseFloat(unRealizedProfit) /
-              (parseFloat(positionAmt) * parseFloat(entryPrice))) *
-            100 *
-            parseFloat(leverage)
-          ).toFixed(2) * -1 // Multiply by -1 to flip the sign
-        );
+        // const unrealised_pnl_pct = String(
+        //   (
+        //     (parseFloat(unRealizedProfit) /
+        //       (parseFloat(positionAmt) * parseFloat(entryPrice))) *
+        //     100 *
+        //     parseFloat(leverage)
+        //   ).toFixed(2) * -1 // Multiply by -1 to flip the sign
+        // );
+
+        // Calculate unrealized profit and loss percentage
+        let unrealised_pnl_pct = (
+          (parseFloat(unRealizedProfit) /
+            (parseFloat(positionAmt) * parseFloat(entryPrice))) *
+          100 *
+          parseFloat(leverage)
+        ).toFixed(2);
+
+        // Flip the sign for short positions
+        if (positionSide === "SHORT") {
+          unrealised_pnl_pct *= -1;
+        }
+
+        unrealised_pnl_pct = String(unrealised_pnl_pct);
 
         return await mapPositionToTrade(
           {
