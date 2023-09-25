@@ -54,7 +54,12 @@ app.post("/trade", async (req, res) => {
     // };
 
     // Get the user's Discord ID from Firestore
-    const userRef = db.collection("users").doc(tradeData.user_id);
+    if (!tradeData.userId) {
+      res.status(400).json({ success: false, error: "No user ID provided." });
+      return;
+    }
+
+    const userRef = db.collection("users").doc(tradeData.userId);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
     const telegramToken = userDoc.data().telegram.token;
@@ -177,7 +182,10 @@ app.post("/action", async (req, res) => {
     // };
 
     // Get the user's Discord ID from Firestore
-    const userRef = db.collection("users").doc(actionData.user_id);
+    if (!actionData.user_id) {
+      res.status(400).json({ success: false, error: "No user ID provided." });
+      return;
+    }
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
     const telegramToken = userDoc.data().telegram.token;
