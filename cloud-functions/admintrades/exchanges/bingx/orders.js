@@ -64,6 +64,7 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
 async function getBingXOrders(apiKey, apiSecret, traderId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
+    if(!orders.length) return [];
 
     const bingxMatchingParams = await Promise.all(
       orders.map(async (order) => {

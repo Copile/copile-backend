@@ -76,6 +76,7 @@ async function getPositions(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    if(!data.length) return [];
     return data
       .filter((pos) => parseFloat(pos.positionAmt) !== 0)
       .map((pos) => ({
@@ -134,6 +135,7 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    if(!data.length) return [];
     return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({

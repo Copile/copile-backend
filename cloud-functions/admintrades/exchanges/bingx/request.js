@@ -97,6 +97,7 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
+    if(!data.length) return [];
     return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({
