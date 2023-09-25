@@ -117,26 +117,57 @@ app.post("/trade", async (req, res) => {
       //   attachments: [],
       // };
 
-      const simpleEmbed = {
-        content: null,
-        embeds: [
+      const exampleEmbed = {
+        color: 0x0099ff,
+        title: "Some title",
+        url: "https://discord.js.org",
+        author: {
+          name: "Some name",
+          icon_url: "https://i.imgur.com/AfFp7pu.png",
+          url: "https://discord.js.org",
+        },
+        description: "Some description here",
+        thumbnail: {
+          url: "https://i.imgur.com/AfFp7pu.png",
+        },
+        fields: [
           {
-            title: "Simple Title",
-            description: "Simple Description",
-            color: 2895667,
-            footer: {
-              text: "Simple Footer",
-              icon_url: "https://i.imgur.com/UMSFUaT.png",
-            },
-            thumbnail: {
-              url: "https://i.imgur.com/hmcMAtj.png",
-            },
+            name: "Regular field title",
+            value: "Some value here",
+          },
+          {
+            name: "\u200b",
+            value: "\u200b",
+            inline: false,
+          },
+          {
+            name: "Inline field title",
+            value: "Some value here",
+            inline: true,
+          },
+          {
+            name: "Inline field title",
+            value: "Some value here",
+            inline: true,
+          },
+          {
+            name: "Inline field title",
+            value: "Some value here",
+            inline: true,
           },
         ],
+        image: {
+          url: "https://i.imgur.com/AfFp7pu.png",
+        },
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: "Some footer text here",
+          icon_url: "https://i.imgur.com/AfFp7pu.png",
+        },
       };
 
       const user = await client.users.fetch(discordId);
-      user.send({ embeds: [simpleEmbed] }).catch((error) => {
+      user.send({ embeds: [exampleEmbed] }).catch((error) => {
         console.error(`Could not send discord DM to ${user.tag}.`, error);
         res.status(500).json({ success: false, error: error });
       });
