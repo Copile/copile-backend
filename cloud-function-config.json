@@ -107,7 +107,7 @@
   {
     "name": "notifications",
     "runtime": "nodejs18",
-    "memory": "512MB",
+    "memory": "256MB",
     "region": "us-central1",
     "entry_point": "notifications"
   }

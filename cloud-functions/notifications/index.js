@@ -6,7 +6,7 @@ const express = require("express");
 const applyMiddleware = require("./middleware");
 const app = express();
 const Discord = require("discord.js");
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] });
 
 applyMiddleware(app);
 
@@ -107,8 +107,15 @@ app.post("/trade", async (req, res) => {
         attachments: [],
       };
 
+      // const user = await client.users.fetch(discordId);
+      // await user.send({ embeds: [embed] });
+
       const user = await client.users.fetch(discordId);
-      await user.send({ embeds: [embed] });
+      user
+        .send({ embeds: [embed] })
+        .catch((error) =>
+          console.error(`Could not send discord DM to ${user.tag}.`, error)
+        );
 
       notificationSent.push("Discord");
     }
@@ -272,8 +279,15 @@ app.post("/action", async (req, res) => {
       };
 
       // Send the Discord notification
+      // const user = await client.users.fetch(discordId);
+      // await user.send({ embeds: [embed] });
+
       const user = await client.users.fetch(discordId);
-      await user.send({ embeds: [embed] });
+      user
+        .send({ embeds: [embed] })
+        .catch((error) =>
+          console.error(`Could not send discord DM to ${user.tag}.`, error)
+        );
 
       notificationSent.push("Discord");
     }
