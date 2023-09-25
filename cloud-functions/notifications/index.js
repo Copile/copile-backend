@@ -6,7 +6,9 @@ const express = require("express");
 const applyMiddleware = require("./middleware");
 const app = express();
 const Discord = require("discord.js");
-const client = new Discord.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] });
+const client = new Discord.Client({
+  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.GuildMessages],
+});
 
 applyMiddleware(app);
 
