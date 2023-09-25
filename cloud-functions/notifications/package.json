@@ -1,5 +1,5 @@
 {
-  "name": "get-balance",
+  "name": "notifications",
   "version": "1.0.0",
   "description": "GCP Cloud Function",
   "main": "index.js",
