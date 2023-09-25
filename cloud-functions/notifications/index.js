@@ -69,65 +69,77 @@ app.post("/trade", async (req, res) => {
     let notificationSent = [];
 
     if (discordId !== "x") {
-      const embed = {
+      // const embed = {
+      //   content: null,
+      //   embeds: [
+      //     {
+      //       title: "Copile Automation",
+      //       description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
+      //         tradeData.side
+      //       } ${
+      //         tradeData.side === "SHORT"
+      //           ? ":arrow_down: :red_circle:"
+      //           : ":arrow_up: :green_circle:"
+      //       }`,
+      //       color: 8350975,
+      //       fields: [
+      //         {
+      //           name: "Entry",
+      //           value: tradeData.entry,
+      //         },
+      //         {
+      //           name: "Leverage",
+      //           value: tradeData.leverage,
+      //         },
+      //         {
+      //           name: `Take Profits ${tradeData.take_profits.length}`,
+      //           value: tradeData.take_profits
+      //             .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
+      //             .join("\n"),
+      //         },
+      //         {
+      //           name: `Stop Losses ${tradeData.stop_losses.length}`,
+      //           value: tradeData.stop_losses
+      //             .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
+      //             .join("\n"),
+      //         },
+      //       ],
+      //       footer: {
+      //         text: "Copile Trade Automation",
+      //         icon_url: "https://i.imgur.com/UMSFUaT.png",
+      //       },
+      //       // timestamp: new Date(),
+      //       thumbnail: {
+      //         url: "https://i.imgur.com/hmcMAtj.png",
+      //       },
+      //     },
+      //   ],
+      //   attachments: [],
+      // };
+
+      const simpleEmbed = {
         content: null,
         embeds: [
           {
-            title: "Copile Automation",
-            description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
-              tradeData.side
-            } ${
-              tradeData.side === "SHORT"
-                ? ":arrow_down: :red_circle:"
-                : ":arrow_up: :green_circle:"
-            }`,
-            color: 8350975,
-            fields: [
-              {
-                name: "Entry",
-                value: tradeData.entry,
-              },
-              {
-                name: "Leverage",
-                value: tradeData.leverage,
-              },
-              {
-                name: `Take Profits ${tradeData.take_profits.length}`,
-                value: tradeData.take_profits
-                  .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
-                  .join("\n"),
-              },
-              {
-                name: `Stop Losses ${tradeData.stop_losses.length}`,
-                value: tradeData.stop_losses
-                  .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
-                  .join("\n"),
-              },
-            ],
+            title: "Simple Title",
+            description: "Simple Description",
+            color: 2895667,
             footer: {
-              text: "Copile Trade Automation",
+              text: "Simple Footer",
               icon_url: "https://i.imgur.com/UMSFUaT.png",
             },
-            // timestamp: new Date(),
             thumbnail: {
               url: "https://i.imgur.com/hmcMAtj.png",
             },
           },
         ],
-        attachments: [],
       };
 
-      console.log("embed", embed);
-
-      // const user = await client.users.fetch(discordId);
-      // await user.send({ embeds: [embed] });
-
       const user = await client.users.fetch(discordId);
-      user
-        .send({ embeds: [embed] })
-        .catch((error) =>
-          console.error(`Could not send discord DM to ${user.tag}.`, error)
-        );
+      user.send({ embeds: [simpleEmbed] }).catch((error) => {
+        console.error(`Could not send discord DM to ${user.tag}.`, error);
+        res.status(500).json({ success: false, error: error });
+      });
 
       notificationSent.push("Discord");
     }
@@ -304,11 +316,10 @@ app.post("/action", async (req, res) => {
       // await user.send({ embeds: [embed] });
 
       const user = await client.users.fetch(discordId);
-      user
-        .send({ embeds: [embed] })
-        .catch((error) =>
-          console.error(`Could not send discord DM to ${user.tag}.`, error)
-        );
+      user.send({ embeds: [embed] }).catch((error) => {
+        console.error(`Could not send discord DM to ${user.tag}.`, error);
+        res.status(500).json({ success: false, error: error });
+      });
 
       notificationSent.push("Discord");
     }
