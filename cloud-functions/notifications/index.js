@@ -22,6 +22,7 @@ app.post("/trade", async (req, res) => {
   try {
     // const tradeData = req.body;
 
+    // example trade data
     const tradeData = {
       trade_id: "123-123-123",
       order_id: "321321321",
@@ -145,6 +146,7 @@ app.post("/action", async (req, res) => {
   try {
     // const actionData = req.body;
 
+    // example action data
     const actionData = {
       data: {
         take_profits: [
@@ -179,6 +181,7 @@ app.post("/action", async (req, res) => {
     const tradeDoc = await tradeRef.get();
     // const tradeData = tradeDoc.data();
 
+    // example trade data
     const tradeData = {
       created_at: 1693595313,
       entry: "25584",
@@ -213,12 +216,14 @@ app.post("/action", async (req, res) => {
       },
     };
 
+    // Get the action type from the query string
     const actionType = req.query.type;
     let actionText = "";
 
+    // Update the action text to be more human readable
     switch (actionType) {
       case "bulktp":
-        actionText = "New Take Profit Orders";
+        actionText = "New Take Profit Orders Added";
         break;
       case "cancelOrder":
         actionText = "Order Cancelled";
@@ -240,7 +245,31 @@ app.post("/action", async (req, res) => {
 
     if (discordId) {
       // Create the embed
-      const embed = {};
+      const embed = {
+        content: null,
+        embeds: [
+          {
+            title: "Copile Automation",
+            description: `> **TRADE UPDATED**\n\n#${tradeData.symbol} #${
+              tradeData.side
+            } ${
+              tradeData.side === "Buy"
+                ? ":arrow_up: :green_circle:"
+                : ":arrow_down: :red_circle:"
+            }\n\n🛎️ **${actionText}** 🛎️`,
+            color: 2895667,
+            footer: {
+              text: "Copile Trade Automation",
+              icon_url: "https://i.imgur.com/UMSFUaT.png",
+            },
+            timestamp: new Date(),
+            thumbnail: {
+              url: "https://i.imgur.com/hmcMAtj.png",
+            },
+          },
+        ],
+        attachments: [],
+      };
 
       // Send the Discord notification
       const user = await client.users.fetch(discordId);
