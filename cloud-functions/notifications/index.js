@@ -68,7 +68,7 @@ app.post("/trade", async (req, res) => {
 
     let notificationSent = [];
 
-    if (discordId) {
+    if (discordId !== "x") {
       const embed = {
         content: null,
         embeds: [
@@ -108,7 +108,7 @@ app.post("/trade", async (req, res) => {
               text: "Copile Trade Automation",
               icon_url: "https://i.imgur.com/UMSFUaT.png",
             },
-            timestamp: new Date(),
+            // timestamp: new Date(),
             thumbnail: {
               url: "https://i.imgur.com/hmcMAtj.png",
             },
@@ -116,6 +116,8 @@ app.post("/trade", async (req, res) => {
         ],
         attachments: [],
       };
+
+      console.log("embed", embed);
 
       // const user = await client.users.fetch(discordId);
       // await user.send({ embeds: [embed] });
@@ -203,6 +205,8 @@ app.post("/action", async (req, res) => {
     const tradeDoc = await tradeRef.get();
     const tradeData = tradeDoc.data();
 
+    console.log("trade data", tradeData);
+
     // example trade data
     // const tradeData = {
     //   created_at: 1693595313,
@@ -265,7 +269,7 @@ app.post("/action", async (req, res) => {
 
     let notificationSent = [];
 
-    if (discordId) {
+    if (discordId !== "x") {
       // Create the embed
       const embed = {
         content: null,
@@ -284,7 +288,7 @@ app.post("/action", async (req, res) => {
               text: "Copile Trade Automation",
               icon_url: "https://i.imgur.com/UMSFUaT.png",
             },
-            timestamp: new Date(),
+            // timestamp: new Date(),
             thumbnail: {
               url: "https://i.imgur.com/hmcMAtj.png",
             },
@@ -292,6 +296,8 @@ app.post("/action", async (req, res) => {
         ],
         attachments: [],
       };
+
+      console.log("embed", embed);
 
       // Send the Discord notification
       // const user = await client.users.fetch(discordId);
