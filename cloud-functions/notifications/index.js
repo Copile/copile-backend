@@ -69,105 +69,106 @@ app.post("/trade", async (req, res) => {
     let notificationSent = [];
 
     if (discordId !== "x") {
-      // const embed = {
-      //   content: null,
-      //   embeds: [
-      //     {
-      //       title: "Copile Automation",
-      //       description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
-      //         tradeData.side
-      //       } ${
-      //         tradeData.side === "SHORT"
-      //           ? ":arrow_down: :red_circle:"
-      //           : ":arrow_up: :green_circle:"
-      //       }`,
-      //       color: 8350975,
-      //       fields: [
-      //         {
-      //           name: "Entry",
-      //           value: tradeData.entry,
-      //         },
-      //         {
-      //           name: "Leverage",
-      //           value: tradeData.leverage,
-      //         },
-      //         {
-      //           name: `Take Profits ${tradeData.take_profits.length}`,
-      //           value: tradeData.take_profits
-      //             .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
-      //             .join("\n"),
-      //         },
-      //         {
-      //           name: `Stop Losses ${tradeData.stop_losses.length}`,
-      //           value: tradeData.stop_losses
-      //             .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
-      //             .join("\n"),
-      //         },
-      //       ],
-      //       footer: {
-      //         text: "Copile Trade Automation",
-      //         icon_url: "https://i.imgur.com/UMSFUaT.png",
-      //       },
-      //       // timestamp: new Date(),
-      //       thumbnail: {
-      //         url: "https://i.imgur.com/hmcMAtj.png",
-      //       },
-      //     },
-      //   ],
-      //   attachments: [],
-      // };
-
-      const exampleEmbed = {
+      const embed = {
         color: 0x0099ff,
-        title: "Some title",
+        title: "Copile Automation",
         url: "https://discord.js.org",
         author: {
-          name: "Some name",
-          icon_url: "https://i.imgur.com/AfFp7pu.png",
+          name: "Copile",
+          icon_url: "https://i.imgur.com/UMSFUaT.png",
           url: "https://discord.js.org",
         },
-        description: "Some description here",
+        description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
+          tradeData.side
+        } ${
+          tradeData.side === "SHORT"
+            ? ":arrow_down: :red_circle:"
+            : ":arrow_up: :green_circle:"
+        }`,
         thumbnail: {
-          url: "https://i.imgur.com/AfFp7pu.png",
+          url: "https://i.imgur.com/hmcMAtj.png",
         },
         fields: [
           {
-            name: "Regular field title",
-            value: "Some value here",
+            name: "Entry",
+            value: tradeData.entry,
           },
           {
-            name: "\u200b",
-            value: "\u200b",
-            inline: false,
+            name: "Leverage",
+            value: tradeData.leverage,
           },
           {
-            name: "Inline field title",
-            value: "Some value here",
-            inline: true,
+            name: `Take Profits ${tradeData.take_profits.length}`,
+            value: tradeData.take_profits
+              .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
+              .join("\n"),
           },
           {
-            name: "Inline field title",
-            value: "Some value here",
-            inline: true,
-          },
-          {
-            name: "Inline field title",
-            value: "Some value here",
-            inline: true,
+            name: `Stop Losses ${tradeData.stop_losses.length}`,
+            value: tradeData.stop_losses
+              .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
+              .join("\n"),
           },
         ],
-        image: {
-          url: "https://i.imgur.com/AfFp7pu.png",
-        },
         timestamp: new Date().toISOString(),
         footer: {
-          text: "Some footer text here",
-          icon_url: "https://i.imgur.com/AfFp7pu.png",
+          text: "Copile Trade Automation",
+          icon_url: "https://i.imgur.com/UMSFUaT.png",
         },
       };
 
+      // WORKS
+      // const exampleEmbed = {
+      //   color: 0x0099ff,
+      //   title: "Some title",
+      //   url: "https://discord.js.org",
+      //   author: {
+      //     name: "Some name",
+      //     icon_url: "https://i.imgur.com/AfFp7pu.png",
+      //     url: "https://discord.js.org",
+      //   },
+      //   description: "Some description here",
+      //   thumbnail: {
+      //     url: "https://i.imgur.com/AfFp7pu.png",
+      //   },
+      //   fields: [
+      //     {
+      //       name: "Regular field title",
+      //       value: "Some value here",
+      //     },
+      //     {
+      //       name: "\u200b",
+      //       value: "\u200b",
+      //       inline: false,
+      //     },
+      //     {
+      //       name: "Inline field title",
+      //       value: "Some value here",
+      //       inline: true,
+      //     },
+      //     {
+      //       name: "Inline field title",
+      //       value: "Some value here",
+      //       inline: true,
+      //     },
+      //     {
+      //       name: "Inline field title",
+      //       value: "Some value here",
+      //       inline: true,
+      //     },
+      //   ],
+      //   image: {
+      //     url: "https://i.imgur.com/AfFp7pu.png",
+      //   },
+      //   timestamp: new Date().toISOString(),
+      //   footer: {
+      //     text: "Some footer text here",
+      //     icon_url: "https://i.imgur.com/AfFp7pu.png",
+      //   },
+      // };
+
       const user = await client.users.fetch(discordId);
-      user.send({ embeds: [exampleEmbed] }).catch((error) => {
+      user.send({ embeds: [embed] }).catch((error) => {
         console.error(`Could not send discord DM to ${user.tag}.`, error);
         res.status(500).json({ success: false, error: error });
       });
@@ -315,29 +316,51 @@ app.post("/action", async (req, res) => {
     if (discordId !== "x") {
       // Create the embed
       const embed = {
-        content: null,
-        embeds: [
+        color: 0x0099ff,
+        title: "Copile Automation",
+        url: "https://discord.js.org",
+        author: {
+          name: "Copile",
+          icon_url: "https://i.imgur.com/UMSFUaT.png",
+          url: "https://discord.js.org",
+        },
+        description: `> **TRADE UPDATED**\n\n#${tradeData.symbol} #${
+          tradeData.side
+        } ${
+          tradeData.side === "Buy"
+            ? ":arrow_up: :green_circle:"
+            : ":arrow_down: :red_circle:"
+        }\n\n🛎️ **${actionText}** 🛎️`,
+        thumbnail: {
+          url: "https://i.imgur.com/hmcMAtj.png",
+        },
+        fields: [
           {
-            title: "Copile Automation",
-            description: `> **TRADE UPDATED**\n\n#${tradeData.symbol} #${
-              tradeData.side
-            } ${
-              tradeData.side === "Buy"
-                ? ":arrow_up: :green_circle:"
-                : ":arrow_down: :red_circle:"
-            }\n\n🛎️ **${actionText}** 🛎️`,
-            color: 2895667,
-            footer: {
-              text: "Copile Trade Automation",
-              icon_url: "https://i.imgur.com/UMSFUaT.png",
-            },
-            // timestamp: new Date(),
-            thumbnail: {
-              url: "https://i.imgur.com/hmcMAtj.png",
-            },
+            name: "Entry",
+            value: tradeData.entry,
+          },
+          {
+            name: "Leverage",
+            value: tradeData.leverage,
+          },
+          {
+            name: `Take Profits ${tradeData.take_profits.length}`,
+            value: tradeData.take_profits
+              .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
+              .join("\n"),
+          },
+          {
+            name: `Stop Losses ${tradeData.stop_losses.length}`,
+            value: tradeData.stop_losses
+              .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
+              .join("\n"),
           },
         ],
-        attachments: [],
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: "Copile Trade Automation",
+          icon_url: "https://i.imgur.com/UMSFUaT.png",
+        },
       };
 
       console.log("embed", embed);
