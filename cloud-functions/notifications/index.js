@@ -113,15 +113,15 @@ app.post("/trade", async (req, res) => {
       notificationSent.push("Discord");
     }
 
-    if (telegramToken) {
-      // Send the Telegram notification
-      await axios.post(TELEGRAM_BOT_URL, {
-        chat_id: TELEGRAM_CHAT_ID,
-        text: `Trade opened: ${tradeData}`,
-      });
+    // if (telegramToken) {
+    //   // Send the Telegram notification
+    //   await axios.post(TELEGRAM_BOT_URL, {
+    //     chat_id: TELEGRAM_CHAT_ID,
+    //     text: `Trade opened: ${tradeData}`,
+    //   });
 
-      notificationSent.push("Telegram");
-    }
+    //   notificationSent.push("Telegram");
+    // }
 
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
@@ -278,14 +278,14 @@ app.post("/action", async (req, res) => {
       notificationSent.push("Discord");
     }
 
-    if (telegramToken) {
-      await axios.post(TELEGRAM_BOT_URL, {
-        chat_id: TELEGRAM_CHAT_ID,
-        text: `Trade opened: ${tradeData}`,
-      });
+    // if (telegramToken) {
+    //   await axios.post(TELEGRAM_BOT_URL, {
+    //     chat_id: TELEGRAM_CHAT_ID,
+    //     text: `Trade opened: ${tradeData}`,
+    //   });
 
-      notificationSent.push("Telegram");
-    }
+    //   notificationSent.push("Telegram");
+    // }
 
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
