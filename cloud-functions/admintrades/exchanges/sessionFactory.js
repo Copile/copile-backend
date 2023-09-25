@@ -22,7 +22,7 @@ function createSession(exchange, apiKey, apiSecret, apiPassphrase) {
     case "bingx":
       return new BingXSession(apiKey, apiSecret);
     case "testnet":
-      return new TestnetSession();
+      return new TestnetSession(apiKey, apiSecret);
     default:
       throw new CustomError({
         message: "Unknown Exchange",

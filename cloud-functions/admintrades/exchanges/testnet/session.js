@@ -1,15 +1,21 @@
 const ExchangeSession = require("../exchangeSession");
-const { getTestnetPositions } = require("./positions");
 const CustomError = require('../../utils/error');
-const { getTestnetOrders } = require("./orders");
+const { getTestnetPositions } = require("./positions");
+const { getTestnetOrders, getTestnetOrderStatuses } = require("./orders");
+const { getTestnetBalance } = require("./balance");
 
 /**
  * Represents an exchange session for the testnet.
  * @extends ExchangeSession
  */
 class TestnetSession extends ExchangeSession {
-  constructor() {
-    super();
+  /**
+    * Creates a Testnet Session instance.
+    * @param {string} apiKey - API key for the Testnet session.
+    * @param {string} apiSecret - API secret for the Testnet session.
+    */
+  constructor(apiKey, apiSecret) {
+    super(apiKey, apiSecret);
   }
 
   /**
@@ -63,7 +69,18 @@ class TestnetSession extends ExchangeSession {
    * @throws {CustomError} Throws a custom error if operation fails.
    */
   async getBalance() {
-    // Implement the logic here, throw a CustomError if it fails
+    try {
+      return await getTestnetBalance();
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch testnet balance: ${e.message}`,
+        status: 500,
+        source: 'getBalance',
+      });
+    }
   }
 
   /**
@@ -73,8 +90,18 @@ class TestnetSession extends ExchangeSession {
    * @throws {CustomError} Throws a custom error if operation fails.
    */
   async getOrderStatuses() {
-    // Implement the logic here, throw a CustomError if it fails
-  }
+    try {
+      return await getTestnetOrderStatuses();
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch testnet order statuses: ${e.message}`,
+        status: 500,
+        source: 'getOrderStatuses',
+      });
+    }  }
 }
 
 module.exports = TestnetSession;

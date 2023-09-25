@@ -1,6 +1,6 @@
-const { Firestore } = require("@google-cloud/firestore");
-const CustomError = require("../../utils/error"); // Assuming the CustomError is in this path
-const db = new Firestore();
+const { ContractClient } = require('bybit-api');
+const { getTradeDoc } = require("../../utils/firestore");
+const CustomError = require("../../utils/error");
 
 /**
  * Retrieves open orders for a given trader ID from Firestore in a testnet environment.
@@ -12,14 +12,44 @@ const db = new Firestore();
  */
 async function getTestnetOrders(traderId) {
   try {
-    const querySnapshot = await db
-      .collection("traders")
-      .doc(traderId)
-      .collection("trades")
-      .where("status", "==", "pending")
-      .get();
+    const client = new ContractClient({
+      key: apiKey,
+      secret: apiSecret,
+      strict_param_validation: true,
+    });
+    let orders = await client.getActiveOrders({
+      orderFilter: "order",
+      settleCoin: "USDT",
+    });
 
-    return querySnapshot.docs.map((doc) => doc.data());
+    if (!orders.length) {
+      return [];
+    }
+
+    // Filter the orders to only show reduceOnly false and orderStatus "New"
+    const filteredOrders = orders.result.list.filter(order =>
+      order.reduceOnly === false &&
+      order.orderStatus === "New"
+    );
+
+    const bybitMatchingParams = await Promise.all(filteredOrders.map(async order => {
+      const tradeDoc = await getTradeDoc(traderId, order.symbol, "bybit", order.side);
+      const tradeData = tradeDoc.data();
+      return {
+        trade_id: tradeDoc.id,
+        symbol: order.symbol,
+        side: order.side,
+        leverage: tradeData.leverage,
+        margin: tradeData.margin,
+        type: "LIMIT",
+        entry_price: order.price,
+        quantity: order.qty,
+        orderStatus: "Active",
+        created_at: tradeData.created_at
+      };
+    }));
+
+    return bybitMatchingParams;
   } catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet orders: ${e.message}`,
@@ -29,4 +59,42 @@ async function getTestnetOrders(traderId) {
   }
 }
 
-module.exports = { getTestnetOrders };
+/**
+ * Fetches active orders from Binance.
+ * @async
+ * @param {string} apiKey - The API key for Binance.
+ * @param {string} apiSecret - The API secret for Binance.
+ * @returns {Promise<Array>} An array of active orders with their statuses.
+ * @throws {CustomError} Throws a custom error if the operation fails.
+ */
+async function getTestnetOrderStatuses(apiKey, apiSecret) {
+  try {
+    const client = new ContractClient({
+      key: apiKey,
+      secret: apiSecret,
+      strict_param_validation: true,
+    });
+
+    let orders = await client.getActiveOrders({
+      orderFilter: "StopOrder",
+      settleCoin: "USDT",
+    });
+
+    return orders.map(({ orderStatus, ...rest }) => ({
+      ...rest,
+      status: orderStatus === "Untriggered" ? "Active" : orderStatus,
+    }));
+  } catch (error) {
+    // If it's already a custom error, throw it as-is
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    throw new CustomError({
+      message: `Error fetching Binance active orders: ${error.message}`,
+      status: 400,
+      source: "getBinanceOrderStatuses",
+    });
+  }
+}
+
+module.exports = { getTestnetOrders, getTestnetOrderStatuses };
