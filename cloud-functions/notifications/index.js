@@ -1,0 +1,279 @@
+const Firestore = require("@google-cloud/firestore");
+const db = new Firestore();
+const datetime = require("moment");
+const axios = require("axios");
+const express = require("express");
+const applyMiddleware = require("./middleware");
+const app = express();
+const Discord = require("discord.js");
+const client = new Discord.Client();
+
+applyMiddleware(app);
+
+client.on("ready", () => {
+  console.log(`Logged in as ${client.user.tag}!`);
+});
+
+client.login(
+  "MTE1NTg5NDAwMTYyNzU3ODQ5MA.G-KRhm.Y19KUaGLf3U4r6YLqBT2uBLuuhlTnYD6XP1fPk"
+);
+
+app.post("/trade", async (req, res) => {
+  try {
+    // const tradeData = req.body;
+
+    const tradeData = {
+      trade_id: "123-123-123",
+      order_id: "321321321",
+      symbol: "BTCUSDT",
+      type: "LIMIT",
+      side: "SHORT",
+      quantity: "0.11",
+      entry: "25000",
+      leverage: "20",
+      margin: "100",
+      exchange: "bingx",
+      take_profits: [
+        {
+          tp_value: "25000",
+          tp_percentage: "0.5",
+          tp_amount: "0.5",
+        },
+      ],
+      stop_losses: [
+        {
+          sl_value: "24000",
+          sl_percentage: "0.5",
+          sl_amount: "0.5",
+        },
+      ],
+    };
+
+    // Get the user's Discord ID from Firestore
+    const userRef = db.collection("users").doc(tradeData.userId);
+    const userDoc = await userRef.get();
+    const discordId = userDoc.data().discord.id;
+    const telegramToken = userDoc.data().telegram.token;
+
+    let notificationSent = [];
+
+    if (discordId) {
+      const embed = {
+        content: null,
+        embeds: [
+          {
+            title: "Copile Automation",
+            description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
+              tradeData.side
+            } ${
+              tradeData.side === "SHORT"
+                ? ":arrow_down: :red_circle:"
+                : ":arrow_up: :green_circle:"
+            }`,
+            color: 8350975,
+            fields: [
+              {
+                name: "Entry",
+                value: tradeData.entry,
+              },
+              {
+                name: "Leverage",
+                value: tradeData.leverage,
+              },
+              {
+                name: `Take Profits ${tradeData.take_profits.length}`,
+                value: tradeData.take_profits
+                  .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
+                  .join("\n"),
+              },
+              {
+                name: `Stop Losses ${tradeData.stop_losses.length}`,
+                value: tradeData.stop_losses
+                  .map((sl, index) => `\`SL${index + 1}:\` ${tp.sl_value}`)
+                  .join("\n"),
+              },
+            ],
+            footer: {
+              text: "Copile Trade Automation",
+              icon_url: "https://i.imgur.com/UMSFUaT.png",
+            },
+            timestamp: new Date(),
+            thumbnail: {
+              url: "https://i.imgur.com/hmcMAtj.png",
+            },
+          },
+        ],
+        attachments: [],
+      };
+
+      const user = await client.users.fetch(discordId);
+      await user.send({ embeds: [embed] });
+
+      notificationSent.push("Discord");
+    }
+
+    if (telegramToken) {
+      // Send the Telegram notification
+      await axios.post(TELEGRAM_BOT_URL, {
+        chat_id: TELEGRAM_CHAT_ID,
+        text: `Trade opened: ${tradeData}`,
+      });
+
+      notificationSent.push("Telegram");
+    }
+
+    if (notificationSent.length === 0) {
+      console.log("No Discord or Telegram ID found for user.");
+      res.status(400).json({
+        success: false,
+        message: "No Discord or Telegram ID found for user.",
+      });
+    } else {
+      console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
+      res.status(200).json({
+        success: true,
+        message: `Notifications sent to: ${notificationSent.join(", ")}`,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/action", async (req, res) => {
+  try {
+    // const actionData = req.body;
+
+    const actionData = {
+      data: {
+        take_profits: [
+          {
+            tp_value: "25000",
+            tp_percentage: "0.5",
+            tp_amount: "0.5",
+          },
+          {
+            tp_value: "26000",
+            tp_percentage: "0.5",
+            tp_amount: "0.5",
+          },
+        ],
+      },
+      trade_id: trade_id,
+      user_id: user_id,
+    };
+
+    // Get the user's Discord ID from Firestore
+    const userRef = db.collection("users").doc(actionData.user_id);
+    const userDoc = await userRef.get();
+    const discordId = userDoc.data().discord.id;
+    const telegramToken = userDoc.data().telegram.token;
+
+    // Get the trade data from Firestore
+    const tradeRef = db
+      .collection("users")
+      .doc(actionData.user_id)
+      .collection("trades")
+      .doc(actionData.trade_id);
+    const tradeDoc = await tradeRef.get();
+    // const tradeData = tradeDoc.data();
+
+    const tradeData = {
+      created_at: 1693595313,
+      entry: "25584",
+      exchange: "bingx",
+      leverage: "50",
+      margin: 62,
+      orderID: 1697687907600437200,
+      orderType: "LIMIT",
+      quantity: 0.1212,
+      side: "Buy",
+      symbol: "BTC-USDT",
+      tradeID: "ba7417fd-e407-45c0-abd9-722a4c73fcc3",
+      stop_losses: {
+        "b41e6432-5af0-4361-b588-9ea6fd2f9065": {
+          executed: "1",
+          orderID: "1697700687804108800",
+          sl_amount: 0.1212,
+          sl_number: "1",
+          sl_percentage: 1,
+          sl_value: "25584",
+        },
+      },
+      take_profits: {
+        "d266f61d-29af-4b31-9a43-1b304157fcee": {
+          executed: "1",
+          orderID: "1697691450323505152",
+          tp_amount: 0.1212,
+          tp_number: 1,
+          tp_percentage: 1,
+          tp_value: 26150,
+        },
+      },
+    };
+
+    const actionType = req.query.type;
+    let actionText = "";
+
+    switch (actionType) {
+      case "bulktp":
+        actionText = "New Take Profit Orders";
+        break;
+      case "cancelOrder":
+        actionText = "Order Cancelled";
+        break;
+      case "replaceSL":
+        actionText = "Stop Loss Updated";
+        break;
+      case "partialClose":
+        actionText = "Trade Partially Closed";
+        break;
+      case "emergancyClose":
+        actionText = "Trade Closed";
+        break;
+      default:
+        actionText = "Unknown Action";
+    }
+
+    let notificationSent = [];
+
+    if (discordId) {
+      // Create the embed
+      const embed = {};
+
+      // Send the Discord notification
+      const user = await client.users.fetch(discordId);
+      await user.send({ embeds: [embed] });
+
+      notificationSent.push("Discord");
+    }
+
+    if (telegramToken) {
+      await axios.post(TELEGRAM_BOT_URL, {
+        chat_id: TELEGRAM_CHAT_ID,
+        text: `Trade opened: ${tradeData}`,
+      });
+
+      notificationSent.push("Telegram");
+    }
+
+    if (notificationSent.length === 0) {
+      console.log("No Discord or Telegram ID found for user.");
+      res.status(400).json({
+        success: false,
+        message: "No Discord or Telegram ID found for user.",
+      });
+    } else {
+      console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
+      res.status(200).json({
+        success: true,
+        message: `Notifications sent to: ${notificationSent.join(", ")}`,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+exports.notifications = app;

@@ -103,5 +103,12 @@
     "memory": "512MB",
     "region": "us-central1",
     "entry_point": "trades"
+  },
+  {
+    "name": "notifications",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "us-central1",
+    "entry_point": "notifications"
   }
 ]
