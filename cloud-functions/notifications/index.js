@@ -53,13 +53,15 @@ app.post("/trade", async (req, res) => {
     //   ],
     // };
 
+    console.log("tradeData", tradeData);
+
     // Get the user's Discord ID from Firestore
-    if (!tradeData.userId) {
+    if (!tradeData.user_id) {
       res.status(400).json({ success: false, error: "No user ID provided." });
       return;
     }
 
-    const userRef = db.collection("users").doc(tradeData.userId);
+    const userRef = db.collection("users").doc(tradeData.user_id);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
     const telegramToken = userDoc.data().telegram.token;
@@ -186,6 +188,8 @@ app.post("/action", async (req, res) => {
       res.status(400).json({ success: false, error: "No user ID provided." });
       return;
     }
+
+    const userRef = db.collection("users").doc(actionData.user_id);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
     const telegramToken = userDoc.data().telegram.token;
