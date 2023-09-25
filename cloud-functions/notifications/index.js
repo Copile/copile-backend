@@ -13,13 +13,31 @@ const client = new Client({
 
 applyMiddleware(app);
 
+const TELEGRAM_BOT_KEY = process.env.TELEGRAM_BOT_KEY;
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+
+async function sendTelegramMessage(chat_id, message) {
+  const send_message_url = `https://api.telegram.org/bot${TELEGRAM_BOT_KEY}/sendMessage?chat_id=${chat_id}&text=${message}`;
+  try {
+    await axios.post(send_message_url);
+    return {
+      success: true,
+      message: "Telegram message sent successfully.",
+    };
+  } catch (error) {
+    console.log("Failed to send Telegram message.", error);
+    return {
+      success: false,
+      message: "Failed to send Telegram message.",
+    };
+  }
+}
+
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.login(
-  "MTE1NTg5NDAwMTYyNzU3ODQ5MA.G-KRhm.Y19KUaGLf3U4r6YLqBT2uBLuuhlTnYD6XP1fPk"
-);
+client.login(DISCORD_BOT_TOKEN);
 
 app.post("/trade", async (req, res) => {
   try {
@@ -53,8 +71,6 @@ app.post("/trade", async (req, res) => {
     //   ],
     // };
 
-    console.log("tradeData", tradeData);
-
     // Get the user's Discord ID from Firestore
     if (!tradeData.user_id) {
       res.status(400).json({ success: false, error: "No user ID provided." });
@@ -64,23 +80,23 @@ app.post("/trade", async (req, res) => {
     const userRef = db.collection("users").doc(tradeData.user_id);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
-    const telegramToken = userDoc.data().telegram.token;
+    const telegramId = userDoc.data().telegram.id;
 
     let notificationSent = [];
 
     if (discordId !== "x") {
       const embed = {
-        color: 0x0099ff,
+        color: 0x7f6cff,
         title: "Copile Automation",
         url: "https://discord.js.org",
         author: {
           name: "Copile",
           icon_url: "https://i.imgur.com/UMSFUaT.png",
-          url: "https://discord.js.org",
+          url: "https://copile.trade",
         },
-        description: `> **NEW POSITION OPENED**\n\n#${tradeData.symbol} #${
-          tradeData.side
-        } ${
+        description: `>:chart_with_upwards_trend: **NEW POSITION OPENED** :chart_with_upwards_trend:\n\n#${
+          tradeData.symbol
+        } #${tradeData.side} ${
           tradeData.side === "SHORT"
             ? ":arrow_down: :red_circle:"
             : ":arrow_up: :green_circle:"
@@ -100,13 +116,23 @@ app.post("/trade", async (req, res) => {
           {
             name: `Take Profits ${tradeData.take_profits.length}`,
             value: tradeData.take_profits
-              .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
+              .map(
+                (tp, index) =>
+                  `\`TP${index + 1}:\` ${tp.tp_value} | ${
+                    tp.tp_percentage * 100
+                  }%`
+              )
               .join("\n"),
           },
           {
             name: `Stop Losses ${tradeData.stop_losses.length}`,
             value: tradeData.stop_losses
-              .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
+              .map(
+                (sl, index) =>
+                  `\`SL${index + 1}:\` ${sl.sl_value} | ${
+                    sl.sl_percentage * 100
+                  }%`
+              )
               .join("\n"),
           },
         ],
@@ -170,31 +196,55 @@ app.post("/trade", async (req, res) => {
       const user = await client.users.fetch(discordId);
       user.send({ embeds: [embed] }).catch((error) => {
         console.error(`Could not send discord DM to ${user.tag}.`, error);
-        res.status(500).json({ success: false, error: error });
+        return res.status(500).json({ success: false, error: error });
       });
 
       notificationSent.push("Discord");
     }
 
-    // if (telegramToken) {
-    //   // Send the Telegram notification
-    //   await axios.post(TELEGRAM_BOT_URL, {
-    //     chat_id: TELEGRAM_CHAT_ID,
-    //     text: `Trade opened: ${tradeData}`,
-    //   });
+    if (telegramId !== "x") {
+      // Send the Telegram notification
 
-    //   notificationSent.push("Telegram");
-    // }
+      const message = `:chart_with_upwards_trend: *NEW POSITION OPENED* :chart_with_upwards_trend:\n\n*#${
+        tradeData.symbol
+      } #${tradeData.side} ${
+        tradeData.side === "SHORT"
+          ? ":arrow_down: :red_circle:"
+          : ":arrow_up: :green_circle:"
+      }*\n\n*Entry:* ${tradeData.entry}\n*Leverage:* ${
+        tradeData.leverage
+      }\n*Take Profits ${
+        tradeData.take_profits.length
+      }:* ${tradeData.take_profits
+        .map(
+          (tp, index) =>
+            `TP${index + 1}: ${tp.tp_value} | ${tp.tp_percentage * 100}%`
+        )
+        .join("\n")}\n*Stop Losses ${
+        tradeData.stop_losses.length
+      }:* ${tradeData.stop_losses
+        .map(
+          (sl, index) =>
+            `SL${index + 1}: ${sl.sl_value} | ${sl.sl_percentage * 100}%`
+        )
+        .join("\n")}`;
+
+      const { success } = sendTelegramMessage(telegramId, message);
+
+      if (success) {
+        notificationSent.push("Telegram");
+      }
+    }
 
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "No Discord or Telegram ID found for user.",
       });
     } else {
       console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: `Notifications sent to: ${notificationSent.join(", ")}`,
       });
@@ -231,14 +281,15 @@ app.post("/action", async (req, res) => {
 
     // Get the user's Discord ID from Firestore
     if (!actionData.user_id) {
-      res.status(400).json({ success: false, error: "No user ID provided." });
-      return;
+      return res
+        .status(400)
+        .json({ success: false, error: "No user ID provided." });
     }
 
     const userRef = db.collection("users").doc(actionData.user_id);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
-    const telegramToken = userDoc.data().telegram.token;
+    const telegramId = userDoc.data().telegram.id;
 
     // Get the trade data from Firestore
     const tradeRef = db
@@ -248,8 +299,6 @@ app.post("/action", async (req, res) => {
       .doc(actionData.trade_id);
     const tradeDoc = await tradeRef.get();
     const tradeData = tradeDoc.data();
-
-    console.log("trade data", tradeData);
 
     // example trade data
     // const tradeData = {
@@ -316,13 +365,11 @@ app.post("/action", async (req, res) => {
     if (discordId !== "x") {
       // Create the embed
       const embed = {
-        color: 0x0099ff,
-        title: "Copile Automation",
-        url: "https://discord.js.org",
+        color: 0x7f6cff,
         author: {
-          name: "Copile",
+          name: "Copile Notifications",
           icon_url: "https://i.imgur.com/UMSFUaT.png",
-          url: "https://discord.js.org",
+          url: "https://copile.trade",
         },
         description: `> **TRADE UPDATED**\n\n#${tradeData.symbol} #${
           tradeData.side
@@ -330,32 +377,10 @@ app.post("/action", async (req, res) => {
           tradeData.side === "Buy"
             ? ":arrow_up: :green_circle:"
             : ":arrow_down: :red_circle:"
-        }\n\n🛎️ **${actionText}** 🛎️`,
+        }\n\n:bell: **${actionText}** :bell:`,
         thumbnail: {
           url: "https://i.imgur.com/hmcMAtj.png",
         },
-        fields: [
-          {
-            name: "Entry",
-            value: tradeData.entry,
-          },
-          {
-            name: "Leverage",
-            value: tradeData.leverage,
-          },
-          {
-            name: `Take Profits ${tradeData.take_profits.length}`,
-            value: tradeData.take_profits
-              .map((tp, index) => `\`TP${index + 1}:\` ${tp.tp_value}`)
-              .join("\n"),
-          },
-          {
-            name: `Stop Losses ${tradeData.stop_losses.length}`,
-            value: tradeData.stop_losses
-              .map((sl, index) => `\`SL${index + 1}:\` ${sl.sl_value}`)
-              .join("\n"),
-          },
-        ],
         timestamp: new Date().toISOString(),
         footer: {
           text: "Copile Trade Automation",
@@ -372,37 +397,45 @@ app.post("/action", async (req, res) => {
       const user = await client.users.fetch(discordId);
       user.send({ embeds: [embed] }).catch((error) => {
         console.error(`Could not send discord DM to ${user.tag}.`, error);
-        res.status(500).json({ success: false, error: error });
+        return res.status(500).json({ success: false, error: error });
       });
 
       notificationSent.push("Discord");
     }
 
-    // if (telegramToken) {
-    //   await axios.post(TELEGRAM_BOT_URL, {
-    //     chat_id: TELEGRAM_CHAT_ID,
-    //     text: `Trade opened: ${tradeData}`,
-    //   });
+    if (telegramId !== "x") {
+      // Send the Telegram notification
+      const message = `*TRADE UPDATED*\n\n*#${tradeData.symbol} #${
+        tradeData.side
+      } ${
+        tradeData.side === "Buy"
+          ? ":arrow_up: :green_circle:"
+          : ":arrow_down: :red_circle:"
+      }*\n\n*${actionText}*`;
 
-    //   notificationSent.push("Telegram");
-    // }
+      const { success } = sendTelegramMessage(telegramId, message);
+
+      if (success) {
+        notificationSent.push("Telegram");
+      }
+    }
 
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "No Discord or Telegram ID found for user.",
       });
     } else {
       console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: `Notifications sent to: ${notificationSent.join(", ")}`,
       });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 exports.notifications = app;
