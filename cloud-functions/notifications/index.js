@@ -5,10 +5,14 @@ const axios = require("axios");
 const express = require("express");
 const applyMiddleware = require("./middleware");
 const app = express();
-const Discord = require("discord.js");
-const client = new Discord.Client({
-  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.GuildMessages],
-});
+const { Client, IntentsBitField } = require("discord.js");
+
+const myIntents = new IntentsBitField();
+myIntents.add(
+  IntentsBitField.Flags.GuildPresences,
+  IntentsBitField.Flags.GuildMembers
+);
+const client = new Client({ intents: myIntents });
 
 applyMiddleware(app);
 
