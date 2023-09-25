@@ -23,38 +23,38 @@ client.login(
 
 app.post("/trade", async (req, res) => {
   try {
-    // const tradeData = req.body;
+    const tradeData = req.body;
 
     // example trade data
-    const tradeData = {
-      trade_id: "123-123-123",
-      order_id: "321321321",
-      symbol: "BTCUSDT",
-      type: "LIMIT",
-      side: "SHORT",
-      quantity: "0.11",
-      entry: "25000",
-      leverage: "20",
-      margin: "100",
-      exchange: "bingx",
-      take_profits: [
-        {
-          tp_value: "25000",
-          tp_percentage: "0.5",
-          tp_amount: "0.5",
-        },
-      ],
-      stop_losses: [
-        {
-          sl_value: "24000",
-          sl_percentage: "0.5",
-          sl_amount: "0.5",
-        },
-      ],
-    };
+    // const tradeData = {
+    //   trade_id: "123-123-123",
+    //   order_id: "321321321",
+    //   symbol: "BTCUSDT",
+    //   type: "LIMIT",
+    //   side: "SHORT",
+    //   quantity: "0.11",
+    //   entry: "25000",
+    //   leverage: "20",
+    //   margin: "100",
+    //   exchange: "bingx",
+    //   take_profits: [
+    //     {
+    //       tp_value: "25000",
+    //       tp_percentage: "0.5",
+    //       tp_amount: "0.5",
+    //     },
+    //   ],
+    //   stop_losses: [
+    //     {
+    //       sl_value: "24000",
+    //       sl_percentage: "0.5",
+    //       sl_amount: "0.5",
+    //     },
+    //   ],
+    // };
 
     // Get the user's Discord ID from Firestore
-    const userRef = db.collection("users").doc(tradeData.userId);
+    const userRef = db.collection("users").doc(tradeData.user_id);
     const userDoc = await userRef.get();
     const discordId = userDoc.data().discord.id;
     const telegramToken = userDoc.data().telegram.token;
@@ -154,27 +154,27 @@ app.post("/trade", async (req, res) => {
 
 app.post("/action", async (req, res) => {
   try {
-    // const actionData = req.body;
+    const actionData = req.body;
 
     // example action data
-    const actionData = {
-      data: {
-        take_profits: [
-          {
-            tp_value: "25000",
-            tp_percentage: "0.5",
-            tp_amount: "0.5",
-          },
-          {
-            tp_value: "26000",
-            tp_percentage: "0.5",
-            tp_amount: "0.5",
-          },
-        ],
-      },
-      trade_id: trade_id,
-      user_id: user_id,
-    };
+    // const actionData = {
+    //   data: {
+    //     take_profits: [
+    //       {
+    //         tp_value: "25000",
+    //         tp_percentage: "0.5",
+    //         tp_amount: "0.5",
+    //       },
+    //       {
+    //         tp_value: "26000",
+    //         tp_percentage: "0.5",
+    //         tp_amount: "0.5",
+    //       },
+    //     ],
+    //   },
+    //   trade_id: "<trade_id_here>",
+    //   user_id: "<user_id_here>",
+    // };
 
     // Get the user's Discord ID from Firestore
     const userRef = db.collection("users").doc(actionData.user_id);
@@ -189,42 +189,42 @@ app.post("/action", async (req, res) => {
       .collection("trades")
       .doc(actionData.trade_id);
     const tradeDoc = await tradeRef.get();
-    // const tradeData = tradeDoc.data();
+    const tradeData = tradeDoc.data();
 
     // example trade data
-    const tradeData = {
-      created_at: 1693595313,
-      entry: "25584",
-      exchange: "bingx",
-      leverage: "50",
-      margin: 62,
-      orderID: 1697687907600437200,
-      orderType: "LIMIT",
-      quantity: 0.1212,
-      side: "Buy",
-      symbol: "BTC-USDT",
-      tradeID: "ba7417fd-e407-45c0-abd9-722a4c73fcc3",
-      stop_losses: {
-        "b41e6432-5af0-4361-b588-9ea6fd2f9065": {
-          executed: "1",
-          orderID: "1697700687804108800",
-          sl_amount: 0.1212,
-          sl_number: "1",
-          sl_percentage: 1,
-          sl_value: "25584",
-        },
-      },
-      take_profits: {
-        "d266f61d-29af-4b31-9a43-1b304157fcee": {
-          executed: "1",
-          orderID: "1697691450323505152",
-          tp_amount: 0.1212,
-          tp_number: 1,
-          tp_percentage: 1,
-          tp_value: 26150,
-        },
-      },
-    };
+    // const tradeData = {
+    //   created_at: 1693595313,
+    //   entry: "25584",
+    //   exchange: "bingx",
+    //   leverage: "50",
+    //   margin: 62,
+    //   orderID: 1697687907600437200,
+    //   orderType: "LIMIT",
+    //   quantity: 0.1212,
+    //   side: "Buy",
+    //   symbol: "BTC-USDT",
+    //   tradeID: "ba7417fd-e407-45c0-abd9-722a4c73fcc3",
+    //   stop_losses: {
+    //     "b41e6432-5af0-4361-b588-9ea6fd2f9065": {
+    //       executed: "1",
+    //       orderID: "1697700687804108800",
+    //       sl_amount: 0.1212,
+    //       sl_number: "1",
+    //       sl_percentage: 1,
+    //       sl_value: "25584",
+    //     },
+    //   },
+    //   take_profits: {
+    //     "d266f61d-29af-4b31-9a43-1b304157fcee": {
+    //       executed: "1",
+    //       orderID: "1697691450323505152",
+    //       tp_amount: 0.1212,
+    //       tp_number: 1,
+    //       tp_percentage: 1,
+    //       tp_value: 26150,
+    //     },
+    //   },
+    // };
 
     // Get the action type from the query string
     const actionType = req.query.type;
