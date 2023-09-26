@@ -16,6 +16,7 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
       key: apiKey,
       secret: apiSecret,
       strict_param_validation: true,
+      testnet: true,
     });
     let orders = await client.getActiveOrders({
       orderFilter: "order",
