@@ -1,5 +1,5 @@
 const ExchangeSession = require("../exchangeSession");
-const CustomError = require('../../utils/error');
+const CustomError = require("../../utils/error");
 const { getTestnetPositions } = require("./positions");
 const { getTestnetOrders, getTestnetOrderStatuses } = require("./orders");
 const { getTestnetBalance } = require("./balance");
@@ -10,10 +10,10 @@ const { getTestnetBalance } = require("./balance");
  */
 class TestnetSession extends ExchangeSession {
   /**
-    * Creates a Testnet Session instance.
-    * @param {string} apiKey - API key for the Testnet session.
-    * @param {string} apiSecret - API secret for the Testnet session.
-    */
+   * Creates a Testnet Session instance.
+   * @param {string} apiKey - API key for the Testnet session.
+   * @param {string} apiSecret - API secret for the Testnet session.
+   */
   constructor(apiKey, apiSecret) {
     super(apiKey, apiSecret);
   }
@@ -27,7 +27,7 @@ class TestnetSession extends ExchangeSession {
    */
   async getOrders(traderId) {
     try {
-      return await getTestnetOrders(traderId);
+      return await getTestnetOrders(this.apiKey, this.apiSecret, traderId);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
@@ -35,7 +35,7 @@ class TestnetSession extends ExchangeSession {
       throw new CustomError({
         message: `Failed to fetch testnet orders: ${e.message}`,
         status: 500,
-        source: 'getOrders',
+        source: "getOrders",
       });
     }
   }
@@ -49,7 +49,7 @@ class TestnetSession extends ExchangeSession {
    */
   async getPositions(traderId) {
     try {
-      return await getTestnetPositions(traderId);
+      return await getTestnetPositions(this.apiKey, this.apiSecret, traderId);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
@@ -57,7 +57,7 @@ class TestnetSession extends ExchangeSession {
       throw new CustomError({
         message: `Failed to fetch testnet positions: ${e.message}`,
         status: 500,
-        source: 'getPositions',
+        source: "getPositions",
       });
     }
   }
@@ -70,7 +70,7 @@ class TestnetSession extends ExchangeSession {
    */
   async getBalance() {
     try {
-      return await getTestnetBalance();
+      return await getTestnetBalance(this.apiKey, this.apiSecret);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
@@ -78,7 +78,7 @@ class TestnetSession extends ExchangeSession {
       throw new CustomError({
         message: `Failed to fetch testnet balance: ${e.message}`,
         status: 500,
-        source: 'getBalance',
+        source: "getBalance",
       });
     }
   }
@@ -91,7 +91,7 @@ class TestnetSession extends ExchangeSession {
    */
   async getOrderStatuses() {
     try {
-      return await getTestnetOrderStatuses();
+      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
@@ -99,9 +99,10 @@ class TestnetSession extends ExchangeSession {
       throw new CustomError({
         message: `Failed to fetch testnet order statuses: ${e.message}`,
         status: 500,
-        source: 'getOrderStatuses',
+        source: "getOrderStatuses",
       });
-    }  }
+    }
+  }
 }
 
 module.exports = TestnetSession;

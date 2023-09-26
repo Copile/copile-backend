@@ -1,4 +1,4 @@
-const { ContractClient } = require('bybit-api');
+const { ContractClient } = require("bybit-api");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -10,7 +10,7 @@ const CustomError = require("../../utils/error");
  * @returns {Promise<Array<Object>>} An array of active order data objects.
  * @throws {CustomError} Throws a custom error if database operation fails.
  */
-async function getTestnetOrders(traderId) {
+async function getTestnetOrders(apiKey, apiSecret, traderId) {
   try {
     const client = new ContractClient({
       key: apiKey,
@@ -27,27 +27,33 @@ async function getTestnetOrders(traderId) {
     }
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
-    const filteredOrders = orders.result.list.filter(order =>
-      order.reduceOnly === false &&
-      order.orderStatus === "New"
+    const filteredOrders = orders.result.list.filter(
+      (order) => order.reduceOnly === false && order.orderStatus === "New"
     );
 
-    const bybitMatchingParams = await Promise.all(filteredOrders.map(async order => {
-      const tradeDoc = await getTradeDoc(traderId, order.symbol, "bybit", order.side);
-      const tradeData = tradeDoc.data();
-      return {
-        trade_id: tradeDoc.id,
-        symbol: order.symbol,
-        side: order.side,
-        leverage: tradeData.leverage,
-        margin: tradeData.margin,
-        type: "LIMIT",
-        entry_price: order.price,
-        quantity: order.qty,
-        orderStatus: "Active",
-        created_at: tradeData.created_at
-      };
-    }));
+    const bybitMatchingParams = await Promise.all(
+      filteredOrders.map(async (order) => {
+        const tradeDoc = await getTradeDoc(
+          traderId,
+          order.symbol,
+          "bybit",
+          order.side
+        );
+        const tradeData = tradeDoc.data();
+        return {
+          trade_id: tradeDoc.id,
+          symbol: order.symbol,
+          side: order.side,
+          leverage: tradeData.leverage,
+          margin: tradeData.margin,
+          type: "LIMIT",
+          entry_price: order.price,
+          quantity: order.qty,
+          orderStatus: "Active",
+          created_at: tradeData.created_at,
+        };
+      })
+    );
 
     return bybitMatchingParams;
   } catch (e) {

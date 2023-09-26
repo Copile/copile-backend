@@ -10,7 +10,7 @@ const { mapPositionToTrade } = require("../../utils/firestore");
  * @returns {Promise<Array<Object>>} An array of active trade data objects.
  * @throws {CustomError} Throws a custom error if api call fails.
  */
-async function getTestnetPositions(traderId) {
+async function getTestnetPositions(apiKey, apiSecret, traderId) {
   try {
     const client = new ContractClient({
       key: apiKey,
