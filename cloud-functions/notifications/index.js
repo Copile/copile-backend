@@ -67,14 +67,14 @@ app.post("/trade", async (req, res) => {
     //   ],
     // };
 
-    // Get the user's Discord ID from Firestore
+    // If theres no user ID, return an error
     if (!tradeData.user_id) {
       return res
         .status(400)
         .json({ success: false, error: "No user ID provided." });
     }
 
-    // Fetching user data using the user ID
+    // Fetching user data from firestore using the user ID
     const userData = await fetchUserData(tradeData.user_id);
     // Extracting Discord and Telegram IDs from the user data
     const discordId = userData.discord.id;
@@ -161,14 +161,14 @@ app.post("/action", async (req, res) => {
     //   user_id: "<user_id_here>",
     // };
 
-    // Get the user's Discord ID from Firestore
+    // If theres no user ID, return an error
     if (!actionData.user_id) {
       return res
         .status(400)
         .json({ success: false, error: "No user ID provided." });
     }
 
-    // Fetching user data using the user ID
+    // Fetching user data from firestore using the user ID
     const userData = await fetchUserData(actionData.user_id);
     // Extracting Discord and Telegram IDs from the user data
     const discordId = userData.discord.id;

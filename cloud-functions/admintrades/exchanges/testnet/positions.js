@@ -1,4 +1,4 @@
-const { ContractClient } = require('bybit-api');
+const { ContractClient } = require("bybit-api");
 const CustomError = require("../../utils/error");
 const { mapPositionToTrade } = require("../../utils/firestore");
 
@@ -16,10 +16,11 @@ async function getTestnetPositions(traderId) {
       key: apiKey,
       secret: apiSecret,
       strict_param_validation: true,
+      testnet: true,
     });
 
     const positionData = await client.getPositions({
-      settleCoin: 'USDT',
+      settleCoin: "USDT",
     });
 
     if (!positionData.result.list.length) {
@@ -27,11 +28,19 @@ async function getTestnetPositions(traderId) {
     }
 
     const trades = positionData.result.list
-      .filter(position => position.size !== 0)
-      .map(async position => {
+      .filter((position) => position.size !== 0)
+      .map(async (position) => {
         let margin = position.positionBalance;
-        position.unrealised_pnl_pct = String(((position.unrealisedPnl * 100) / margin).toFixed(2));
-        return await mapPositionToTrade(position, traderId, position.symbol, "bybit", position.side);
+        position.unrealised_pnl_pct = String(
+          ((position.unrealisedPnl * 100) / margin).toFixed(2)
+        );
+        return await mapPositionToTrade(
+          position,
+          traderId,
+          position.symbol,
+          "bybit",
+          position.side
+        );
       });
     return await Promise.all(trades);
   } catch (e) {
