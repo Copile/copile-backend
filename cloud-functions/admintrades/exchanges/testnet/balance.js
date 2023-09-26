@@ -13,7 +13,7 @@ async function getTestnetBalance(apiKey, apiSecret) {
       accountType: "CONTRACT",
       coin: "USDT",
     });
-    return balance.result.list[0].availableBalance;
+    return balance;
   } catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet balance: ${e.message}`,
