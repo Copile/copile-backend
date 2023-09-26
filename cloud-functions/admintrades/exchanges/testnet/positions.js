@@ -12,6 +12,10 @@ const { mapPositionToTrade } = require("../../utils/firestore");
  */
 async function getTestnetPositions(apiKey, apiSecret, traderId) {
   try {
+    console.log("apiKey", apiKey);
+    console.log("apiSecret", apiSecret);
+    console.log("traderId", traderId);
+
     const client = new ContractClient({
       key: apiKey,
       secret: apiSecret,
