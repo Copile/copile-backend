@@ -10,10 +10,10 @@ async function getTestnetBalance(apiKey, apiSecret) {
       testnet: true,
     });
     const balance = await client.getAllCoinsBalance({
-      accountType: "CONTRACT",
+      accountType: "UNIFIED",
       coin: "USDT",
     });
-    return balance;
+    return balance.result.balance[0].walletBalance;
   } catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet balance: ${e.message}`,
