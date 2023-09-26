@@ -9,7 +9,10 @@ async function getTestnetBalance(apiKey, apiSecret) {
       strict_param_validation: true,
       testnet: true,
     });
-    const balance = await client.getBalances((coin = "USDT"));
+    const balance = await client.getAllCoinsBalance({
+      accountType: "CONTRACT",
+      coin: "USDT",
+    });
     return balance.result.list[0].availableBalance;
   } catch (e) {
     throw new CustomError({
