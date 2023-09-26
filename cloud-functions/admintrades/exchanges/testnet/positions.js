@@ -23,7 +23,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
       settleCoin: "USDT",
     });
 
-    if (!positionData.result.list.length) {
+    if (!positionData.result.list) {
       return [];
     }
 
