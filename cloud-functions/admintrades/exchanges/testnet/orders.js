@@ -90,7 +90,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
       settleCoin: "USDT",
     });
 
-    return orders.map(({ orderStatus, ...rest }) => ({
+    return orders.result.list.map(({ orderStatus, ...rest }) => ({
       ...rest,
       status: orderStatus === "Untriggered" ? "Active" : orderStatus,
     }));
@@ -100,9 +100,9 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
       throw error;
     }
     throw new CustomError({
-      message: `Error fetching Binance active orders: ${error.message}`,
+      message: `Error fetching Testnet active orders: ${error.message}`,
       status: 400,
-      source: "getBinanceOrderStatuses",
+      source: "getTestnetOrderStatuses",
     });
   }
 }
