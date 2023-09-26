@@ -19,15 +19,13 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
     const client = new ContractClient({
       key: apiKey,
       secret: apiSecret,
-      // strict_param_validation: true,
+      strict_param_validation: true,
       testnet: true,
     });
 
-    // const positionData = await client.getPositions({
-    //   settleCoin: "USDT",
-    // });
-
-    const positionData = await client.getPositions();
+    const positionData = await client.getPositions({
+      settleCoin: "USDT",
+    });
 
     if (!positionData.result.list) {
       return [];
