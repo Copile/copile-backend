@@ -1,4 +1,5 @@
 const { RestClientV5 } = require("bybit-api");
+const CustomError = require("../../utils/error");
 
 async function getTestnetBalance(apiKey, apiSecret) {
   try {
@@ -14,7 +15,7 @@ async function getTestnetBalance(apiKey, apiSecret) {
     throw new CustomError({
       message: `Failed to fetch testnet balance: ${e.message}`,
       status: 500,
-      source: "getTestnetPositions",
+      source: "getTestnetBalance",
     });
   }
 }
