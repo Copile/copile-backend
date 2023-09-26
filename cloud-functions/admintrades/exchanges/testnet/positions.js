@@ -46,7 +46,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
           position,
           traderId,
           position.symbol,
-          "bybit",
+          "testnet",
           position.side
         );
       });
