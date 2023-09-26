@@ -38,7 +38,7 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
         const tradeDoc = await getTradeDoc(
           traderId,
           order.symbol,
-          "bybit",
+          "testnet",
           order.side
         );
         const tradeData = tradeDoc.data();
@@ -77,13 +77,15 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
  */
 async function getTestnetOrderStatuses(apiKey, apiSecret) {
   try {
-    const client = new ContractClient({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       strict_param_validation: true,
+      testnet: true,
     });
 
     let orders = await client.getActiveOrders({
+      category: "linear",
       orderFilter: "StopOrder",
       settleCoin: "USDT",
     });
