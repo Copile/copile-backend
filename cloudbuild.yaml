@@ -20,7 +20,7 @@ steps:
           entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
           # Check if the current function is notifications or admintrades before deploying
-          if [ "$name" = "notifications" ] || [ "$name" = "admintrades"]; then
+          if [ "$name" = "notifications" ] || [ "$name" = "admintrades" ]; then
             echo "Deploying function: $name"
             # Deploy Cloud Function with specified settings
             gcloud functions deploy $name \
