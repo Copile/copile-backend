@@ -1,7 +1,11 @@
+// Importing necessary modules
 const express = require("express");
 const applyMiddleware = require("./middleware");
+// Initializing express app
 const app = express();
+// Importing discord.js for Discord API interactions
 const { Client, GatewayIntentBits } = require("discord.js");
+// Importing utility functions
 const {
   sendTelegramMessage,
   fetchUserData,
@@ -10,22 +14,29 @@ const {
   constructActionEmbed,
 } = require("./utils");
 
+// Creating a new Discord client
 const client = new Client({
   intents: [GatewayIntentBits.DirectMessages],
 });
 
+// Applying middleware to the express app
 applyMiddleware(app);
 
+// Getting Discord bot token from environment variables
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
+// Event listener for when the Discord client is ready
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
+// Logging in the Discord client with the bot token
 client.login(DISCORD_BOT_TOKEN);
 
+// POST endpoint for trade notifications
 app.post("/trade", async (req, res) => {
   try {
+    // Getting trade data from the request body
     const tradeData = req.body;
 
     // example trade data
@@ -63,34 +74,46 @@ app.post("/trade", async (req, res) => {
         .json({ success: false, error: "No user ID provided." });
     }
 
+    // Fetching user data using the user ID
     const userData = await fetchUserData(tradeData.user_id);
+    // Extracting Discord and Telegram IDs from the user data
     const discordId = userData.discord.id;
     const telegramId = userData.telegram.id;
 
+    // Array to keep track of where notifications are sent
     let notificationSent = [];
 
+    // If Discord ID is present, send a Discord notification
     if (discordId !== "x") {
+      // Constructing the Discord embed message
       const embed = constructTradeEmbed(tradeData);
 
+      // Fetching the Discord user and sending them the message
       const user = await client.users.fetch(discordId);
       user.send({ embeds: [embed] }).catch((error) => {
         console.log(`Could not send discord DM to ${user.tag}.`, error);
         return res.status(500).json({ success: false, error: error });
       });
 
+      // Adding Discord to the list of sent notifications
       notificationSent.push("Discord");
     }
 
+    // If Telegram ID is present, send a Telegram notification
     if (telegramId !== "x") {
+      // Constructing the Telegram message
       const message = `NEW TRADE OPENED: #${tradeData.symbol} | #${tradeData.side} | ${tradeData.leverage}`;
 
+      // Sending the Telegram message
       const { success } = await sendTelegramMessage(telegramId, message);
 
+      // If the message was sent successfully, add Telegram to the list of sent notifications
       if (success) {
         notificationSent.push("Telegram");
       }
     }
 
+    // If no notifications were sent, return an error
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
       return res.status(400).json({
@@ -98,6 +121,7 @@ app.post("/trade", async (req, res) => {
         message: "No Discord or Telegram ID found for user.",
       });
     } else {
+      // If notifications were sent, return a success message
       console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
       return res.status(200).json({
         success: true,
@@ -105,13 +129,16 @@ app.post("/trade", async (req, res) => {
       });
     }
   } catch (err) {
+    // If an error occurs, log it and return an error message
     console.log(err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// POST endpoint for action notifications
 app.post("/action", async (req, res) => {
   try {
+    // Getting action data from the request body
     const actionData = req.body;
 
     // example action data
@@ -141,12 +168,13 @@ app.post("/action", async (req, res) => {
         .json({ success: false, error: "No user ID provided." });
     }
 
+    // Fetching user data using the user ID
     const userData = await fetchUserData(actionData.user_id);
+    // Extracting Discord and Telegram IDs from the user data
     const discordId = userData.discord.id;
     const telegramId = userData.telegram.id;
 
-    // Get the trade data from Firestore
-
+    // Fetching trade data from Firestore using the user ID and trade ID
     const fireStoreTradeData = await fetchFirestoreTradeData(
       actionData.user_id,
       actionData.trade_id
@@ -154,6 +182,7 @@ app.post("/action", async (req, res) => {
 
     // example trade data
     // const fireStoreTradeData = {
+    //   user_id: <user_id_here>,
     //   created_at: 1693595313,
     //   entry: "25584",
     //   exchange: "bingx",
@@ -191,7 +220,7 @@ app.post("/action", async (req, res) => {
     const actionType = req.query.type;
     let actionText = "";
 
-    // Update the action text to be more human readable
+    // Updating the action text based on the action type
     switch (actionType) {
       case "bulktp":
         actionText = "New Take Profit Orders Added";
@@ -212,31 +241,40 @@ app.post("/action", async (req, res) => {
         actionText = "Unknown Action";
     }
 
+    // Array to keep track of where notifications are sent
     let notificationSent = [];
 
+    // If Discord ID is present, send a Discord notification
     if (discordId !== "x") {
-      // Create the embed
+      // Constructing the Discord embed message
       const embed = constructActionEmbed(fireStoreTradeData, actionText);
 
+      // Fetching the Discord user and sending them the message
       const user = await client.users.fetch(discordId);
       user.send({ embeds: [embed] }).catch((error) => {
         console.log(`Could not send discord DM to ${user.tag}.`, error);
         return res.status(500).json({ success: false, error: error });
       });
 
+      // Adding Discord to the list of sent notifications
       notificationSent.push("Discord");
     }
 
+    // If Telegram ID is present, send a Telegram notification
     if (telegramId !== "x") {
+      // Constructing the Telegram message
       const message = `${fireStoreTradeData.symbol} | ${fireStoreTradeData.side} UPDATED: ${actionText}`;
 
+      // Sending the Telegram message
       const { success } = await sendTelegramMessage(telegramId, message);
 
+      // If the message was sent successfully, add Telegram to the list of sent notifications
       if (success) {
         notificationSent.push("Telegram");
       }
     }
 
+    // If no notifications were sent, return an error
     if (notificationSent.length === 0) {
       console.log("No Discord or Telegram ID found for user.");
       return res.status(400).json({
@@ -244,6 +282,7 @@ app.post("/action", async (req, res) => {
         message: "No Discord or Telegram ID found for user.",
       });
     } else {
+      // If notifications were sent, return a success message
       console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
       return res.status(200).json({
         success: true,
@@ -251,8 +290,10 @@ app.post("/action", async (req, res) => {
       });
     }
   } catch (error) {
+    // If an error occurs, log it and return an error message
     console.log(error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
+// Exporting the express app
 exports.notifications = app;
