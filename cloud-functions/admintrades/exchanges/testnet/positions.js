@@ -27,6 +27,9 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
       return [];
     }
 
+    console.log("positionData", positionData);
+    console.log("positionData.result.list", positionData.result.list);
+
     const trades = positionData.result.list
       .filter((position) => position.size !== 0)
       .map(async (position) => {
@@ -42,6 +45,8 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
           position.side
         );
       });
+
+    console.log("testnet positionData formatted", trades);
     return await Promise.all(trades);
   } catch (e) {
     throw new CustomError({
