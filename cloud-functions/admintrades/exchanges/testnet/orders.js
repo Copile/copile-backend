@@ -1,4 +1,4 @@
-const { ContractClient } = require("bybit-api");
+const { RestClientV5 } = require("bybit-api");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -12,13 +12,14 @@ const CustomError = require("../../utils/error");
  */
 async function getTestnetOrders(apiKey, apiSecret, traderId) {
   try {
-    const client = new ContractClient({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
-      strict_param_validation: true,
+      // strict_param_validation: true,
       testnet: true,
     });
     let orders = await client.getActiveOrders({
+      category: "linear",
       orderFilter: "order",
       settleCoin: "USDT",
     });

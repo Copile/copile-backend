@@ -1,4 +1,4 @@
-const { ContractClient } = require("bybit-api");
+const { RestClientV5 } = require("bybit-api");
 const CustomError = require("../../utils/error");
 const { mapPositionToTrade } = require("../../utils/firestore");
 
@@ -16,18 +16,19 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
     console.log("apiSecret", apiSecret);
     console.log("traderId", traderId);
 
-    const client = new ContractClient({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
-      strict_param_validation: true,
+      // strict_param_validation: true,
       testnet: true,
     });
 
-    const positionData = await client.getPositions({
+    const positionData = await client.getPositionInfo({
+      category: "linear",
       settleCoin: "USDT",
     });
 
-    if (!positionData.result.list) {
+    if (!positionData.result.list.length) {
       return [];
     }
 

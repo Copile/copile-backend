@@ -1,8 +1,8 @@
-const { ContractClient } = require("bybit-api");
+const { RestClientV5 } = require("bybit-api");
 
 async function getTestnetBalance(apiKey, apiSecret) {
   try {
-    const client = new ContractClient({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       strict_param_validation: true,
