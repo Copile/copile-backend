@@ -41,55 +41,55 @@ async function fetchFirestoreTradeData(userId, tradeId) {
 
 function constructTradeEmbed(tradeBody) {
   const tradeData = tradeBody.data;
+  const tradeSide = tradeData.order.side === "Buy" ? "LONG" : "SHORT";
+  const isLong = tradeData.order.side === "Buy";
 
   console.log("tradeBody", tradeBody);
   console.log("tradeData", tradeData);
 
   const embed = {
     color: 0x7f6cff,
-    title: "Copile Automation",
-    url: "https://discord.js.org",
-    author: {
-      name: "Copile",
-      icon_url: "https://i.imgur.com/UMSFUaT.png",
-      url: "https://copile.trade",
-    },
-    description: `>:chart_with_upwards_trend: **NEW POSITION OPENED** :chart_with_upwards_trend:\n\n#${
-      tradeData.order.symbol
-    } #${tradeData.order.side} ${
-      tradeData.order.side === "SHORT"
-        ? ":arrow_down: :red_circle:"
-        : ":arrow_up: :green_circle:"
+    title: "Copile Notifications",
+    description: `> **NEW __${tradeSide}__ POSITION OPENED** ${
+      isLong ? ":green_circle:" : ":red_circle:"
     }`,
-    thumbnail: {
-      url: "https://i.imgur.com/hmcMAtj.png",
-    },
     fields: [
       {
+        name: "---------------------------------------------------------------------",
+        value: "__**DETAILS**__",
+      },
+      {
+        name: "Symbol",
+        value: tradeData.order.symbol,
+        inline: true,
+      },
+      {
         name: "Entry",
-        value: tradeData.order.entry,
+        value: `$${tradeData.order.entry}`,
+        inline: true,
       },
       {
         name: "Leverage",
-        value: tradeData.order.leverage,
+        value: `${tradeData.order.leverage}x`,
+        inline: true,
       },
       {
-        name: `Take Profits ${tradeData.take_profits.length}`,
+        name: "---------------------------------------------------------------------",
+        value: "__**ORDERS**__",
+      },
+      {
+        name: `Take Profits (${tradeData.take_profits.length})`,
         value: tradeData.take_profits
-          .map(
-            (tp, index) =>
-              `\`TP${index + 1}:\` ${tp.tp_value} | ${tp.tp_percentage * 100}%`
-          )
+          .map((tp, index) => `${tp.tp_value} | **${tp.tp_percentage * 100}%**`)
           .join("\n"),
+        inline: true,
       },
       {
-        name: `Stop Losses ${tradeData.stop_losses.length}`,
+        name: `Stop Losses (${tradeData.stop_losses.length})`,
         value: tradeData.stop_losses
-          .map(
-            (sl, index) =>
-              `\`SL${index + 1}:\` ${sl.sl_value} | ${sl.sl_percentage * 100}%`
-          )
+          .map((sl, index) => `${sl.sl_value} | **${sl.sl_percentage * 100}%**`)
           .join("\n"),
+        inline: true,
       },
     ],
     timestamp: new Date().toISOString(),
