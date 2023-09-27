@@ -38,6 +38,7 @@ app.post("/trade", async (req, res) => {
   try {
     // Getting trade data from the request body
     const tradeBody = req.body;
+    const tradeData = tradeBody.data;
 
     // example trade data
     // const tradeData = {
@@ -102,7 +103,7 @@ app.post("/trade", async (req, res) => {
     // If Telegram ID is present, send a Telegram notification
     if (telegramId !== "x") {
       // Constructing the Telegram message
-      const message = `NEW TRADE OPENED: #${tradeBody.symbol} | #${tradeBody.side} | ${tradeBody.leverage}`;
+      const message = `NEW TRADE OPENED: #${tradeData.order.symbol} | #${tradeData.order.side} | ${tradeData.order.leverage}`;
 
       // Sending the Telegram message
       const { success } = await sendTelegramMessage(telegramId, message);

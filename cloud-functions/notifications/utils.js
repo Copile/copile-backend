@@ -42,6 +42,9 @@ async function fetchFirestoreTradeData(userId, tradeId) {
 function constructTradeEmbed(tradeBody) {
   const tradeData = tradeBody.data;
 
+  console.log("tradeBody", tradeBody);
+  console.log("tradeData", tradeData);
+
   const embed = {
     color: 0x7f6cff,
     title: "Copile Automation",
@@ -52,9 +55,9 @@ function constructTradeEmbed(tradeBody) {
       url: "https://copile.trade",
     },
     description: `>:chart_with_upwards_trend: **NEW POSITION OPENED** :chart_with_upwards_trend:\n\n#${
-      tradeData.symbol
-    } #${tradeData.side} ${
-      tradeData.side === "SHORT"
+      tradeData.order.symbol
+    } #${tradeData.order.side} ${
+      tradeData.order.side === "SHORT"
         ? ":arrow_down: :red_circle:"
         : ":arrow_up: :green_circle:"
     }`,
@@ -64,15 +67,15 @@ function constructTradeEmbed(tradeBody) {
     fields: [
       {
         name: "Entry",
-        value: tradeData.entry,
+        value: tradeData.order.entry,
       },
       {
         name: "Leverage",
-        value: tradeData.leverage,
+        value: tradeData.order.leverage,
       },
       {
-        name: `Take Profits ${tradeBody.take_profits.length}`,
-        value: tradeBody.take_profits
+        name: `Take Profits ${tradeData.take_profits.length}`,
+        value: tradeData.take_profits
           .map(
             (tp, index) =>
               `\`TP${index + 1}:\` ${tp.tp_value} | ${tp.tp_percentage * 100}%`
@@ -80,8 +83,8 @@ function constructTradeEmbed(tradeBody) {
           .join("\n"),
       },
       {
-        name: `Stop Losses ${tradeBody.stop_losses.length}`,
-        value: tradeBody.stop_losses
+        name: `Stop Losses ${tradeData.stop_losses.length}`,
+        value: tradeData.stop_losses
           .map(
             (sl, index) =>
               `\`SL${index + 1}:\` ${sl.sl_value} | ${sl.sl_percentage * 100}%`
