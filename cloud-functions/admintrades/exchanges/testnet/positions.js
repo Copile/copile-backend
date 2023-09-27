@@ -38,7 +38,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
         position.symbol = originalPosition.symbol; // Position Symbol (e.g., "BTCUSDT")
         position.side = originalPosition.side; // Position side (e.g., "Buy" or "Sell")
         position.margin_mode =
-          originalPosition.tradeMode === 0 ? "Cross" : "Isolated"; // Margin mode (e.g., "Isolated" or "Cross")
+          originalPosition.tradeMode === 0 ? "Isolated" : "Cross"; // Margin mode (e.g., "Isolated" or "Cross")
         position.leverage = originalPosition.leverage; // Leverage (e.g., "10")
         position.quantity = originalPosition.size; // Position quantity (e.g., "0.001")
         position.margin = originalPosition.positionBalance; // Position margin (e.g., "15")
