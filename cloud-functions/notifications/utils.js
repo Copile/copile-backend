@@ -69,7 +69,7 @@ function constructTradeEmbed(tradeData) {
         value: tradeData.leverage,
       },
       {
-        name: `Take Profits ${tradeData.take_profits.length}`,
+        name: `Take Profits ${tradeData.take_profits?.length}`,
         value: tradeData.take_profits
           .map(
             (tp, index) =>
@@ -78,7 +78,7 @@ function constructTradeEmbed(tradeData) {
           .join("\n"),
       },
       {
-        name: `Stop Losses ${tradeData.stop_losses.length}`,
+        name: `Stop Losses ${tradeData.stop_losses?.length}`,
         value: tradeData.stop_losses
           .map(
             (sl, index) =>
