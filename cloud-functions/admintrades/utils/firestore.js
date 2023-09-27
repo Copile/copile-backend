@@ -43,9 +43,9 @@ async function mapPositionToTrade(position, traderId, exchange) {
   try {
     const tradeDoc = await fetchLatestTradeDoc(
       traderId,
-      symbol,
+      position.symbol,
       exchange,
-      side
+      position.side
     );
 
     if (tradeDoc === null) return;
