@@ -37,7 +37,7 @@ client.login(DISCORD_BOT_TOKEN);
 app.post("/trade", async (req, res) => {
   try {
     // Getting trade data from the request body
-    const tradeData = req.body;
+    const tradeBody = req.body;
 
     // example trade data
     // const tradeData = {
@@ -68,14 +68,14 @@ app.post("/trade", async (req, res) => {
     // };
 
     // If theres no user ID, return an error
-    if (!tradeData.user_id) {
+    if (!tradeBody.user_id) {
       return res
         .status(400)
         .json({ success: false, error: "No user ID provided." });
     }
 
     // Fetching user data from firestore using the user ID
-    const userData = await fetchUserData(tradeData.user_id);
+    const userData = await fetchUserData(tradeBody.user_id);
     // Extracting Discord and Telegram IDs from the user data
     const discordId = userData.discord.id;
     const telegramId = userData.telegram.id;
@@ -86,7 +86,7 @@ app.post("/trade", async (req, res) => {
     // If Discord ID is present, send a Discord notification
     if (discordId !== "x") {
       // Constructing the Discord embed message
-      const embed = constructTradeEmbed(tradeData);
+      const embed = constructTradeEmbed(tradeBody);
 
       // Fetching the Discord user and sending them the message
       const user = await client.users.fetch(discordId);
@@ -102,7 +102,7 @@ app.post("/trade", async (req, res) => {
     // If Telegram ID is present, send a Telegram notification
     if (telegramId !== "x") {
       // Constructing the Telegram message
-      const message = `NEW TRADE OPENED: #${tradeData.symbol} | #${tradeData.side} | ${tradeData.leverage}`;
+      const message = `NEW TRADE OPENED: #${tradeBody.symbol} | #${tradeBody.side} | ${tradeBody.leverage}`;
 
       // Sending the Telegram message
       const { success } = await sendTelegramMessage(telegramId, message);

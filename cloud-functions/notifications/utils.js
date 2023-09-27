@@ -39,7 +39,9 @@ async function fetchFirestoreTradeData(userId, tradeId) {
   return fireStoreTradeData;
 }
 
-function constructTradeEmbed(tradeData) {
+function constructTradeEmbed(tradeBody) {
+  const tradeData = tradeBody.data;
+
   const embed = {
     color: 0x7f6cff,
     title: "Copile Automation",
@@ -69,8 +71,8 @@ function constructTradeEmbed(tradeData) {
         value: tradeData.leverage,
       },
       {
-        name: `Take Profits ${tradeData.take_profits.length}`,
-        value: tradeData.take_profits
+        name: `Take Profits ${tradeBody.take_profits.length}`,
+        value: tradeBody.take_profits
           .map(
             (tp, index) =>
               `\`TP${index + 1}:\` ${tp.tp_value} | ${tp.tp_percentage * 100}%`
@@ -78,8 +80,8 @@ function constructTradeEmbed(tradeData) {
           .join("\n"),
       },
       {
-        name: `Stop Losses ${tradeData.stop_losses.length}`,
-        value: tradeData.stop_losses
+        name: `Stop Losses ${tradeBody.stop_losses.length}`,
+        value: tradeBody.stop_losses
           .map(
             (sl, index) =>
               `\`SL${index + 1}:\` ${sl.sl_value} | ${sl.sl_percentage * 100}%`
