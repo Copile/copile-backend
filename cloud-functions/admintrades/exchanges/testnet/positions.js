@@ -47,10 +47,10 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
         position.unrealised_pnl_pct = String(
           (
             (parseFloat(originalPosition.unrealisedPnl) * 100) /
-            parseFloat(originalPosition.margin)
+            parseFloat(originalPosition.positionBalance)
           ).toFixed(2)
         ); // Unrealised PnL percentage (e.g., "12.65%")
-        position.realised_pnl = originalPosition.cumRealisedPnl; // Realised PnL (e.g., "-4.51")
+        position.realised_pnl = "0"; // Realised PnL (e.g., "-4.51")
         return await mapPositionToTrade(position, traderId, "testnet");
       });
 
