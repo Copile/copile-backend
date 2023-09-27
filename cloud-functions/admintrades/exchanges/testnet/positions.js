@@ -51,7 +51,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
           ).toFixed(2)
         ); // Unrealised PnL percentage (e.g., "12.65%")
         position.realised_pnl = originalPosition.cumRealisedPnl; // Realised PnL (e.g., "-4.51")
-        return await mapPositionToTrade(originalPosition, traderId, "testnet");
+        return await mapPositionToTrade(position, traderId, "testnet");
       });
 
     return await Promise.all(trades);
