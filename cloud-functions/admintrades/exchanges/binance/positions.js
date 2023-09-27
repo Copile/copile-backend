@@ -7,75 +7,50 @@ const CustomError = require("../../utils/error");
  * @async
  * @param {string} apiKey - Binance API key.
  * @param {string} apiSecret - Binance API secret.
- * @param {string} user_id - User ID.
+ * @param {string} traderId - Trader ID.
  * @returns {Promise<Array>} An array of mapped trades.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getBinancePositions(apiKey, apiSecret, user_id) {
+async function getBinancePositions(apiKey, apiSecret, traderId) {
   try {
     const positions = await getPositions(apiKey, apiSecret);
     const trades = positions
-      .filter(({ positionAmt }) => positionAmt !== 0)
-      .map(async (position) => {
-        const {
-          positionSide,
-          marginType,
-          unRealizedProfit,
-          isolatedMargin,
-          entryPrice,
-          positionAmt,
-          symbol,
-          leverage,
-        } = position;
+      .filter(({ positionAmt }) => parseFloat(positionAmt) !== 0)
+      .map(async (originalPosition) => {
+        // Create a new position object, to only hold needed properties
+        let position = {};
 
-        const side = positionSide === "LONG" ? "Buy" : "Sell";
-        const margin_mode = marginType === "isolated" ? "isolated" : "cross";
-        const unrealised_pnl = unRealizedProfit;
-        const margin = isolatedMargin;
-        const size = positionAmt;
-
-        // Calculate unrealized profit and loss percentage
-        // const unrealised_pnl_pct = String(
-        //   (
-        //     (parseFloat(unRealizedProfit) /
-        //       (parseFloat(positionAmt) * parseFloat(entryPrice))) *
-        //     100 *
-        //     parseFloat(leverage)
-        //   ).toFixed(2) * -1 // Multiply by -1 to flip the sign
-        // );
+        // Updating properties
+        position.symbol = originalPosition.symbol; // Position Symbol (e.g., "BTCUSDT")
+        position.side =
+          originalPosition.positionSide === "LONG" ? "Buy" : "Sell"; // Position side (e.g., "Buy" or "Sell")
+        position.margin_mode =
+          originalPosition.marginType === "isolated" ? "isolated" : "cross"; // Margin mode (e.g., "Isolated" or "Cross")
+        position.leverage = originalPosition.leverage; // Leverage (e.g., "10")
+        position.quantity = originalPosition.positionAmt; // Position quantity (e.g., "0.001")
+        position.margin = originalPosition.isolatedMargin; // Initial margin (e.g., "15")
+        position.entry_price = originalPosition.entryPrice; // Entry price (e.g., "25680")
+        position.unrealised_pnl = originalPosition.unRealizedProfit; // Unrealised PnL (e.g., "2.45")
 
         // Calculate unrealized profit and loss percentage
         let unrealised_pnl_pct = (
-          (parseFloat(unRealizedProfit) /
-            (parseFloat(positionAmt) * parseFloat(entryPrice))) *
+          (parseFloat(originalPosition.unRealizedProfit) /
+            (parseFloat(originalPosition.positionAmt) *
+              parseFloat(originalPosition.entryPrice))) *
           100 *
-          parseFloat(leverage)
+          parseFloat(originalPosition.leverage)
         ).toFixed(2);
 
         // Flip the sign for short positions
-        if (positionSide === "SHORT") {
+        if (originalPosition.positionSide === "SHORT") {
           unrealised_pnl_pct *= -1;
         }
 
-        unrealised_pnl_pct = String(unrealised_pnl_pct);
+        position.unrealised_pnl_pct = String(unrealised_pnl_pct); // Unrealised PnL percentage (e.g., "12.65%")
+        position.realised_pnl = "0"; // Binance does not provide realised PnL
 
-        return await mapPositionToTrade(
-          {
-            ...position,
-            side,
-            margin_mode,
-            unrealised_pnl,
-            margin,
-            entryPrice,
-            realised_pnl: "0",
-            size,
-            unrealised_pnl_pct,
-          },
-          user_id,
-          symbol,
-          "binance",
-          side
-        );
+        // Pass the whole modified position object to mapPositionToTrade
+        return await mapPositionToTrade(position, traderId, "binance");
       });
 
     return await Promise.all(trades);

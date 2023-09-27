@@ -12,10 +12,6 @@ const { mapPositionToTrade } = require("../../utils/firestore");
  */
 async function getTestnetPositions(apiKey, apiSecret, traderId) {
   try {
-    console.log("apiKey", apiKey);
-    console.log("apiSecret", apiSecret);
-    console.log("traderId", traderId);
-
     const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
@@ -32,26 +28,32 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
       return [];
     }
 
-    console.log("positionData", positionData);
-    console.log("positionData.result.list", positionData.result.list);
-
     const trades = positionData.result.list
       .filter((position) => position.size !== 0)
-      .map(async (position) => {
-        let margin = position.positionBalance;
+      .map(async (originalPosition) => {
+        // Create a new position object, to only hold needed properties
+        let position = {};
+
+        // Transform and enrich the position data
+        position.symbol = originalPosition.symbol; // Position Symbol (e.g., "BTCUSDT")
+        position.side = originalPosition.side; // Position side (e.g., "Buy" or "Sell")
+        position.margin_mode =
+          originalPosition.tradeMode === 0 ? "Cross" : "Isolated"; // Margin mode (e.g., "Isolated" or "Cross")
+        position.leverage = originalPosition.leverage; // Leverage (e.g., "10")
+        position.quantity = originalPosition.size; // Position quantity (e.g., "0.001")
+        position.margin = originalPosition.positionBalance; // Position margin (e.g., "15")
+        position.entry_price = originalPosition.avgPrice; // Entry price (e.g., "25680")
+        position.unrealised_pnl = originalPosition.unrealisedPnl; // Unrealised PnL (e.g., "2.45")
         position.unrealised_pnl_pct = String(
-          ((position.unrealisedPnl * 100) / margin).toFixed(2)
-        );
-        return await mapPositionToTrade(
-          position,
-          traderId,
-          position.symbol,
-          "testnet",
-          position.side
-        );
+          (
+            (parseFloat(originalPosition.unrealisedPnl) * 100) /
+            parseFloat(originalPosition.margin)
+          ).toFixed(2)
+        ); // Unrealised PnL percentage (e.g., "12.65%")
+        position.realised_pnl = originalPosition.cumRealisedPnl; // Realised PnL (e.g., "-4.51")
+        return await mapPositionToTrade(originalPosition, traderId, "testnet");
       });
 
-    console.log("testnet positionData formatted", trades);
     return await Promise.all(trades);
   } catch (e) {
     throw new CustomError({

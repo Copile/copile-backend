@@ -40,12 +40,12 @@ class BinanceSession extends ExchangeSession {
 
   /**
    * Get positions from Binance for a specific user.
-   * @param {string} userId - User's unique ID.
+   * @param {string} traderId - Trader's unique ID.
    * @returns {Promise<Array>} - Array of position objects.
    */
-  async getPositions(userId) {
+  async getPositions(traderId) {
     try {
-      return await getBinancePositions(this.apiKey, this.apiSecret, userId);
+      return await getBinancePositions(this.apiKey, this.apiSecret, traderId);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

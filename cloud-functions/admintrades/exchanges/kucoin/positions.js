@@ -9,22 +9,20 @@ const CustomError = require("../../utils/error");
  */
 const transformPosition = (position) => {
   return {
-    ...position,
-    side: position.currentQty < 0 ? "Sell" : "Buy",
-    marginMode: position.crossMode ? "cross" : "isolated",
-    currentQty: Math.abs(position.currentQty),
-    currentCost: Math.abs(position.currentCost),
-    leverage: position.realLeverage,
-    unrealisedPnl: position.unrealisedPnl,
-    margin: position.maintMargin,
-    unrealisedPnlPct: (
+    symbol: position.symbol, // Position Symbol (e.g., "BTCUSDT")
+    side: position.currentQty < 0 ? "Sell" : "Buy", // Position side (e.g., "Buy" or "Sell")
+    margin_mode: position.crossMode ? "Cross" : "Isolated", // Margin mode (e.g., "Isolated" or "Cross")
+    leverage: String(position.realLeverage), // Leverage (e.g., "10")
+    quantity: String(Math.abs(position.currentQty)), // Position quantity (e.g., "0.001")
+    margin: String(position.maintMargin), // Initial margin (e.g., "15")
+    entry_price: position.avgEntryPrice, // Entry price (e.g., "25680")
+    unrealised_pnl: position.unrealisedPnl, // Unrealised PnL (e.g., "2.45")
+    unrealised_pnl_pct: (
       parseFloat(position.unrealisedPnlPcnt) *
       100 *
       parseFloat(position.realLeverage)
-    ).toFixed(2),
-    entryPrice: position.avgEntryPrice,
-    realisedPnl: position.realisedPnl,
-    size: Math.abs(position.currentQty),
+    ).toFixed(2), // Unrealised PnL percentage (e.g., "12.65%")
+    realised_pnl: position.realisedPnl, // Realised PnL (e.g., "-4.51")
   };
 };
 
@@ -33,10 +31,10 @@ const transformPosition = (position) => {
  * @param {string} apiKey - The API key.
  * @param {string} apiSecret - The API secret.
  * @param {string} apiPassphrase - The API passphrase.
- * @param {string} userId - The user ID.
+ * @param {string} traderId - The trader ID.
  * @returns {Promise<Array>} - A promise that resolves to an array of positions.
  */
-async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, userId) {
+async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, traderId) {
   try {
     const config = {
       apiKey,
@@ -58,10 +56,8 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, userId) {
           const transformedPosition = transformPosition(position);
           return await mapPositionToTrade(
             transformedPosition,
-            userId,
-            transformedPosition.symbol,
-            "kucoin",
-            transformedPosition.side
+            traderId,
+            "kucoin"
           );
         });
 

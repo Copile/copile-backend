@@ -40,12 +40,12 @@ class BingXSession extends ExchangeSession {
 
   /**
    * Fetches positions for a given user.
-   * @param {string} userId - The ID of the user.
+   * @param {string} traderId - The ID of the trader.
    * @return {Promise<Array>} - A promise that resolves to an array of positions.
    */
-  async getPositions(userId) {
+  async getPositions(traderId) {
     try {
-      return await getBingXPositions(this.apiKey, this.apiSecret, userId);
+      return await getBingXPositions(this.apiKey, this.apiSecret, traderId);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;

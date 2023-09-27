@@ -31,10 +31,10 @@ class ExchangeSession {
   /**
    * Fetch positions for a given user ID.
    * @async
-   * @param {string} userId - The unique ID of the user.
+   * @param {string} traderId - The unique ID of the trader.
    * @throws {CustomError} Throws a custom error if method not implemented by subclass.
    */
-  async getPositions(userId) {
+  async getPositions(traderId) {
     throw new CustomError({
       message: "Method getPositions must be implemented by subclass",
       status: 501,
