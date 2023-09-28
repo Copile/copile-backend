@@ -225,7 +225,7 @@ app.post("/action", async (req, res) => {
 
     // Updating the action text based on the action type
     switch (actionType) {
-      case "bulktp":
+      case "bulkTp":
         actionText = "New Take Profit Orders Added";
         break;
       case "cancelOrder":
@@ -237,7 +237,7 @@ app.post("/action", async (req, res) => {
       case "partialClose":
         actionText = "Trade Partially Closed";
         break;
-      case "emergancyClose":
+      case "emergencyClose":
         actionText = "Trade Closed";
         break;
       default:
