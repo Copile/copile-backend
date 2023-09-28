@@ -106,8 +106,8 @@ function constructActionEmbed(fireStoreTradeData, actionText) {
   const tradeSide = fireStoreTradeData.side === "Buy" ? "LONG" : "SHORT";
   const isLong = fireStoreTradeData.side === "Buy";
 
-  console.log("tradeBody", tradeBody);
   console.log("fireStoreTradeData", fireStoreTradeData);
+  console.log("actionText", actionText);
 
   const embed = {
     color: 0x2c2f33,
