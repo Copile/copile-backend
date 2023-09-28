@@ -142,15 +142,10 @@ async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
-  if (exchange === EXCHANGE.TESTNET) {
-    return STATUS.UNKNOWN;
-  }
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       return String(order.stopPrice) === String(price);
     }
-    console.log("order.orderId", order.orderId);
-    console.log("orderID", orderID);
     return String(order.orderId) === String(orderID);
   });
 
