@@ -101,7 +101,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
 
     return orders.map(({ orderStatus, ...rest }) => ({
       ...rest,
-      status: orderStatus === "Untriggered" ? "Active" : orderStatus,
+      status: orderStatus === "Untriggered" || "New" ? "Active" : orderStatus,
     }));
   } catch (error) {
     // If it's already a custom error, throw it as-is
