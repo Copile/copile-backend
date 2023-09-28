@@ -18,20 +18,24 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
       // strict_param_validation: true,
       testnet: true,
     });
-    let orders = await client.getActiveOrders({
+    let response = await client.getActiveOrders({
       category: "linear",
       orderFilter: "Order",
       settleCoin: "USDT",
     });
 
-    console.log(orders);
+    if(!response){
+      return [];
+    }
+
+    const orders = response.result.list;
 
     if (!orders.length) {
       return [];
     }
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
-    const filteredOrders = orders.result.list.filter(
+    const filteredOrders = orders.filter(
       (order) => order.reduceOnly === false && order.orderStatus === "New"
     );
 
@@ -86,14 +90,18 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
       testnet: true,
     });
 
-    let orders = await client.getActiveOrders({
+    let response = await client.getActiveOrders({
       category: "linear",
       orderFilter: "StopOrder",
       settleCoin: "USDT",
     });
 
-    console.log(orders);
-    return orders.result.list.map(({ orderStatus, ...rest }) => ({
+    if(!response){
+      return [];
+    }
+    const orders = response.result.list;
+
+    return orders.map(({ orderStatus, ...rest }) => ({
       ...rest,
       status: orderStatus === "Untriggered" ? "Active" : orderStatus,
     }));
