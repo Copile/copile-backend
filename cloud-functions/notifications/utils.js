@@ -48,7 +48,7 @@ function constructTradeEmbed(tradeBody) {
   console.log("tradeData", tradeData);
 
   const embed = {
-    color: 0x7f6cff,
+    color: 0x2c2f33,
     title: "Copile Notifications",
     description: `> **NEW __${tradeSide}__ POSITION OPENED** ${
       isLong ? ":green_circle:" : ":red_circle:"
@@ -103,23 +103,55 @@ function constructTradeEmbed(tradeBody) {
 }
 
 function constructActionEmbed(fireStoreTradeData, actionText) {
+  const tradeSide = fireStoreTradeData.side === "Buy" ? "LONG" : "SHORT";
+  const isLong = fireStoreTradeData.side === "Buy";
+
+  console.log("tradeBody", tradeBody);
+  console.log("fireStoreTradeData", fireStoreTradeData);
+
   const embed = {
-    color: 0x7f6cff,
-    author: {
-      name: "Copile Notifications",
-      icon_url: "https://i.imgur.com/UMSFUaT.png",
-      url: "https://copile.trade",
-    },
-    description: `> **TRADE UPDATED**\n\n#${fireStoreTradeData.symbol} #${
-      fireStoreTradeData.side
-    } ${
-      fireStoreTradeData.side === "Buy"
-        ? ":arrow_up: :green_circle:"
-        : ":arrow_down: :red_circle:"
-    }\n\n:bell: **${actionText}** :bell:`,
-    thumbnail: {
-      url: "https://i.imgur.com/hmcMAtj.png",
-    },
+    color: 0x2c2f33,
+    title: "Copile Notifications",
+    description: `> **${actionText}** :bellhop:`,
+    fields: [
+      {
+        name: "---------------------------------------------------------------------",
+        value: "__**DETAILS**__",
+      },
+      {
+        name: "Symbol",
+        value: fireStoreTradeData.symbol,
+        inline: true,
+      },
+      {
+        name: "Entry",
+        value: `$${fireStoreTradeData.entry}`,
+        inline: true,
+      },
+      {
+        name: "Leverage",
+        value: `${fireStoreTradeData.leverage}x`,
+        inline: true,
+      },
+      {
+        name: "---------------------------------------------------------------------",
+        value: "__**ORDERS**__",
+      },
+      {
+        name: `Take Profits (${fireStoreTradeData.take_profits.length})`,
+        value: fireStoreTradeData.take_profits
+          .map((tp, index) => `${tp.tp_value} | **${tp.tp_percentage * 100}%**`)
+          .join("\n"),
+        inline: true,
+      },
+      {
+        name: `Stop Losses (${fireStoreTradeData.stop_losses.length})`,
+        value: fireStoreTradeData.stop_losses
+          .map((sl, index) => `${sl.sl_value} | **${sl.sl_percentage * 100}%**`)
+          .join("\n"),
+        inline: true,
+      },
+    ],
     timestamp: new Date().toISOString(),
     footer: {
       text: "Copile Trade Automation",
