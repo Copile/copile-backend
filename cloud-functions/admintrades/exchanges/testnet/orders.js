@@ -20,7 +20,6 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
     });
     let response = await client.getActiveOrders({
       category: "linear",
-      orderFilter: "Order",
       settleCoin: "USDT",
     });
 
@@ -92,7 +91,6 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
 
     let response = await client.getActiveOrders({
       category: "linear",
-      orderFilter: "StopOrder",
       settleCoin: "USDT",
     });
 
