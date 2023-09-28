@@ -74,6 +74,7 @@ router.get("/trades/:exchange", validateTrader, async (req, res, next) => {
       session.getOrders(traderId),
     ]);
 
+    console.log("order", orders);
     // Pagination
     const start = (page - 1) * limit;
     const end = start + limit;
