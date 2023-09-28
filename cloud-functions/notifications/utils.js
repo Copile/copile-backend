@@ -112,11 +112,11 @@ function constructActionEmbed(fireStoreTradeData, actionText) {
   const embed = {
     color: 0x2c2f33,
     title: "Copile Notifications",
-    description: `> **${actionText}** :bellhop:`,
+    description: `> :bellhop: ***TRADE UPDATED*** :bellhop:`,
     fields: [
       {
         name: "---------------------------------------------------------------------",
-        value: "__**DETAILS**__",
+        value: "__**UPDATE DETAILS**__",
       },
       {
         name: "Symbol",
@@ -134,22 +134,8 @@ function constructActionEmbed(fireStoreTradeData, actionText) {
         inline: true,
       },
       {
-        name: "---------------------------------------------------------------------",
-        value: "__**ORDERS**__",
-      },
-      {
-        name: `Take Profits (${fireStoreTradeData.take_profits.length})`,
-        value: fireStoreTradeData.take_profits
-          .map((tp, index) => `${tp.tp_value} | **${tp.tp_percentage * 100}%**`)
-          .join("\n"),
-        inline: true,
-      },
-      {
-        name: `Stop Losses (${fireStoreTradeData.stop_losses.length})`,
-        value: fireStoreTradeData.stop_losses
-          .map((sl, index) => `${sl.sl_value} | **${sl.sl_percentage * 100}%**`)
-          .join("\n"),
-        inline: true,
+        name: "Update",
+        value: `> **${actionText}** `,
       },
     ],
     timestamp: new Date().toISOString(),
