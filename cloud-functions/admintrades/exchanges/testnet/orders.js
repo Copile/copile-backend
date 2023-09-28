@@ -20,9 +20,11 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
     });
     let orders = await client.getActiveOrders({
       category: "linear",
-      orderFilter: "order",
+      orderFilter: "Order",
       settleCoin: "USDT",
     });
+
+    console.log(orders);
 
     if (!orders.length) {
       return [];
@@ -48,7 +50,7 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
           side: order.side,
           leverage: tradeData.leverage,
           margin: tradeData.margin,
-          type: "LIMIT",
+          type: order.orderType,
           entry_price: order.price,
           quantity: order.qty,
           orderStatus: "Active",
@@ -80,7 +82,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
     const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
-      strict_param_validation: true,
+      // strict_param_validation: true,
       testnet: true,
     });
 
@@ -90,6 +92,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
       settleCoin: "USDT",
     });
 
+    console.log(orders);
     return orders.result.list.map(({ orderStatus, ...rest }) => ({
       ...rest,
       status: orderStatus === "Untriggered" ? "Active" : orderStatus,
