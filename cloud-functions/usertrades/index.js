@@ -386,8 +386,7 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
 
         let unrealised_pnl_pct = (
           (parseFloat(position.unrealised_pnl) /
-            (parseFloat(position.positionAmt) *
-              parseFloat(position.entryPrice))) *
+            (parseFloat(position.size) * parseFloat(position.entryPrice))) *
           100 *
           parseFloat(position.leverage)
         ).toFixed(2);
