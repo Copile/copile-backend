@@ -111,12 +111,10 @@ app.all("/trades/:exchange", async (req, res) => {
       orders: orders,
     });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the balance details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the balance details.",
+    });
   }
 });
 
@@ -388,8 +386,7 @@ async function getBinanceTrades(apiKey, apiSecret, userId) {
 
         let unrealised_pnl_pct = (
           (parseFloat(position.unrealised_pnl) /
-            (parseFloat(position.quantity) *
-              parseFloat(position.entry_price))) *
+            (parseFloat(position.size) * parseFloat(position.entryPrice))) *
           100 *
           parseFloat(position.leverage)
         ).toFixed(2);
