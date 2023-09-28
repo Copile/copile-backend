@@ -35,6 +35,8 @@ client.login(DISCORD_BOT_TOKEN);
 
 // POST endpoint for trade notifications
 app.post("/trade", async (req, res) => {
+  console.log("/trade hit");
+
   try {
     // Getting trade data from the request body
     const tradeBody = req.body;
