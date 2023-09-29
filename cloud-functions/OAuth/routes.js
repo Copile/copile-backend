@@ -16,7 +16,6 @@ router.get("/callback/discord", async (req, res, next) => {
   try {
     const user = req.get("userId");
     const code = req.query.code;
-    console.log("code from query: ", code);
 
     if (!code) {
       throw new ApiError(400, "Code parameter missing.", "discord");
