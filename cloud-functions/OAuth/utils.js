@@ -11,7 +11,7 @@ const TELEGRAM_BOT_KEY = process.env.TELEGRAM_BOT_KEY;
 async function exchangeDiscordCodeForToken(code) {
   try {
     const response = await axios.post(
-      "https://discord.com/api/v10/oauth2/token",
+      "https://discord.com/api/oauth2/token",
       new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
         client_secret: DISCORD_CLIENT_SECRET,
