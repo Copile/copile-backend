@@ -47,7 +47,17 @@ async function getDiscordUserData(access_token) {
         },
       }
     );
-    return user_response.data;
+    // return user_response.data;
+
+    const avatarType = user_response.data.avatar.startsWith("a_")
+      ? "gif"
+      : "png";
+
+    return {
+      id: user_response.data.id,
+      username: user_response.data.username,
+      avatar: `https://cdn.discordapp.com/avatars/${user_response.data.id}/${user_response.data.avatar}.${avatarType}`,
+    };
   } catch (error) {
     throw new ApiError(500, "Error getting Discord user data.", "discord");
   }
