@@ -26,12 +26,9 @@ async function exchangeDiscordCodeForToken(code) {
         },
       }
     );
+
     return response.data.access_token;
   } catch (error) {
-    console.log(
-      "Error response while exchanging Discord code for token:",
-      error
-    );
     throw new ApiError(
       500,
       "Error exchanging Discord code for token.",
@@ -52,7 +49,6 @@ async function getDiscordUserData(access_token) {
     );
     return user_response.data;
   } catch (error) {
-    console.log("Error response while getting Discord user data:", error);
     throw new ApiError(500, "Error getting Discord user data.", "discord");
   }
 }

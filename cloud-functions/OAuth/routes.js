@@ -28,9 +28,7 @@ router.get("/callback/discord", async (req, res, next) => {
 
     const token_data = await exchangeDiscordCodeForToken(code);
 
-    console.log("token_data: ", token_data);
-    console.log("token_data.access_token: ", token_data.access_token);
-    const discord_user_data = await getDiscordUserData(token_data.access_token);
+    const discord_user_data = await getDiscordUserData(token_data);
 
     await saveUserDataToFirestore(user, discord_user_data, "discord");
 
