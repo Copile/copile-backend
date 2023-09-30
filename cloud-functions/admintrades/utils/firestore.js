@@ -48,7 +48,12 @@ async function mapPositionToTrade(position, traderId, exchange) {
       position.side
     );
 
-    if (tradeDoc === null) return position;
+    if (tradeDoc === null) {
+      return {
+        ...position,
+        isCopileTrade: false,
+      };
+    }
 
     const tradeData = tradeDoc.data();
 
@@ -56,6 +61,7 @@ async function mapPositionToTrade(position, traderId, exchange) {
       trade_id: tradeDoc.id,
       ...position,
       created_at: tradeData.created_at,
+      isCopileTrade: true,
     };
   } catch (error) {
     throw new CustomError({
@@ -78,7 +84,10 @@ async function mapPositionToTrade(position, traderId, exchange) {
 async function getTradeDoc(traderId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
-  return await fetchLatestTradeDoc(traderId, symbol, exchange, formattedSide);
+  const tradeDoc = await fetchLatestTradeDoc(traderId, symbol, exchange, formattedSide);
+  if(tradeDoc === null){
+    return null;
+  }
 }
 
 module.exports = { mapPositionToTrade, getTradeDoc };

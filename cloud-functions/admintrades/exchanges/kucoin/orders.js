@@ -115,6 +115,20 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
           order.side
         );
         const tradeData = tradeDoc.data();
+        if(tradeData === null) {
+          return {
+            orderId: order.id,
+            symbol: order.symbol,
+            side:
+              order.side.charAt(0).toUpperCase() +
+              order.side.slice(1).toLowerCase(),
+            type: "LIMIT",
+            entryPrice: order.price,
+            quantity: order.size,
+            status: order.status === "NEW" ? "Active" : order.status,
+            isCopileTrade: false,
+          };
+        }
         return {
           tradeId: tradeDoc.id,
           orderId: order.id,
@@ -129,6 +143,7 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
           quantity: order.size,
           status: "Active",
           createdAt: tradeData.created_at,
+          isCopileTrade: true,
         };
       })
     );

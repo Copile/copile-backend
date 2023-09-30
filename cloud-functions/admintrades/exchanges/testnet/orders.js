@@ -47,6 +47,20 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
           order.side
         );
         const tradeData = tradeDoc.data();
+        if(tradeData === null){
+          return {
+            order_id: order.orderId,
+            symbol: order.symbol,
+            side: order.side,
+            leverage: order.leverage,
+            margin: order.margin,
+            type: order.orderType,
+            entry_price: order.price,
+            quantity: order.qty,
+            orderStatus: "Active",
+            isCopileTrade: false,
+          };
+        }
         return {
           trade_id: tradeDoc.id,
           symbol: order.symbol,
@@ -58,6 +72,7 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
           quantity: order.qty,
           orderStatus: "Active",
           created_at: tradeData.created_at,
+          isCopileTrade: true,
         };
       })
     );

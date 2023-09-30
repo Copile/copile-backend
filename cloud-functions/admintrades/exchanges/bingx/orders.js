@@ -75,6 +75,16 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
           order.side
         );
         const tradeData = tradeDoc.data();
+        if(tradeData === null) return {
+          order_id: order.orderId,
+          symbol: order.symbol,
+          side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
+          type: "LIMIT",
+          entry_price: order.price,
+          quantity: order.origQty,
+          status: order.status === "NEW" ? "Active" : order.status,
+          isCopileTrade: false,
+        };
         return {
           trade_id: tradeDoc.id,
           order_id: order.orderId,
@@ -87,6 +97,7 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
           quantity: order.origQty,
           status: "Active",
           created_at: tradeData.created_at,
+          isCopileTrade: true,
         };
       })
     );

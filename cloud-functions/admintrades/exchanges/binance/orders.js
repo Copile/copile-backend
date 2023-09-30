@@ -47,6 +47,19 @@ async function getBinanceOrders(apiKey, apiSecret, traderId) {
       orders.map(async ({ symbol, side, type, price, origQty, orderId, status }) => {
         const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
         const tradeData = tradeDoc.data();
+        if (tradeData === null) {
+          return {
+            order_id: orderId,
+            symbol,
+            side: `${side.charAt(0).toUpperCase()}${side.slice(1).toLowerCase()}`,
+            type,
+            entry_price: price,
+            quantity: origQty,
+            status,
+            isCopileTrade: false,
+          }
+        }
+
         return {
           trade_id: tradeDoc.id,
           order_id: orderId,
@@ -59,6 +72,7 @@ async function getBinanceOrders(apiKey, apiSecret, traderId) {
           quantity: origQty,
           status,
           created_at: tradeData.created_at,
+          isCopileTrade: true,
         };
       })
     );
