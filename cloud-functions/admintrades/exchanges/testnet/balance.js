@@ -13,6 +13,8 @@ async function getTestnetBalance(apiKey, apiSecret) {
       accountType: "UNIFIED",
       coin: "USDT",
     });
+
+    console.log("balance.result", balance.result);
     return balance.result.balance[0].walletBalance;
   } catch (e) {
     throw new CustomError({
