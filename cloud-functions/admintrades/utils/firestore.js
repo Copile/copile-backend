@@ -39,7 +39,7 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   }
 }
 
-async function mapPositionToTrade(position, traderId, exchange) {  
+async function mapPositionToTrade(position, traderId, exchange) {
   try {
     const tradeDoc = await fetchLatestTradeDoc(
       traderId,
@@ -48,13 +48,13 @@ async function mapPositionToTrade(position, traderId, exchange) {
       position.side
     );
 
-    if (tradeDoc === null) return;
+    if (tradeDoc === null) return position;
 
     const tradeData = tradeDoc.data();
 
     return {
       trade_id: tradeDoc.id,
-      ... position,
+      ...position,
       created_at: tradeData.created_at,
     };
   } catch (error) {
