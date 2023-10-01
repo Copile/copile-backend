@@ -85,9 +85,6 @@ async function getTradeDoc(traderId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
   const tradeDoc = await fetchLatestTradeDoc(traderId, symbol, exchange, formattedSide);
-  if(tradeDoc === null){
-    return null;
-  }
   return tradeDoc;
 }
 
