@@ -25,7 +25,9 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
       .get();
 
     if (tradeQuerySnapshot.empty) {
-      console.log(`No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`);
+      console.log(
+        `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`
+      );
       return null;
     }
 
@@ -47,21 +49,14 @@ async function mapPositionToTrade(position, traderId, exchange) {
       exchange,
       position.side
     );
-
-    if (tradeDoc === null) {
-      return {
-        ...position,
-        isCopileTrade: false,
-      };
-    }
+    if (!tradeDoc) return;
 
     const tradeData = tradeDoc.data();
 
     return {
       trade_id: tradeDoc.id,
-      ...position,
       created_at: tradeData.created_at,
-      isCopileTrade: true,
+      ...position,
     };
   } catch (error) {
     throw new CustomError({
@@ -84,7 +79,12 @@ async function mapPositionToTrade(position, traderId, exchange) {
 async function getTradeDoc(traderId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
-  const tradeDoc = await fetchLatestTradeDoc(traderId, symbol, exchange, formattedSide);
+  const tradeDoc = await fetchLatestTradeDoc(
+    traderId,
+    symbol,
+    exchange,
+    formattedSide
+  );
   return tradeDoc;
 }
 
