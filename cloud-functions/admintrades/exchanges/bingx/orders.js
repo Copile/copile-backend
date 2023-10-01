@@ -22,7 +22,7 @@ async function getBingXOrderStatuses(apiKey, apiSecret) {
     }
     throw new CustomError({
       message: `Error fetching BingX active orders: ${e.message}`,
-      source: 'getBingXOrderStatuses',
+      source: "getBingXOrderStatuses",
       status: 500,
     });
   }
@@ -47,7 +47,7 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
     }
     throw new CustomError({
       message: `An error occurred while retrieving trades from BingX: ${e.message}`,
-      source: 'getBingXOrderById',
+      source: "getBingXOrderById",
       status: 500,
     });
   }
@@ -64,52 +64,36 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
 async function getBingXOrders(apiKey, apiSecret, traderId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
-    if(!orders.length) return [];
+    if (!orders.length) return [];
 
-    const bingxMatchingParams = await Promise.all(
-      orders.map(async (order) => {
-        const tradeDoc = await getTradeDoc(
-          traderId,
-          order.symbol,
-          "bingx",
-          order.side
-        );
-        const tradeData = tradeDoc.data();
-        if(tradeData === null) return {
-          order_id: order.orderId,
-          symbol: order.symbol,
-          side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
-          type: "LIMIT",
-          entry_price: order.price,
-          quantity: order.origQty,
-          status: order.status === "NEW" ? "Active" : order.status,
-          isCopileTrade: false,
-        };
+    return await Promise.all(
+      orders.map(async ({ orderId, symbol, side, price, origQty, status }) => {
+        const tradeDoc = await getTradeDoc(traderId, symbol, "bingx", side);
+        const tradeData = tradeDoc?.data();
+
         return {
-          trade_id: tradeDoc.id,
-          order_id: order.orderId,
-          symbol: order.symbol,
-          side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
-          leverage: tradeData.leverage,
-          margin: tradeData.margin,
+          trade_id: tradeDoc?.id,
+          order_id: orderId,
+          symbol,
+          side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
+          leverage: tradeData?.leverage,
+          margin: tradeData?.margin,
           type: "LIMIT",
-          entry_price: order.price,
-          quantity: order.origQty,
-          status: "Active",
-          created_at: tradeData.created_at,
-          isCopileTrade: true,
+          entry_price: price,
+          quantity: origQty,
+          status: status === "NEW" ? "Active" : status,
+          created_at: tradeData?.created_at,
+          isCopileTrade: Boolean(tradeDoc),
         };
       })
     );
-
-    return bingxMatchingParams;
   } catch (e) {
     if (e instanceof CustomError) {
       throw e;
     }
     throw new CustomError({
       message: `An error occurred while retrieving active orders from BingX: ${e.message}`,
-      source: 'getBingXOrders',
+      source: "getBingXOrders",
       status: 500,
     });
   }

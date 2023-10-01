@@ -12,16 +12,14 @@ const CustomError = require("../../utils/error"); // Import the CustomError clas
  */
 async function getBingXBalance(apiKey, apiSecret) {
   try {
-    const balance = await getBalance(apiKey, apiSecret);
-
-    console.log('balance', balance);
+    const response = await getBalance(apiKey, apiSecret);
 
     // Validate the structure of the response data
-    if (!balance || !balance.data || !balance.data.data || !balance.data.data.balance) {
+    if (!response || !response.balance || !response.balance.availableMargin) {
       throw new CustomError({ message: 'Unexpected response format from BingX', status: 502 });
     }
 
-    return balance.data.data.balance.availableMargin;
+    return response.balance.availableMargin;
 
   } catch (e) {
     // If it's already a custom error, throw it as-is

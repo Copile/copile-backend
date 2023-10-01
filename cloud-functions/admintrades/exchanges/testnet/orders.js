@@ -18,67 +18,43 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
       // strict_param_validation: true,
       testnet: true,
     });
-    let response = await client.getActiveOrders({
+
+    const response = await client.getActiveOrders({
       category: "linear",
       settleCoin: "USDT",
     });
 
-    if(!response){
-      return [];
-    }
-
-    const orders = response.result.list;
-
-    if (!orders.length) {
+    if (!response || !response.result.list.length) {
       return [];
     }
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
-    const filteredOrders = orders.filter(
-      (order) => order.reduceOnly === false && order.orderStatus === "New"
+    const filteredOrders = response.result.list.filter(
+      (order) => !order.reduceOnly && order.orderStatus === "New"
     );
 
-    const bybitMatchingParams = await Promise.all(
+    return await Promise.all(
       filteredOrders.map(async (order) => {
-        const tradeDoc = await getTradeDoc(
-          traderId,
-          order.symbol,
-          "testnet",
-          order.side
-        );
-        const tradeData = tradeDoc.data();
-        if(tradeData === null){
-          return {
-            order_id: order.orderId,
-            symbol: order.symbol,
-            side: order.side,
-            leverage: order.leverage,
-            margin: order.margin,
-            type: order.orderType,
-            entry_price: order.price,
-            quantity: order.qty,
-            orderStatus: "Active",
-            isCopileTrade: false,
-          };
-        }
+        const tradeDoc = await getTradeDoc(traderId, order.symbol, "testnet", order.side);
+        const tradeData = tradeDoc?.data();
+
         return {
-          trade_id: tradeDoc.id,
+          trade_id: tradeDoc?.id,
+          order_id: order.orderId,
           symbol: order.symbol,
-          side: order.side,
-          leverage: tradeData.leverage,
-          margin: tradeData.margin,
+          side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
           type: order.orderType,
           entry_price: order.price,
           quantity: order.qty,
-          orderStatus: "Active",
-          created_at: tradeData.created_at,
-          isCopileTrade: true,
+          status: "Active",
+          leverage: tradeData?.leverage,
+          margin: tradeData?.margin,
+          created_at: tradeData?.created_at,
+          isCopileTrade: Boolean(tradeDoc),
         };
       })
     );
-
-    return bybitMatchingParams;
-  } catch (e) {
+  }catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet orders: ${e.message}`,
       status: 500,

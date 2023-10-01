@@ -106,49 +106,27 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
         order.status === "open"
     );
 
-    const kucoinMatchingParams = await Promise.all(
-      filteredOrders.map(async (order) => {
-        const tradeDoc = await getTradeDoc(
-          traderId,
-          order.symbol,
-          "kucoin",
-          order.side
-        );
-        const tradeData = tradeDoc.data();
-        if(tradeData === null) {
-          return {
-            orderId: order.id,
-            symbol: order.symbol,
-            side:
-              order.side.charAt(0).toUpperCase() +
-              order.side.slice(1).toLowerCase(),
-            type: "LIMIT",
-            entryPrice: order.price,
-            quantity: order.size,
-            status: order.status === "NEW" ? "Active" : order.status,
-            isCopileTrade: false,
-          };
-        }
+    return await Promise.all(
+      filteredOrders.map(async ({ id, symbol, side, price, size, status }) => {
+        const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side);
+        const tradeData = tradeDoc?.data();
+
         return {
-          tradeId: tradeDoc.id,
-          orderId: order.id,
-          symbol: order.symbol,
-          side:
-            order.side.charAt(0).toUpperCase() +
-            order.side.slice(1).toLowerCase(),
-          leverage: tradeData.leverage,
-          margin: tradeData.margin,
+          trade_id: tradeDoc?.id,
+          orderId: id,
+          symbol: symbol,
+          side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
+          leverage: tradeData?.leverage,
+          margin: tradeData?.margin,
           type: "LIMIT",
-          entryPrice: order.price,
-          quantity: order.size,
-          status: "Active",
-          createdAt: tradeData.created_at,
-          isCopileTrade: true,
+          entryPrice: price,
+          quantity: size,
+          status: status === "NEW" ? "Active" : status,
+          createdAt: tradeData?.created_at,
+          isCopileTrade: Boolean(tradeDoc),
         };
       })
     );
-
-    return kucoinMatchingParams;
   } catch (e) {
     // If it's already a custom error, throw it as-is
     if (e instanceof CustomError) {

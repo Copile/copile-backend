@@ -44,42 +44,29 @@ async function getBinanceOrders(apiKey, apiSecret, traderId) {
     const orders = await getOrders(apiKey, apiSecret);
 
     return await Promise.all(
-      orders.map(async ({ symbol, side, type, price, origQty, orderId, status }) => {
-        const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
-        console.log('tradeDoc', tradeDoc);
-        const tradeData = tradeDoc.data();
-        console.log('tradeData', tradeData);
-        if (tradeData === null) {
+      orders.map(
+        async ({ symbol, side, type, price, origQty, orderId, status }) => {
+          const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
+          const tradeData = tradeDoc?.data();
+
           return {
+            trade_id: tradeDoc?.id,
             order_id: orderId,
             symbol,
-            side: `${side.charAt(0).toUpperCase()}${side.slice(1).toLowerCase()}`,
+            side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
+            leverage: tradeData?.leverage,
+            margin: tradeData?.margin,
             type,
             entry_price: price,
             quantity: origQty,
             status,
-            isCopileTrade: false,
-          }
+            created_at: tradeData?.created_at,
+            isCopileTrade: Boolean(tradeDoc),
+          };
         }
-
-        return {
-          trade_id: tradeDoc.id,
-          order_id: orderId,
-          symbol,
-          side: `${side.charAt(0).toUpperCase()}${side.slice(1).toLowerCase()}`,
-          leverage: tradeData.leverage,
-          margin: tradeData.margin,
-          type,
-          entry_price: price,
-          quantity: origQty,
-          status,
-          created_at: tradeData.created_at,
-          isCopileTrade: true,
-        };
-      })
+      )
     );
   } catch (error) {
-    // If it's already a custom error, throw it as-is
     if (error instanceof CustomError) {
       throw error;
     }
