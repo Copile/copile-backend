@@ -46,7 +46,9 @@ async function getBinanceOrders(apiKey, apiSecret, traderId) {
     return await Promise.all(
       orders.map(async ({ symbol, side, type, price, origQty, orderId, status }) => {
         const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
+        console.log('tradeDoc', tradeDoc);
         const tradeData = tradeDoc.data();
+        console.log('tradeData', tradeData);
         if (tradeData === null) {
           return {
             order_id: orderId,

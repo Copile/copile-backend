@@ -14,6 +14,8 @@ async function getBingXBalance(apiKey, apiSecret) {
   try {
     const balance = await getBalance(apiKey, apiSecret);
 
+    console.log('balance', balance);
+
     // Validate the structure of the response data
     if (!balance || !balance.data || !balance.data.data || !balance.data.data.balance) {
       throw new CustomError({ message: 'Unexpected response format from BingX', status: 502 });
