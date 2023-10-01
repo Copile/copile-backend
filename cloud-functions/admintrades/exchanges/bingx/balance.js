@@ -1,4 +1,4 @@
-const getBalance = require("./request");
+const { getBalance } = require("./request");
 const CustomError = require("../../utils/error"); // Import the CustomError class from the correct path
 
 /**
