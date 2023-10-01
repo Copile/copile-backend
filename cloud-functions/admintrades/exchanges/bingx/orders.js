@@ -69,21 +69,21 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
     return await Promise.all(
       orders.map(async ({ orderId, symbol, side, price, origQty, status }) => {
         const tradeDoc = await getTradeDoc(traderId, symbol, "bingx", side);
-        const tradeData = tradeDoc?.data();
+        if (!tradeDoc) return;
+        const tradeData = tradeDoc.data();
 
         return {
-          trade_id: tradeDoc?.id,
+          trade_id: tradeDoc.id,
           order_id: orderId,
           symbol,
           side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
-          leverage: tradeData?.leverage,
-          margin: tradeData?.margin,
+          leverage: tradeData.leverage,
+          margin: tradeData.margin,
           type: "LIMIT",
           entry_price: price,
           quantity: origQty,
           status: status === "NEW" ? "Active" : status,
-          created_at: tradeData?.created_at,
-          isCopileTrade: Boolean(tradeDoc),
+          created_at: tradeData.created_at,
         };
       })
     );

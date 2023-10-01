@@ -36,10 +36,11 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
     return await Promise.all(
       filteredOrders.map(async (order) => {
         const tradeDoc = await getTradeDoc(traderId, order.symbol, "testnet", order.side);
-        const tradeData = tradeDoc?.data();
+        if (!tradeDoc) return;
+        const tradeData = tradeDoc.data();
 
         return {
-          trade_id: tradeDoc?.id,
+          trade_id: tradeDoc.id,
           order_id: order.orderId,
           symbol: order.symbol,
           side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
@@ -47,10 +48,9 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
           entry_price: order.price,
           quantity: order.qty,
           status: "Active",
-          leverage: tradeData?.leverage,
-          margin: tradeData?.margin,
-          created_at: tradeData?.created_at,
-          isCopileTrade: Boolean(tradeDoc),
+          leverage: tradeData.leverage,
+          margin: tradeData.margin,
+          created_at: tradeData.created_at,
         };
       })
     );

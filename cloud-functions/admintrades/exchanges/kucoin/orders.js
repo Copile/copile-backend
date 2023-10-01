@@ -109,21 +109,21 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
     return await Promise.all(
       filteredOrders.map(async ({ id, symbol, side, price, size, status }) => {
         const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side);
-        const tradeData = tradeDoc?.data();
+        if (!tradeDoc) return;
+        const tradeData = tradeDoc.data();
 
         return {
-          trade_id: tradeDoc?.id,
+          trade_id: tradeDoc.id,
           orderId: id,
           symbol: symbol,
           side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
-          leverage: tradeData?.leverage,
-          margin: tradeData?.margin,
+          leverage: tradeData.leverage,
+          margin: tradeData.margin,
           type: "LIMIT",
           entryPrice: price,
           quantity: size,
           status: status === "NEW" ? "Active" : status,
-          createdAt: tradeData?.created_at,
-          isCopileTrade: Boolean(tradeDoc),
+          createdAt: tradeData.created_at,
         };
       })
     );
