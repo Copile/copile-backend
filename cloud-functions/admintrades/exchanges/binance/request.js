@@ -48,10 +48,11 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
  * @throws {CustomError} - When the request for server time fails.
  */
 async function getServerTime() {
-  const url = `${API_PROTOCOL}://${API_HOST}/fapi/v1/time`;
+  //const url = `${API_PROTOCOL}://${API_HOST}/fapi/v1/time`;
   try {
-    const response = await axios.get(url);
-    return response.data.serverTime;
+    //const response = await axios.get(url);
+    // create and give back a timestamp in milliseconds
+    return Date.now();
   } catch (error) {
     throw new CustomError({
       message: `Failed to get Binance server time: ${error.message}`,
