@@ -88,6 +88,7 @@ async function getTradeDoc(traderId, symbol, exchange, side) {
   if(tradeDoc === null){
     return null;
   }
+  return tradeDoc;
 }
 
 module.exports = { mapPositionToTrade, getTradeDoc };
