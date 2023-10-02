@@ -12,6 +12,7 @@ const {
   fetchFirestoreTradeData,
   constructTradeEmbed,
   constructActionEmbed,
+  constructErrorEmbed,
 } = require("./utils");
 
 // Creating a new Discord client
@@ -298,5 +299,111 @@ app.post("/action", async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// POST endpoint for error notifications
+app.post("/error", async (req, res) => {
+  try {
+    // Getting error data from the request body
+    const errorData = req.body;
+
+    // If theres no user ID, return an error
+    if (!errorData.user_id) {
+      return res
+        .status(400)
+        .json({ success: false, error: "No user ID provided." });
+    }
+
+    // Fetching user data from firestore using the user ID
+    const userData = await fetchUserData(errorData.user_id);
+    // Extracting Discord and Telegram IDs from the user data
+    const discordId = userData.discord.id;
+    const telegramId = userData.telegram.id;
+
+    // Get the error type from the query string
+    const errorType = req.query.type;
+    let errorText = "";
+
+    // Updating the error text based on the error type
+    switch (errorType) {
+      case "bulkTp":
+        errorText = "Error occurred during bulk Take Profit operation";
+        break;
+      case "cancelOrder":
+        errorText = "Error occurred while cancelling the order";
+        break;
+      case "replaceSL":
+        errorText = "Error occurred while updating Stop Loss";
+        break;
+      case "partialClose":
+        errorText = "Error occurred while partially closing the trade";
+        break;
+      case "emergencyClose":
+        errorText = "Error occurred while closing the trade";
+        break;
+      case "margin":
+        errorText = "Error occurred due to improper margin setup";
+        break;
+      case "api":
+        errorText = "Error occurred due to improper API key setup";
+        break;
+      default:
+        errorText = "Unknown Error";
+    }
+
+    // Array to keep track of where notifications are sent
+    let notificationSent = [];
+
+    // If Discord ID is present, send a Discord notification
+    if (discordId !== "x") {
+      // Constructing the Discord embed message
+      const embed = constructErrorEmbed(errorText); // You need to implement this function
+
+      // Fetching the Discord user and sending them the message
+      const user = await client.users.fetch(discordId);
+      user.send({ embeds: [embed] }).catch((error) => {
+        console.log(`Could not send discord DM to ${user.tag}.`, error);
+        return res.status(500).json({ success: false, error: error });
+      });
+
+      // Adding Discord to the list of sent notifications
+      notificationSent.push("Discord");
+    }
+
+    // If Telegram ID is present, send a Telegram notification
+    if (telegramId !== "x") {
+      // Constructing the Telegram message
+      const message = `ERROR: ${errorText}`;
+
+      // Sending the Telegram message
+      const { success } = await sendTelegramMessage(telegramId, message);
+
+      // If the message was sent successfully, add Telegram to the list of sent notifications
+      if (success) {
+        notificationSent.push("Telegram");
+      }
+    }
+
+    // If no notifications were sent, return an error
+    if (notificationSent.length === 0) {
+      console.log("No Discord or Telegram ID found for user.");
+      return res.status(400).json({
+        success: false,
+        message: "No Discord or Telegram ID found for user.",
+      });
+    } else {
+      // If notifications were sent, return a success message
+      console.log(`Notifications sent to: ${notificationSent.join(", ")}`);
+      return res.status(200).json({
+        success: true,
+        message: `Notifications sent to: ${notificationSent.join(", ")}`,
+      });
+    }
+  } catch (error) {
+    // If an error occurs, log it and return an error message
+    console.log(error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Exporting the express app
 exports.notifications = app;

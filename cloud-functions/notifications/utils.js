@@ -148,10 +148,57 @@ function constructActionEmbed(fireStoreTradeData, actionText) {
   return embed;
 }
 
+function constructErrorEmebed(fireStoreTradeData, errorText) {
+  const tradeSide = fireStoreTradeData.side === "Buy" ? "LONG" : "SHORT";
+  const isLong = fireStoreTradeData.side === "Buy";
+
+  console.log("fireStoreTradeData", fireStoreTradeData);
+  console.log("actionText", actionText);
+
+  const embed = {
+    color: 0xe9495a,
+    title: "Copile Notifications",
+    description: `> :warning: ***TRADE ERROR*** :warning:`,
+    fields: [
+      {
+        name: "---------------------------------------------------------------------",
+        value: "__**TRADE DETAILS**__",
+      },
+      {
+        name: "Symbol",
+        value: fireStoreTradeData.symbol,
+        inline: true,
+      },
+      {
+        name: "Entry",
+        value: `$${fireStoreTradeData.entry}`,
+        inline: true,
+      },
+      {
+        name: "Leverage",
+        value: `${fireStoreTradeData.leverage}x`,
+        inline: true,
+      },
+      {
+        name: "Error :no_entry:",
+        value: `> **${errorText}** `,
+      },
+    ],
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: "Copile Trade Automation",
+      icon_url: "https://i.imgur.com/UMSFUaT.png",
+    },
+  };
+
+  return embed;
+}
+
 module.exports = {
   sendTelegramMessage,
   fetchUserData,
   fetchFirestoreTradeData,
   constructTradeEmbed,
   constructActionEmbed,
+  constructErrorEmebed,
 };
