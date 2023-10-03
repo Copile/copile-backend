@@ -20,7 +20,7 @@ const EXCHANGE = {
 /**
  * Retrieves detailed information on trade profits and losses for a specific trader and trade.
  * @async
- * @param {string} traderId - The identifier for the trader.
+ * @param {string} userId - The identifier for the user.
  * @param {string} tradeId - The identifier for the trade.
  * @param {string} exchange - The name of the exchange platform.
  * @param {string} [apiKey] - The API key for the exchange.
@@ -30,7 +30,7 @@ const EXCHANGE = {
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
 async function getTradeProfitLossDetails(
-  traderId,
+  userId,
   tradeId,
   exchange,
   symbol,
@@ -40,8 +40,8 @@ async function getTradeProfitLossDetails(
 ) {
   try {
     const tradeDocRef = db
-      .collection("traders")
-      .doc(traderId)
+      .collection("users")
+      .doc(userId)
       .collection("trades")
       .doc(tradeId);
 

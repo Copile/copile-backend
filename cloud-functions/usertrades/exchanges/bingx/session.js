@@ -1,0 +1,100 @@
+const ExchangeSession = require("../exchangeSession");
+const { getBingXOrders, getBingXOrderStatuses } = require("./orders");
+const { getBingXPositions } = require("./positions");
+const { getBingXBalance } = require("./balance");
+const CustomError = require("../../utils/error");
+
+/**
+ * Represents a BingX exchange session.
+ * @extends ExchangeSession
+ */
+class BingXSession extends ExchangeSession {
+  /**
+   * Creates a BingXSession instance.
+   * @param {string} apiKey - API key for the BingX session.
+   * @param {string} apiSecret - API secret for the BingX session.
+   */
+  constructor(apiKey, apiSecret) {
+    super(apiKey, apiSecret);
+  }
+
+  /**
+   * Fetches orders for a given trader.
+   * @param {string} userId - The ID of the user.
+   * @return {Promise<Array>} - A promise that resolves to an array of orders.
+   */
+  async getOrders(userId) {
+    try {
+      return await getBingXOrders(this.apiKey, this.apiSecret, userId);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch BingX orders: ${e.message}`,
+        status: 500,
+        source: "getOrders",
+      });
+    }
+  }
+
+  /**
+   * Fetches positions for a given user.
+   * @param {string} userId - The ID of the user.
+   * @return {Promise<Array>} - A promise that resolves to an array of positions.
+   */
+  async getPositions(userId) {
+    try {
+      return await getBingXPositions(this.apiKey, this.apiSecret, userId);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch BingX positions: ${e.message}`,
+        status: 500,
+        source: "getPositions",
+      });
+    }
+  }
+
+  /**
+   * Fetches the account balance.
+   * @return {Promise<Object>} - A promise that resolves to an object containing the balance.
+   */
+  async getBalance() {
+    try {
+      return await getBingXBalance(this.apiKey, this.apiSecret);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch BingX balance: ${e.message}`,
+        status: 500,
+        source: "getBalance",
+      });
+    }
+  }
+
+  /**
+   * Fetches the statuses of orders.
+   * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
+   */
+  async getOrderStatuses() {
+    try {
+      return await getBingXOrderStatuses(this.apiKey, this.apiSecret);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to fetch BingX order statuses: ${e.message}`,
+        status: 500,
+        source: "getOrderStatuses",
+      });
+    }
+  }
+}
+
+module.exports = BingXSession;

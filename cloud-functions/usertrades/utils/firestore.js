@@ -5,17 +5,17 @@ const db = new Firestore();
 /**
  * Utility function to fetch the latest trade document.
  *
- * @param {string} traderId Trader ID.
+ * @param {string} userId User ID.
  * @param {string} symbol Symbol of the trade.
  * @param {string} exchange Exchange name.
  * @param {string} side Trade side (e.g., "Buy" or "Sell").
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
+async function fetchLatestTradeDoc(userId, symbol, exchange, side) {
   try {
     const tradeQuerySnapshot = await db
-      .collection("traders")
-      .doc(traderId)
+      .collection("users")
+      .doc(userId)
       .collection("trades")
       .where("symbol", "==", symbol)
       .where("exchange", "==", exchange)
@@ -26,7 +26,7 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
 
     if (tradeQuerySnapshot.empty) {
       console.log(
-        `No trade document found for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`
+        `No trade document found for trader ${userId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`
       );
       return null;
     }
@@ -41,10 +41,10 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   }
 }
 
-async function mapPositionToTrade(position, traderId, exchange) {
+async function mapPositionToTrade(position, userId, exchange) {
   try {
     const tradeDoc = await fetchLatestTradeDoc(
-      traderId,
+      userId,
       position.symbol,
       exchange,
       position.side
@@ -70,17 +70,17 @@ async function mapPositionToTrade(position, traderId, exchange) {
 /**
  * Fetches the latest trade document based on provided parameters.
  *
- * @param {string} traderId Trader ID.
+ * @param {string} userId User ID.
  * @param {string} symbol Symbol of the trade.
  * @param {string} exchange Exchange name.
  * @param {string} side Trade side.
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function getTradeDoc(traderId, symbol, exchange, side) {
+async function getTradeDoc(userId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
   const tradeDoc = await fetchLatestTradeDoc(
-    traderId,
+    userId,
     symbol,
     exchange,
     formattedSide
