@@ -346,6 +346,9 @@ app.post("/error", async (req, res) => {
       case "api":
         errorText = "Error occurred due to improper API key setup";
         break;
+      case "lowMargin":
+        errorText = "Error occurred due to insufficient margin";
+        break;
       default:
         errorText = "Unknown Error";
     }
