@@ -23,7 +23,6 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 
   try {
     const response = await axios.get(url, { headers, timeout: 5000 });
-    console.log("BingX response.data.data: ", response.data.data);
     return response.data.data;
   } catch (error) {
     throw new CustomError({
@@ -98,8 +97,9 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if(!data.length) return [];
-    return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
+    if (!data.length || !data) return [];
+    const orders = data.orders;
+    return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({
       message: `Failed to get BingX open orders: ${error.message}`,
