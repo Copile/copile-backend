@@ -12,7 +12,6 @@ const CustomError = require("../../utils/error");
 async function getBingXOrderStatuses(apiKey, apiSecret) {
   try {
     const rawOrders = await getOrders(apiKey, apiSecret, true);
-    console.log("BingX order statuses: ", rawOrders);
     return rawOrders.map((order) => ({
       orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
