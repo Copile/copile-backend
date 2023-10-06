@@ -77,6 +77,8 @@ async function getTradeProfitLossDetails(
       apiSecret,
       apiPassphrase
     );
+
+    console.log("activeOrders: ", activeOrders);
     
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
