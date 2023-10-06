@@ -65,7 +65,6 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
 async function getBingXOrders(apiKey, apiSecret, traderId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
-    console.log("orders: ", orders);
     if (!orders.length) return [];
 
     return await Promise.all(

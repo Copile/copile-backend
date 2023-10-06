@@ -23,7 +23,6 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 
   try {
     const response = await axios.get(url, { headers, timeout: 5000 });
-    console.log("BingX response: ", response);
     console.log("BingX response.data.data: ", response.data.data);
     return response.data.data;
   } catch (error) {
