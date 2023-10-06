@@ -8,14 +8,14 @@ const CustomError = require("../../utils/error");
  * @param {string} apiPassphrase - API passphrase.
  * @returns {Object} - Initialized API client.
  */
-const initKucoinApi = async (apiKey, apiSecret, apiPassphrase) => {
+const initKucoinApi = (apiKey, apiSecret, apiPassphrase) => {
   const config = {
     apiKey,
     secretKey: apiSecret,
     passphrase: apiPassphrase,
     environment: "live",
   };
-  const apiLive = await new kucoinAPI();
+  const apiLive = new kucoinAPI();
   apiLive.init(config);
   return apiLive;
 };
@@ -29,7 +29,7 @@ const initKucoinApi = async (apiKey, apiSecret, apiPassphrase) => {
  */
 async function getKucoinBalance(apiKey, apiSecret, apiPassphrase) {
   try {
-    const apiLive =  await initKucoinApi(apiKey, apiSecret, apiPassphrase);
+    const apiLive = initKucoinApi(apiKey, apiSecret, apiPassphrase);
     const params = {
       currency: "USDT",
     };

@@ -43,7 +43,7 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, traderId) {
       environment: "live",
     };
 
-    const apiLive = await new kucoinAPI();
+    const apiLive = new kucoinAPI();
     apiLive.init(config);
 
     let positions = await apiLive.getAllPositions();

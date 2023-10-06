@@ -101,6 +101,7 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
     if (!data.length || !data) return [];
     console.log("BingX data", data);
     const orders = data.orders;
+    console.log("BingX orders", orders);
     return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({

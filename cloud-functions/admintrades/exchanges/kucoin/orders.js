@@ -9,14 +9,14 @@ const CustomError = require("../../utils/error");
  * @param {string} apiPassphrase - API passphrase.
  * @returns {Object} - Initialized API client.
  */
-const initKucoinApi = async (apiKey, apiSecret, apiPassphrase) => {
+const initKucoinApi = (apiKey, apiSecret, apiPassphrase) => {
   const config = {
     apiKey,
     secretKey: apiSecret,
     passphrase: apiPassphrase,
     environment: "live",
   };
-  const apiLive = await new kucoinAPI();
+  const apiLive = new kucoinAPI();
   apiLive.init(config);
   return apiLive;
 };
@@ -30,7 +30,7 @@ const initKucoinApi = async (apiKey, apiSecret, apiPassphrase) => {
  */
 async function getKucoinOrderStatuses(apiKey, apiSecret, apiPassphrase) {
   try {
-    const apiLive = await initKucoinApi(apiKey, apiSecret, apiPassphrase);
+    const apiLive = initKucoinApi(apiKey, apiSecret, apiPassphrase);
     const rawOrders = await apiLive.getOrders();
     console.log("Kucoin order statuses: ", rawOrders.data.items);
     return (rawOrders.data.items || []).map((order) => ({
@@ -68,7 +68,7 @@ async function getKucoinOrderById(
   apiPassphrase
 ) {
   try {
-    const apiLive = await initKucoinApi(apiKey, apiSecret, apiPassphrase);
+    const apiLive = initKucoinApi(apiKey, apiSecret, apiPassphrase);
     const order = await apiLive.getOrderById({ oid: orderID });
     return order.data;
   } catch (e) {
@@ -95,8 +95,8 @@ async function getKucoinOrderById(
  */
 async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
   try {
-    const apiLive = await initKucoinApi(apiKey, apiSecret, apiPassphrase);
-    const orders = await apiLive.getOrders({ status: "active" });
+    const apiLive = initKucoinApi(apiKey, apiSecret, apiPassphrase);
+    const orders = await apiLive.getOrders();
     if (!orders.data.items) return [];
 
     const filteredOrders = orders.data.items.filter(
