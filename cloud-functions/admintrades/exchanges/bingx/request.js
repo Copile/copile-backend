@@ -23,7 +23,6 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 
   try {
     const response = await axios.get(url, { headers, timeout: 5000 });
-    console.log("BingX response", response.data.data);
     return response.data.data;
   } catch (error) {
     throw new CustomError({
@@ -41,7 +40,6 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 async function getServerTime() {
   const path = "/openApi/swap/v2/server/time";
   const { serverTime } = await makeSignedRequest(path, {}, "", "");
-  console.log("BingX server time", serverTime);
   return serverTime;
 }
 
@@ -99,8 +97,7 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data.length || !data) return [];
-    console.log("BingX data", data);
+    if (!data) return [];
     const orders = data.orders;
     console.log("BingX orders", orders);
     return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");

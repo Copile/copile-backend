@@ -77,8 +77,7 @@ async function getTradeProfitLossDetails(
       apiSecret,
       apiPassphrase
     );
-
-    console.log("activeOrders: ", activeOrders);
+    
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
       checkStopLossStatus(exchange, stopLossData, activeOrders),
@@ -146,6 +145,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       return String(order.stopPrice) === String(price);
     }
+    console.log("order.orderId: ", order.orderId);
     return String(order.orderId) === String(orderID);
   });
 
