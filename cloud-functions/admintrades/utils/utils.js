@@ -79,7 +79,6 @@ async function getTradeProfitLossDetails(
     );
 
     console.log("activeOrders: ", activeOrders);
-    console.log("activeOrders Result.list: ", activeOrders.result.list);
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
       checkStopLossStatus(exchange, stopLossData, activeOrders),

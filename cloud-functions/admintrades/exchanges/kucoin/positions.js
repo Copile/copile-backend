@@ -47,6 +47,7 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, traderId) {
     apiLive.init(config);
 
     let positions = await apiLive.getAllPositions();
+    console.log("KuCoin positions:", positions.data);
     positions = positions.data;
 
     if (positions !== null) {
