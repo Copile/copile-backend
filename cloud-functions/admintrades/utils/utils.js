@@ -78,6 +78,8 @@ async function getTradeProfitLossDetails(
       apiPassphrase
     );
 
+    console.log("activeOrders: ", activeOrders);
+    console.log("activeOrders Result.list: ", activeOrders.result.list);
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
       checkStopLossStatus(exchange, stopLossData, activeOrders),
@@ -140,7 +142,6 @@ async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
-  console.log("activeOrders: ", activeOrders);
   console.log("orderID: ", orderID);
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
