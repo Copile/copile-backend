@@ -14,7 +14,7 @@ async function getBingXOrderStatuses(apiKey, apiSecret) {
     const rawOrders = await getOrders(apiKey, apiSecret, true);
     console.log("BingX order statuses: ", rawOrders);
     return rawOrders.map((order) => ({
-      order_id: order.orderId,
+      orderId: order.orderId,
       status: order.status === "NEW" ? "Active" : order.status,
     }));
   } catch (e) {
