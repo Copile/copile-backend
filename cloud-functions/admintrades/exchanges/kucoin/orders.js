@@ -32,7 +32,7 @@ async function getKucoinOrderStatuses(apiKey, apiSecret, apiPassphrase) {
   try {
     const apiLive = await initKucoinApi(apiKey, apiSecret, apiPassphrase);
     const rawOrders = await apiLive.getOrders({ status: "active" });
-    console.log("Kucoin order status: ", rawOrders);
+    console.log("Kucoin order statuses: ", rawOrders.data.items);
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
       status: order.status === "done" ? "Filled" : "Active",
@@ -97,7 +97,6 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
   try {
     const apiLive = await initKucoinApi(apiKey, apiSecret, apiPassphrase);
     const orders = await apiLive.getOrders({ status: "active" });
-    console.log("Kucoin orders: ", orders);
     if (!orders.data.items) return [];
 
     const filteredOrders = orders.data.items.filter(

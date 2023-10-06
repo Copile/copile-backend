@@ -98,6 +98,7 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
     if (!data.length || !data) return [];
+    console.log("BingX data", data);
     const orders = data.orders;
     return isTpOrSl ? orders : orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
