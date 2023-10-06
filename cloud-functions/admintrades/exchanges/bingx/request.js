@@ -41,6 +41,7 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 async function getServerTime() {
   const path = "/openApi/swap/v2/server/time";
   const { serverTime } = await makeSignedRequest(path, {}, "", "");
+  console.log("BingX server time", serverTime);
   return serverTime;
 }
 

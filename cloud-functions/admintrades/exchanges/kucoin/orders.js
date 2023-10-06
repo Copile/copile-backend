@@ -35,7 +35,7 @@ async function getKucoinOrderStatuses(apiKey, apiSecret, apiPassphrase) {
     console.log("Kucoin order statuses: ", rawOrders.data.items);
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
-      status: order.status === "done" ? "Filled" : "Active",
+      status: "Active",
     }));
   } catch (e) {
     // If it's already a custom error, throw it as-is
@@ -122,7 +122,7 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
           type: "LIMIT",
           entryPrice: price,
           quantity: size,
-          status: status === "NEW" ? "Active" : status,
+          status: "Active",
           createdAt: tradeData.created_at,
         };
       })
