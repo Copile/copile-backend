@@ -81,9 +81,9 @@ class BinanceSession extends ExchangeSession {
    * Get the statuses of various orders.
    * @returns {Promise<Array>} - Array containing order statuses.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     try {
-      return await getBinanceOrderStatuses(this.apiKey, this.apiSecret);
+      return await getBinanceOrderStatuses(this.apiKey, this.apiSecret, symbol);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

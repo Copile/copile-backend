@@ -72,14 +72,13 @@ async function getTradeProfitLossDetails(
 
     // Get active orders once for both takeProfit and stopLoss
     const activeOrders = await getActiveOrders(
-      exchange,
       apiKey,
       apiSecret,
-      apiPassphrase
+      apiPassphrase,
+      exchange,
+      symbol
     );
 
-    console.log("activeOrders: ", activeOrders);
-    
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
       checkStopLossStatus(exchange, stopLossData, activeOrders),
@@ -120,15 +119,16 @@ async function getTradeProfitLossDetails(
  * @returns {Promise<Array>} An array of active orders.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
+async function getActiveOrders(
+  apiKey,
+  apiSecret,
+  apiPassphrase,
+  exchange,
+  symbol
+) {
   try {
-    const session = createSession(
-      exchange,
-      apiKey,
-      apiSecret,
-      apiPassphrase
-    );
-    return await session.getOrderStatuses();
+    const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
+    return await session.getOrderStatuses(symbol);
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
