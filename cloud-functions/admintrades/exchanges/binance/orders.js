@@ -1,4 +1,4 @@
-const { getOrders } = require("./request");
+const { getOrders, getOrderStatuses } = require("./request");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -10,9 +10,9 @@ const CustomError = require("../../utils/error");
  * @returns {Promise<Array>} An array of active orders with their statuses.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getBinanceOrderStatuses(apiKey, apiSecret) {
+async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
   try {
-    const rawOrders = await getOrders(apiKey, apiSecret, true);
+    const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
     return rawOrders.map(({ status, orderId }) => ({
       orderId: orderId,
       status: status === "NEW" ? "Active" : status,

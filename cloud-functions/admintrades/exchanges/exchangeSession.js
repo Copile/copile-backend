@@ -60,7 +60,7 @@ class ExchangeSession {
    * @async
    * @throws {CustomError} Throws a custom error if method not implemented by subclass.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     throw new CustomError({
       message: "Method getOrderStatuses must be implemented by subclass",
       status: 501,

@@ -89,9 +89,9 @@ class TestnetSession extends ExchangeSession {
    * @returns {Promise<Array<Object>>} An array of order status objects.
    * @throws {CustomError} Throws a custom error if operation fails.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     try {
-      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret);
+      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret, symbol);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;

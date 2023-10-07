@@ -129,7 +129,7 @@ async function getOrder(symbol, orderId, apiKey, apiSecret) {
  * @returns {Promise<Array>} - List of open orders.
  * @throws {CustomError} - When the request for open orders fails.
  */
-async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
+async function getOrders(apiKey, apiSecret) {
   const timestamp = await getServerTime();
   const url = `${API_PROTOCOL}://${API_HOST}/fapi/v1/openOrders`;
   const payload = { timestamp, recvWindow: 5000 };
@@ -137,7 +137,26 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
     if(!data.length) return [];
-    return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
+    return data.filter((order) => order.type === "LIMIT");
+  } catch (error) {
+    throw new CustomError({
+      message: `Failed to get Binance open orders: ${error.message}`,
+      status: 400,
+      source: "getOrders",
+    });
+  }
+}
+
+async function getOrderStatuses(apiKey, apiSecret, symbol) {
+  const timestamp = await getServerTime();
+  const url = `${API_PROTOCOL}://${API_HOST}/fapi/v1/openOrders`;
+  const payload = { symbol, timestamp, recvWindow: 5000 };
+
+  try {
+    const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    if(!data.length) return [];
+    console.log(data);
+    return data;
   } catch (error) {
     throw new CustomError({
       message: `Failed to get Binance open orders: ${error.message}`,
@@ -177,4 +196,5 @@ module.exports = {
   getOrder,
   getOrders,
   getBalance,
+  getOrderStatuses,
 };

@@ -1,4 +1,4 @@
-const { getOrders, getOrder } = require("./request");
+const { getOrders, getOrder, getOrderStatuses } = require("./request");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -9,9 +9,9 @@ const CustomError = require("../../utils/error");
  * @returns {Promise<Array<Object>>} An array of order status objects.
  * @throws {CustomError} Throws a CustomError if the operation fails.
  */
-async function getBingXOrderStatuses(apiKey, apiSecret) {
+async function getBingXOrderStatuses(apiKey, apiSecret, symbol) {
   try {
-    const rawOrders = await getOrders(apiKey, apiSecret, true);
+    const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
     return rawOrders.map((order) => ({
       orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
