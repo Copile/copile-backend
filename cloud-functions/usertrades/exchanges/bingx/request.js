@@ -38,10 +38,9 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
  * @return {Promise<number>} Server time.
  */
 async function getServerTime() {
-  /*const path = "/openApi/swap/v2/server/time";
+  const path = "/openApi/swap/v2/server/time";
   const { serverTime } = await makeSignedRequest(path, {}, "", "");
-  return serverTime;*/
-  return Date.now();
+  return serverTime;
 }
 
 /**
@@ -93,13 +92,14 @@ async function getBalance(apiKey, apiSecret) {
  * @param {boolean} checkStatus Flag to check the status of the orders.
  * @return {Promise<Array>} The orders.
  */
-async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
+async function getOrders(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/trade/openOrders";
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if(!data.length) return [];
-    return isTpOrSl ? data : data.filter((order) => order.type === "LIMIT");
+    if (!data) return [];
+    const orders = data.orders;
+    return orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({
       message: `Failed to get BingX open orders: ${error.message}`,
@@ -109,9 +109,28 @@ async function getOrders(apiKey, apiSecret, isTpOrSl = false) {
   }
 }
 
+async function getOrderStatuses(apiKey, apiSecret, symbol) {
+  const path = "/openApi/swap/v2/trade/openOrders";
+  const payload = { timestamp: await getServerTime(), symbol };
+  const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
+  try {
+    if (!data) return [];
+    const orders = data.orders;
+    console.log(orders);
+    return orders;
+  } catch (error) {
+    throw new CustomError({
+      message: `Failed to get BingX open orders: ${error.message}`,
+      status: 400,
+      source: "getOrderStatuses",
+    });
+  }
+}
+
 module.exports = {
   getPositions,
   getOrder,
   getOrders,
   getBalance,
+  getOrderStatuses,
 };

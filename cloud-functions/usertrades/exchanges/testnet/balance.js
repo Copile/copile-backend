@@ -3,7 +3,7 @@ const CustomError = require("../../utils/error");
 
 async function getTestnetBalance(apiKey, apiSecret) {
   try {
-    const client = await new RestClientV5({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       strict_param_validation: true,
@@ -13,7 +13,7 @@ async function getTestnetBalance(apiKey, apiSecret) {
       accountType: "UNIFIED",
       coin: "USDT",
     });
-    
+
     return balance.result.balance[0].walletBalance;
   } catch (e) {
     throw new CustomError({

@@ -12,7 +12,7 @@ const CustomError = require("../../utils/error");
  */
 async function getTestnetOrders(apiKey, apiSecret, userId) {
   try {
-    const client = await new RestClientV5({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       // strict_param_validation: true,
@@ -30,12 +30,17 @@ async function getTestnetOrders(apiKey, apiSecret, userId) {
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
     const filteredOrders = response.result.list.filter(
-      (order) => !order.reduceOnly && order.orderStatus === "New"
+      (order) => !order.reduceOnly && order.orderStatus === "New" && order.type === "Limit"
     );
 
     return await Promise.all(
       filteredOrders.map(async (order) => {
-        const tradeDoc = await getTradeDoc(userId, order.symbol, "testnet", order.side);
+        const tradeDoc = await getTradeDoc(
+          userId,
+          order.symbol,
+          "testnet",
+          order.side
+        );
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();
 
@@ -43,7 +48,9 @@ async function getTestnetOrders(apiKey, apiSecret, userId) {
           trade_id: tradeDoc.id,
           order_id: order.orderId,
           symbol: order.symbol,
-          side: order.side.charAt(0).toUpperCase() + order.side.slice(1).toLowerCase(),
+          side:
+            order.side.charAt(0).toUpperCase() +
+            order.side.slice(1).toLowerCase(),
           type: order.orderType,
           entry_price: order.price,
           quantity: order.qty,
@@ -54,7 +61,7 @@ async function getTestnetOrders(apiKey, apiSecret, userId) {
         };
       })
     );
-  }catch (e) {
+  } catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet orders: ${e.message}`,
       status: 500,
@@ -71,9 +78,9 @@ async function getTestnetOrders(apiKey, apiSecret, userId) {
  * @returns {Promise<Array>} An array of active orders with their statuses.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getTestnetOrderStatuses(apiKey, apiSecret) {
+async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
   try {
-    const client = await new RestClientV5({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       // strict_param_validation: true,
@@ -82,14 +89,14 @@ async function getTestnetOrderStatuses(apiKey, apiSecret) {
 
     let response = await client.getActiveOrders({
       category: "linear",
-      settleCoin: "USDT",
+      symbol: symbol,
     });
 
-    if(!response){
+    if (!response) {
       return [];
     }
     const orders = response.result.list;
-
+    console.log("Bybit raw orders: ", orders);
     return orders.map(({ orderStatus, ...rest }) => ({
       ...rest,
       status: orderStatus === "Untriggered" || "New" ? "Active" : orderStatus,

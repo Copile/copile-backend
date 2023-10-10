@@ -1,4 +1,4 @@
-const { getOrders, getOrder } = require("./request");
+const { getOrders, getOrder, getOrderStatuses } = require("./request");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -9,11 +9,11 @@ const CustomError = require("../../utils/error");
  * @returns {Promise<Array<Object>>} An array of order status objects.
  * @throws {CustomError} Throws a CustomError if the operation fails.
  */
-async function getBingXOrderStatuses(apiKey, apiSecret) {
+async function getBingXOrderStatuses(apiKey, apiSecret, symbol) {
   try {
-    const rawOrders = await getOrders(apiKey, apiSecret, true);
+    const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
     return rawOrders.map((order) => ({
-      order_id: order.orderId,
+      orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
     }));
   } catch (e) {
@@ -57,7 +57,7 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
  * Retrieves BingX orders and their associated trade details.
  * @param {string} apiKey The API key for BingX.
  * @param {string} apiSecret The API secret for BingX.
- * @param {string} userId The ID of the user.
+ * @param {string} userId The ID of the User.
  * @returns {Promise<Array<Object>>} An array of order matching parameters.
  * @throws {CustomError} Throws a CustomError if the operation fails.
  */

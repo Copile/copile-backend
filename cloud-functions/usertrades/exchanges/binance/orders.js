@@ -1,4 +1,4 @@
-const { getOrders } = require("./request");
+const { getOrders, getOrderStatuses } = require("./request");
 const { getTradeDoc } = require("../../utils/firestore");
 const CustomError = require("../../utils/error");
 
@@ -10,11 +10,11 @@ const CustomError = require("../../utils/error");
  * @returns {Promise<Array>} An array of active orders with their statuses.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getBinanceOrderStatuses(apiKey, apiSecret) {
+async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
   try {
-    const rawOrders = await getOrders(apiKey, apiSecret, true);
-    return rawOrders.map(({ status, ...rest }) => ({
-      ...rest,
+    const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
+    return rawOrders.map(({ status, orderId }) => ({
+      orderId: orderId,
       status: status === "NEW" ? "Active" : status,
     }));
   } catch (error) {
@@ -35,18 +35,18 @@ async function getBinanceOrderStatuses(apiKey, apiSecret) {
  * @async
  * @param {string} apiKey - The API key for Binance.
  * @param {string} apiSecret - The API secret for Binance.
- * @param {string} userId - The user ID.
+ * @param {string} traderId - The trader ID.
  * @returns {Promise<Array>} An array of matched orders with trade data.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getBinanceOrders(apiKey, apiSecret, userId) {
+async function getBinanceOrders(apiKey, apiSecret, traderId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
 
     return await Promise.all(
       orders.map(
         async ({ symbol, side, type, price, origQty, orderId, status }) => {
-          const tradeDoc = await getTradeDoc(userId, symbol, "binance", side);
+          const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
           if(!tradeDoc) return;
 
           const tradeData = tradeDoc.data();

@@ -81,9 +81,9 @@ class BingXSession extends ExchangeSession {
    * Fetches the statuses of orders.
    * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     try {
-      return await getBingXOrderStatuses(this.apiKey, this.apiSecret);
+      return await getBingXOrderStatuses(this.apiKey, this.apiSecret, symbol);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;

@@ -97,12 +97,13 @@ class KuCoinSession extends ExchangeSession {
    * Fetches the statuses of orders.
    * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     try {
       return await getKucoinOrderStatuses(
         this.apiKey,
         this.apiSecret,
-        this.apiPassphrase
+        this.apiPassphrase,
+        symbol
       );
     } catch (e) {
       if (e instanceof CustomError) {

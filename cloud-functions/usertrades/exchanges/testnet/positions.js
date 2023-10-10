@@ -12,7 +12,7 @@ const { mapPositionToTrade } = require("../../utils/firestore");
  */
 async function getTestnetPositions(apiKey, apiSecret, userId) {
   try {
-    const client = await new RestClientV5({
+    const client = new RestClientV5({
       key: apiKey,
       secret: apiSecret,
       // strict_param_validation: true,
@@ -23,6 +23,7 @@ async function getTestnetPositions(apiKey, apiSecret, userId) {
       category: "linear",
       settleCoin: "USDT",
     });
+
 
     if (!positionData.result.list.length) {
       return [];

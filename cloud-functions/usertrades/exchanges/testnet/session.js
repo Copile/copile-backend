@@ -19,15 +19,15 @@ class TestnetSession extends ExchangeSession {
   }
 
   /**
-   * Fetch orders for a given user ID.
+   * Fetch orders for a given trader ID.
    * @async
-   * @param {string} userID - The unique ID of the user.
+   * @param {string} userId - The unique ID of the user.
    * @returns {Promise<Array<Object>>} An array of order data objects.
    * @throws {CustomError} Throws a custom error if operation fails.
    */
-  async getOrders(userID) {
+  async getOrders(userId) {
     try {
-      return await getTestnetOrders(this.apiKey, this.apiSecret, userID);
+      return await getTestnetOrders(this.apiKey, this.apiSecret, userId);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
@@ -41,7 +41,7 @@ class TestnetSession extends ExchangeSession {
   }
 
   /**
-   * Fetch positions for a given user ID.
+   * Fetch positions for a given trader ID.
    * @async
    * @param {string} userId - The unique ID of the user.
    * @returns {Promise<Array<Object>>} An array of position data objects.
@@ -63,7 +63,7 @@ class TestnetSession extends ExchangeSession {
   }
 
   /**
-   * Fetch the balance for a given trader ID.
+   * Fetch the balance for a given user ID.
    * @async
    * @returns {Promise<number>} The trader's balance.
    * @throws {CustomError} Throws a custom error if operation fails.
@@ -89,9 +89,9 @@ class TestnetSession extends ExchangeSession {
    * @returns {Promise<Array<Object>>} An array of order status objects.
    * @throws {CustomError} Throws a custom error if operation fails.
    */
-  async getOrderStatuses() {
+  async getOrderStatuses(symbol) {
     try {
-      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret);
+      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret, symbol);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
