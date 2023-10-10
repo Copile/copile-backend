@@ -116,9 +116,11 @@ async function getOrderStatuses(apiKey, apiSecret, symbol) {
   const payload = { timestamp: await getServerTime(), symbol };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data) return [];
+    if (!data || !data.orders ) return [];
+    console.loog("data", data);
+    console.log("data.orders", data.orders);
+
     const orders = data.orders;
-    console.log(orders);
     return orders;
   } catch (error) {
     throw new CustomError({
