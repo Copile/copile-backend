@@ -89,7 +89,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
 
     let response = await client.getActiveOrders({
       category: "linear",
-      symbol: symbol,
+      settleCoin: "USDT",
     });
 
     if (!response) {

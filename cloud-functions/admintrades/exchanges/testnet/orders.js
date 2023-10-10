@@ -32,8 +32,7 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
     const filteredOrders = response.result.list.filter(
       (order) =>
         !order.reduceOnly &&
-        order.orderStatus === "New" &&
-        order.type === "Limit"
+        order.orderStatus === "New"
     );
 
     return await Promise.all(
@@ -92,7 +91,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
 
     let response = await client.getActiveOrders({
       category: "linear",
-      settleCoin: "USDT",
+      symbol: symbol,
     });
 
     if (!response) {
