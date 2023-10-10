@@ -30,7 +30,10 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
     const filteredOrders = response.result.list.filter(
-      (order) => !order.reduceOnly && order.orderStatus === "New" && order.type === "Limit"
+      (order) =>
+        !order.reduceOnly &&
+        order.orderStatus === "New" &&
+        order.type === "Limit"
     );
 
     return await Promise.all(
@@ -89,7 +92,7 @@ async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
 
     let response = await client.getActiveOrders({
       category: "linear",
-      symbol: symbol,
+      settleCoin: "USDT",
     });
 
     if (!response) {
