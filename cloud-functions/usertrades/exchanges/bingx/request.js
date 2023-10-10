@@ -39,7 +39,9 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
  */
 async function getServerTime() {
   const path = "/openApi/swap/v2/server/time";
-  const { serverTime } = await makeSignedRequest(path, {}, "", "");
+  const url = `${apiConfig.protocol}://${apiConfig.host}${path}`;
+  const response = await axios.get(url, { timeout: 10000 });
+  const serverTime = response.data.data.serverTime;
   return serverTime;
 }
 
