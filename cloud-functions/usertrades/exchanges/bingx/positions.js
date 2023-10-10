@@ -27,7 +27,7 @@ async function getBingXPositions(apiKey, apiSecret, userId) {
         position.margin_mode =
           originalPosition.isolated === true ? "Isolated" : "Cross"; // Margin mode (e.g., "Isolated" or "Cross")
         position.leverage = String(originalPosition.leverage); // Leverage (e.g., "10")
-        position.quantity = position.positionAmt; // Position quantity (e.g., "0.001")
+        position.quantity = originalPosition.positionAmt; // Position quantity (e.g., "0.001")
         position.margin = originalPosition.initialMargin; // Initial margin (e.g., "15")
         position.entry_price = originalPosition.avgPrice; // Entry price (e.g., "25680")
         position.unrealised_pnl = originalPosition.unrealizedProfit; // Unrealised PnL (e.g., "2.45")

@@ -12,6 +12,7 @@ const CustomError = require("../../utils/error");
 async function getBingXOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
+    if (!rawOrders || !rawOrders.length) return [];
     return rawOrders.map((order) => ({
       orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
@@ -64,7 +65,7 @@ async function getBingXOrderById(symbol, orderId, apiKey, apiSecret) {
 async function getBingXOrders(apiKey, apiSecret, userId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
-    if (!orders.length) return [];
+    if (!orders || orders.length) return [];
 
     return await Promise.all(
       orders.map(async ({ orderId, symbol, side, price, origQty, status }) => {

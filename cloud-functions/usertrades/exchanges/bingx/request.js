@@ -99,7 +99,7 @@ async function getOrders(apiKey, apiSecret) {
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data) return [];
+    if (!data || !data.orders) return;
     const orders = data.orders;
     return orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
@@ -113,13 +113,10 @@ async function getOrders(apiKey, apiSecret) {
 
 async function getOrderStatuses(apiKey, apiSecret, symbol) {
   const path = "/openApi/swap/v2/trade/openOrders";
-  const payload = { timestamp: await getServerTime(), symbol };
+  const payload = { timestamp: await getServerTime(), symbol: symbol };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data || !data.orders ) return [];
-    console.loog("data", data);
-    console.log("data.orders", data.orders);
-
+    if (!data || !data.orders ) return;
     const orders = data.orders;
     return orders;
   } catch (error) {
