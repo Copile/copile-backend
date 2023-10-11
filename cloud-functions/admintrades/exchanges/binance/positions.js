@@ -49,6 +49,7 @@ async function getBinancePositions(apiKey, apiSecret, traderId) {
 
         position.unrealised_pnl_pct = String(unrealised_pnl_pct); // Unrealised PnL percentage (e.g., "12.65%")
         position.realised_pnl = "0"; // Binance does not provide realised PnL
+        position.liq_price = originalPosition.liquidationPrice; // Liquidation price (e.g., "25680")
 
         // Pass the whole modified position object to mapPositionToTrade
         return await mapPositionToTrade(position, traderId, "binance");

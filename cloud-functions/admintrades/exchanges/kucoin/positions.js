@@ -23,6 +23,7 @@ const transformPosition = (position) => {
       parseFloat(position.realLeverage)
     ).toFixed(2), // Unrealised PnL percentage (e.g., "12.65%")
     realised_pnl: position.realisedPnl, // Realised PnL (e.g., "-4.51")
+    liq_price: String(position.liquidationPrice), // Liquidation price (e.g., "25680")
   };
 };
 
