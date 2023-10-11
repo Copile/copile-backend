@@ -11,7 +11,7 @@ const db = new Firestore();
  * @param {string} side Trade side (e.g., "Buy" or "Sell").
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function fetchLatestTradeDoc(traderId, symbol, exchange, side, entry_price) {
+async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   try {
     const tradeQuerySnapshot = await db
       .collection("traders")
@@ -20,7 +20,6 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side, entry_price
       .where("symbol", "==", symbol)
       .where("exchange", "==", exchange)
       .where("side", "==", side)
-      .where("entry", "==", entry_price)
       .orderBy("created_at", "desc")
       .limit(1)
       .get();
@@ -49,7 +48,6 @@ async function mapPositionToTrade(position, traderId, exchange) {
       position.symbol,
       exchange,
       position.side,
-      position.entry_price
     );
     if (!tradeDoc) return;
 
@@ -78,7 +76,7 @@ async function mapPositionToTrade(position, traderId, exchange) {
  * @param {string} side Trade side.
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function getTradeDoc(traderId, symbol, exchange, side, entry_price) {
+async function getTradeDoc(traderId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
   const tradeDoc = await fetchLatestTradeDoc(
@@ -86,7 +84,6 @@ async function getTradeDoc(traderId, symbol, exchange, side, entry_price) {
     symbol,
     exchange,
     formattedSide,
-    entry_price
   );
   return tradeDoc;
 }
