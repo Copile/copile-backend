@@ -14,9 +14,10 @@ async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
     if(!rawOrders) return;
-    return rawOrders.map(({ status, orderId }) => ({
+    return rawOrders.map(({ status, orderId, stopPrice }) => ({
       orderId: orderId,
       status: status === "NEW" ? "Active" : status,
+      price: stopPrice,
     }));
   } catch (error) {
     // If it's already a custom error, throw it as-is
