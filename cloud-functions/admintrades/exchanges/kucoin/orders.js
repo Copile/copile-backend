@@ -40,10 +40,10 @@ async function getKucoinOrderStatuses(
       type: "market",
       symbol: symbol,
     });
-    if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return [];
+    if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return;
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
-      status: "Active",
+      status: order.status === "open" ? "Active" : "Filled",
     }));
   } catch (e) {
     // If it's already a custom error, throw it as-is
@@ -116,7 +116,7 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
 
     return await Promise.all(
       filteredOrders.map(async ({ id, symbol, side, price, size, status }) => {
-        const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side);
+        const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side, price);
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();
 

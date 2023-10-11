@@ -11,8 +11,7 @@ const CustomError = require("../../utils/error");
  */
 async function getBinanceBalance(apiKey, apiSecret) {
   try {
-    const balanceData = await getBalance(apiKey, apiSecret);
-    const usdtBalance = balanceData.find((asset) => asset.asset === "USDT");
+    const usdtBalance = await getBalance(apiKey, apiSecret);
     return usdtBalance ? String(usdtBalance.availableBalance) : "0";
   } catch (error) {
     // If it's already a custom error, throw it as-is

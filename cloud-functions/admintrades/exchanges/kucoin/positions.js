@@ -47,24 +47,21 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, traderId) {
     apiLive.init(config);
 
     let positions = await apiLive.getAllPositions();
+    if (!positions || !positions.data) return [];
     positions = positions.data;
 
-    if (positions !== null) {
-      const trades = positions
-        .filter((position) => position.size !== 0)
-        .map(async (position) => {
-          const transformedPosition = transformPosition(position);
-          return await mapPositionToTrade(
-            transformedPosition,
-            traderId,
-            "kucoin"
-          );
-        });
+    const trades = positions
+      .filter((position) => position.size !== 0)
+      .map(async (position) => {
+        const transformedPosition = transformPosition(position);
+        return await mapPositionToTrade(
+          transformedPosition,
+          traderId,
+          "kucoin"
+        );
+      });
 
-      return await Promise.all(trades);
-    } else {
-      return [];
-    }
+    return await Promise.all(trades);
   } catch (e) {
     // If it's already a custom error, throw it as-is
     if (e instanceof CustomError) {

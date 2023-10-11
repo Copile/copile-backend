@@ -25,7 +25,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
     });
 
 
-    if (!positionData.result.list.length) {
+    if (!positionData || !positionData.result || !positionData.result.list) {
       return [];
     }
 

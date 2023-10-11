@@ -54,7 +54,7 @@ async function getServerTime() {
 async function getPositions(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/positions";
   const payload = { timestamp: await getServerTime() };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -72,7 +72,7 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
     orderId: BigInt(orderId),
     timestamp: await getServerTime(),
   };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -84,7 +84,7 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
 async function getBalance(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/balance";
   const payload = { timestamp: await getServerTime() };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
