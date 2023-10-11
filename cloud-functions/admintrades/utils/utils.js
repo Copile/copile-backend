@@ -145,7 +145,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       console.log("order.stopPrice", order.stopPrice, "price", price);
-      return String(order.stopPrice) === String(price);
+      return Number(order.stopPrice).toFixed(2) === Number(price).toFixed(2);
     }
     return String(order.orderId) === String(orderID);
   });
