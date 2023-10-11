@@ -78,7 +78,7 @@ async function getTradeProfitLossDetails(
       exchange,
       symbol
     );
-    
+
     if(!activeOrders) return;
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
@@ -144,6 +144,8 @@ async function getActiveOrders(
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
+  console.log("activeOrders", activeOrders);
+  console.log("exchange", exchange);
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       console.log("order.stopPrice", order.stopPrice);
