@@ -14,6 +14,7 @@ const CustomError = require("../../utils/error");
 async function getBinancePositions(apiKey, apiSecret, traderId) {
   try {
     const positions = await getPositions(apiKey, apiSecret);
+    if (!positions || !positions.length) return [];
     const trades = positions
       .filter(({ positionAmt }) => parseFloat(positionAmt) !== 0)
       .map(async (originalPosition) => {

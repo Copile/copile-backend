@@ -77,7 +77,7 @@ async function getPositions(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data.length) return [];
+    if(!data || !data.length) return;
     return data
       .filter((pos) => parseFloat(pos.positionAmt) !== 0)
       .map((pos) => ({
@@ -110,6 +110,7 @@ async function getOrder(symbol, orderId, apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    if(!data) return;
     return data.status;
   } catch (error) {
     throw new CustomError({
@@ -136,7 +137,7 @@ async function getOrders(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data.length) return [];
+    if(!data || !data.length) return;
     return data.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({
@@ -150,13 +151,12 @@ async function getOrders(apiKey, apiSecret) {
 async function getOrderStatuses(apiKey, apiSecret, symbol) {
   const timestamp = await getServerTime();
   const url = `${API_PROTOCOL}://${API_HOST}/fapi/v1/openOrders`;
-  const payload = { symbol, timestamp, recvWindow: 5000 };
+  const payload = { symbol: symbol, timestamp, recvWindow: 5000 };
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data.length) return [];
-    console.log(data);
-    return data;
+    if(!data || !data.length) return;
+    return data.filter((order) => order.type === "TAKE_PROFIT" || order.type === "STOP_MARKET");
   } catch (error) {
     throw new CustomError({
       message: `Failed to get Binance open orders: ${error.message}`,

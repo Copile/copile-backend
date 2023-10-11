@@ -13,6 +13,7 @@ const CustomError = require("../../utils/error");
 async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
+    if(!rawOrders) return;
     return rawOrders.map(({ status, orderId }) => ({
       orderId: orderId,
       status: status === "NEW" ? "Active" : status,
@@ -42,7 +43,7 @@ async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
 async function getBinanceOrders(apiKey, apiSecret, traderId) {
   try {
     const orders = await getOrders(apiKey, apiSecret);
-
+    if(!orders) return [];
     return await Promise.all(
       orders.map(
         async ({ symbol, side, type, price, origQty, orderId, status }) => {
