@@ -99,11 +99,11 @@ router.get(
       if (details) {
         res.status(200).json(details);
       }
-      else {
+      /*else {
         res.status(404).json({
           message: "No details found for this trade",
         });
-      }
+      }*/
     } catch (e) {
       if (e instanceof CustomError) {
         next(e);
