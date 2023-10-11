@@ -1,0 +1,16 @@
+{
+    "name": "bybit-monitor",
+    "version": "1.0.0",
+    "description": "GCP Compute Engine",
+    "main": "connection.js",
+    "scripts": {
+        "start": "node connection.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "bybit-api": "^3.7.3",
+        "discord.js": "^14.13.0"
+    }
+}
