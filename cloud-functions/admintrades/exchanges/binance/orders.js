@@ -18,6 +18,7 @@ async function getBinanceOrderStatuses(apiKey, apiSecret, symbol) {
       orderId: orderId,
       status: status === "NEW" ? "Active" : status,
       price: stopPrice,
+      symbol: symbol,
     }));
   } catch (error) {
     // If it's already a custom error, throw it as-is
