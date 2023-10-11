@@ -25,7 +25,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
     });
 
 
-    if (!positionData.result.list.length) {
+    if (!positionData || !positionData.result || !positionData.result.list) {
       return [];
     }
 
@@ -52,6 +52,7 @@ async function getTestnetPositions(apiKey, apiSecret, traderId) {
           ).toFixed(2)
         ); // Unrealised PnL percentage (e.g., "12.65%")
         position.realised_pnl = "0"; // Realised PnL (e.g., "-4.51")
+        position.liq_price = String(originalPosition.liquidationPrice); // Liquidation price (e.g., "25680")
         return await mapPositionToTrade(position, traderId, "testnet");
       });
 

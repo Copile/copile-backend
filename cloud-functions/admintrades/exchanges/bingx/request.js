@@ -23,8 +23,16 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 
   try {
     const response = await axios.get(url, { headers, timeout: 5000 });
+    if (response.data.code !== 0)
+      throw new CustomError({
+        message: `Failed to send BingX API request to ${path}: ${response.data.message}`,
+        source: "makeSignedRequest",
+        status: 500,
+      });
     return response.data.data;
   } catch (error) {
+    if(error instanceof CustomError) throw error;
+
     throw new CustomError({
       message: `Failed to send BingX API request to ${path}: ${error.message}`,
       source: "makeSignedRequest",
@@ -54,7 +62,7 @@ async function getServerTime() {
 async function getPositions(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/positions";
   const payload = { timestamp: await getServerTime() };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -72,7 +80,7 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
     orderId: BigInt(orderId),
     timestamp: await getServerTime(),
   };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -84,7 +92,7 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
 async function getBalance(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/balance";
   const payload = { timestamp: await getServerTime() };
-  return makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -99,7 +107,7 @@ async function getOrders(apiKey, apiSecret) {
   const payload = { timestamp: await getServerTime() };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data) return;
+    if (!data || !data.orders) return;
     const orders = data.orders;
     return orders.filter((order) => order.type === "LIMIT");
   } catch (error) {
@@ -116,8 +124,9 @@ async function getOrderStatuses(apiKey, apiSecret, symbol) {
   const payload = { timestamp: await getServerTime(), symbol: symbol };
   const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
   try {
-    if (!data || !data.orders ) return;
+    if (!data || !data.orders) return;
     const orders = data.orders;
+    console.log("BingX order types : ", orders.map((order) => order.type));
     return orders;
   } catch (error) {
     throw new CustomError({

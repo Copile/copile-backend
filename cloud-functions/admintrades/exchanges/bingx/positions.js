@@ -14,6 +14,7 @@ const CustomError = require("../../utils/error");
 async function getBingXPositions(apiKey, apiSecret, traderId) {
   try {
     const positions = await getPositions(apiKey, apiSecret);
+    if(!positions || !positions.length) return [];
     const trades = positions
       .filter((position) => position.positionAmt !== "0")
       .map(async (originalPosition) => {
@@ -41,7 +42,7 @@ async function getBingXPositions(apiKey, apiSecret, traderId) {
           ).toFixed(2)
         ); // Unrealised PnL percentage (e.g., "12.65%")
         position.realised_pnl = originalPosition.realisedProfit; // Realised PnL (e.g., "-4.51")
-
+        position.liq_price = String(originalPosition.liquidationPrice); // Liquidation price (e.g., "25680")
         return await mapPositionToTrade(position, traderId, "bingx");
       });
 

@@ -23,6 +23,7 @@ const transformPosition = (position) => {
       parseFloat(position.realLeverage)
     ).toFixed(2), // Unrealised PnL percentage (e.g., "12.65%")
     realised_pnl: position.realisedPnl, // Realised PnL (e.g., "-4.51")
+    liq_price: String(position.liquidationPrice), // Liquidation price (e.g., "25680")
   };
 };
 
@@ -47,24 +48,21 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, traderId) {
     apiLive.init(config);
 
     let positions = await apiLive.getAllPositions();
+    if (!positions || !positions.data) return [];
     positions = positions.data;
 
-    if (positions !== null) {
-      const trades = positions
-        .filter((position) => position.size !== 0)
-        .map(async (position) => {
-          const transformedPosition = transformPosition(position);
-          return await mapPositionToTrade(
-            transformedPosition,
-            traderId,
-            "kucoin"
-          );
-        });
+    const trades = positions
+      .filter((position) => position.size !== 0)
+      .map(async (position) => {
+        const transformedPosition = transformPosition(position);
+        return await mapPositionToTrade(
+          transformedPosition,
+          traderId,
+          "kucoin"
+        );
+      });
 
-      return await Promise.all(trades);
-    } else {
-      return [];
-    }
+    return await Promise.all(trades);
   } catch (e) {
     // If it's already a custom error, throw it as-is
     if (e instanceof CustomError) {

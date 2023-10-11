@@ -34,6 +34,7 @@ async function getKucoinBalance(apiKey, apiSecret, apiPassphrase) {
       currency: "USDT",
     };
     const balance = await apiLive.getAccountOverview(params);
+    if (!balance || !balance.data || !balance.data.availableBalance) return;
     return String(balance.data.availableBalance);
   } catch (e) {
     // If it's already a custom error, throw it as-is

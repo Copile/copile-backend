@@ -12,7 +12,7 @@ const CustomError = require("../../utils/error");
 async function getBingXOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
-    if (!rawOrders || !rawOrders.length) return [];
+    if (!rawOrders || !rawOrders.length) return;
     return rawOrders.map((order) => ({
       orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
@@ -68,7 +68,7 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
     if (!orders || !orders.length) return [];
 
     return await Promise.all(
-      orders.map(async ({ orderId, symbol, side, price, origQty, status }) => {
+      orders.map(async ({ orderId, symbol, side, type, price, origQty, status }) => {
         const tradeDoc = await getTradeDoc(traderId, symbol, "bingx", side);
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();
@@ -80,7 +80,7 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
           side: side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(),
           leverage: tradeData.leverage,
           margin: tradeData.margin,
-          type: "LIMIT",
+          type: type,
           entry_price: price,
           quantity: origQty,
           status: status === "NEW" ? "Active" : status,

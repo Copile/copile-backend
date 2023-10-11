@@ -47,7 +47,7 @@ async function mapPositionToTrade(position, traderId, exchange) {
       traderId,
       position.symbol,
       exchange,
-      position.side
+      position.side,
     );
     if (!tradeDoc) return;
 
@@ -83,7 +83,7 @@ async function getTradeDoc(traderId, symbol, exchange, side) {
     traderId,
     symbol,
     exchange,
-    formattedSide
+    formattedSide,
   );
   return tradeDoc;
 }

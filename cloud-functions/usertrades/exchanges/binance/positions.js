@@ -14,6 +14,7 @@ const CustomError = require("../../utils/error");
 async function getBinancePositions(apiKey, apiSecret, userId) {
   try {
     const positions = await getPositions(apiKey, apiSecret);
+    if (!positions || !positions.length) return [];
     const trades = positions
       .filter(({ positionAmt }) => parseFloat(positionAmt) !== 0)
       .map(async (originalPosition) => {
@@ -48,7 +49,7 @@ async function getBinancePositions(apiKey, apiSecret, userId) {
 
         position.unrealised_pnl_pct = String(unrealised_pnl_pct); // Unrealised PnL percentage (e.g., "12.65%")
         position.realised_pnl = "0"; // Binance does not provide realised PnL
-
+        position.liq_price = originalPosition.liquidationPrice; // Liquidation price (e.g., "25680")
         // Pass the whole modified position object to mapPositionToTrade
         return await mapPositionToTrade(position, userId, "binance");
       });
