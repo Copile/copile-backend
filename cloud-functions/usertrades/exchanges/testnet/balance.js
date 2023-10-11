@@ -13,8 +13,17 @@ async function getTestnetBalance(apiKey, apiSecret) {
       accountType: "UNIFIED",
       coin: "USDT",
     });
-
-    return balance.result.balance[0].walletBalance;
+    if (
+      !response ||
+      !response.result ||
+      !response.result.balance ||
+      !response.result.balance.length
+    )
+      return;
+    balance = response.result.balance.find((coin) => coin.coin === "USDT");
+    if (!balance) return;
+    
+    return balance.walletBalance;
   } catch (e) {
     throw new CustomError({
       message: `Failed to fetch testnet balance: ${e.message}`,

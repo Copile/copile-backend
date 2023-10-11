@@ -40,10 +40,10 @@ async function getKucoinOrderStatuses(
       type: "market",
       symbol: symbol,
     });
-    if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return [];
+    if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return;
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
-      status: "Active",
+      status: order.status === "open" ? "Active" : "Filled",
     }));
   } catch (e) {
     // If it's already a custom error, throw it as-is

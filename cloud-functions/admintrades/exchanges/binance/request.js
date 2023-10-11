@@ -77,7 +77,7 @@ async function getPositions(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data || !data.length) return;
+    if (!data || !data.length) return;
     return data
       .filter((pos) => parseFloat(pos.positionAmt) !== 0)
       .map((pos) => ({
@@ -110,7 +110,7 @@ async function getOrder(symbol, orderId, apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data) return;
+    if (!data) return;
     return data.status;
   } catch (error) {
     throw new CustomError({
@@ -137,7 +137,7 @@ async function getOrders(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data || !data.length) return;
+    if (!data || !data.length) return;
     return data.filter((order) => order.type === "LIMIT");
   } catch (error) {
     throw new CustomError({
@@ -155,8 +155,10 @@ async function getOrderStatuses(apiKey, apiSecret, symbol) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
-    if(!data || !data.length) return;
-    return data.filter((order) => order.type === "TAKE_PROFIT" || order.type === "STOP_MARKET");
+    if (!data || !data.length) return;
+    return data.filter(
+      (order) => order.type === "TAKE_PROFIT" || order.type === "STOP_MARKET"
+    );
   } catch (error) {
     throw new CustomError({
       message: `Failed to get Binance open orders: ${error.message}`,
@@ -181,6 +183,7 @@ async function getBalance(apiKey, apiSecret) {
 
   try {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    if (!data || !data.length) return;
     return data.filter((asset) => asset.asset === "USDT");
   } catch (error) {
     throw new CustomError({

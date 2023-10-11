@@ -23,6 +23,7 @@ const transformPosition = (position) => {
       parseFloat(position.realLeverage)
     ).toFixed(2), // Unrealised PnL percentage (e.g., "12.65%")
     realised_pnl: position.realisedPnl, // Realised PnL (e.g., "-4.51")
+    liq_price: String(position.liquidationPrice), // Liquidation price (e.g., "25680")
   };
 };
 
@@ -47,6 +48,7 @@ async function getKucoinPositions(apiKey, apiSecret, apiPassphrase, userId) {
     apiLive.init(config);
 
     let positions = await apiLive.getAllPositions();
+    if (!positions || !positions.data) return [];
     positions = positions.data;
 
     if (positions !== null) {

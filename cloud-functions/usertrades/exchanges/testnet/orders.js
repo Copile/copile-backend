@@ -28,9 +28,13 @@ async function getTestnetOrders(apiKey, apiSecret, userId) {
       return [];
     }
 
+    const orders = response.result.list;
     // Filter the orders to only show reduceOnly false and orderStatus "New"
-    const filteredOrders = response.result.list.filter(
-      (order) => !order.reduceOnly && order.orderStatus === "New" && order.type === "Limit"
+    const filteredOrders = orders.filter(
+      (order) =>
+        !order.reduceOnly &&
+        order.orderStatus === "New" &&
+        order.orderType === "Limit"
     );
 
     return await Promise.all(
@@ -92,12 +96,16 @@ async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
       settleCoin: "USDT",
     });
 
-    if (!response) {
-      return [];
+    if (!response || !response.result || !response.result.list.length) {
+      return;
     }
     const orders = response.result.list;
-    console.log("Bybit raw orders: ", orders);
-    return orders.map(({ orderStatus, ...rest }) => ({
+
+    const filteredOrders = orders.filter(
+      (order) => (order.orderType = "Market")
+    );
+
+    return filteredOrders.map(({ orderStatus, ...rest }) => ({
       ...rest,
       status: orderStatus === "Untriggered" || "New" ? "Active" : orderStatus,
     }));

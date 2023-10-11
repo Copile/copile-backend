@@ -100,7 +100,6 @@ async function getTestnetOrderStatuses(apiKey, apiSecret, symbol) {
       return;
     }
     const orders = response.result.list;
-    console.log("Testnet orders: ", orders);
 
     const filteredOrders = orders.filter(
       (order) => (order.orderType = "Market")
