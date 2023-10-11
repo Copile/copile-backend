@@ -1,0 +1,15 @@
+{
+    "100001": "Signature authentication failed.",
+    "101204": "Insufficient balance.",
+    "100400": "Invalid parameter.",
+    "100440": "Order price deviates greatly.",
+    "100500": "Internal server error.",
+    "100503": "Server busy.",
+    "100004": "Permission denied as the API key was created without the permission",
+    "80016": "Order not exist",
+    "100421": "Null timestamp or timestamp mismatch",
+    "101400": "The order size must be less than the available amount.",
+    "50001": "No margin found!",
+    "80014": "timestamp is invalid",
+    "unknown": "unknown error"
+}

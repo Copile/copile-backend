@@ -1,0 +1,18 @@
+FROM python:3.11-alpine
+
+
+ENV PYTHONUNBUFFERED True
+
+
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+COPY . ./
+
+RUN pip install fastapi[all]
+RUN pip install uvicorn[standard] gunicorn
+RUN pip install google-cloud-firestore
+RUN pip install google-cloud-tasks
+RUN pip install google-cloud-kms
+RUN pip install aiohttp
+
+CMD exec gunicorn --bind :$PORT --worker-class uvicorn.workers.UvicornWorker --workers 1 --timeout 0 main:app
