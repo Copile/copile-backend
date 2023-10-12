@@ -147,7 +147,7 @@ def get_open_positions(self,
         raise ClientError(res['code'], res['msg'])
     return res['data']
 
-def ticker(self,
+async def ticker(self,
     symbol: str = None,
 ) -> dict:
     ''' Get Ticker
@@ -155,7 +155,7 @@ def ticker(self,
 
     https://bingx-api.github.io/docs/swapV2/market-api.html#_9-get-ticker
     '''
-    res = self.get("/openApi/swap/v2/quote/ticker", params={
+    res = await self.get("/openApi/swap/v2/quote/ticker", params={
         "symbol": symbol,
     })
 

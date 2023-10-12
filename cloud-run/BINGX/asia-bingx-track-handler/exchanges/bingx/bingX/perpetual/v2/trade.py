@@ -5,6 +5,7 @@ bingX.perpetual.v2.trade
 from typing import List
 from ...error import ClientError
 import asyncio
+from ...api import recvWindow
 
 async def trade_order(self,
     symbol:       str,
@@ -14,7 +15,7 @@ async def trade_order(self,
     price:        float = None,
     quantity:     float = None,
     stopPrice:    float = None,
-    recvWindow:   int   = None,
+    recvWindow:   int   = recvWindow,
 ) -> dict:
     ''' Place a New Order
     POST /openApi/swap/v2/trade/order
@@ -38,7 +39,7 @@ async def trade_order(self,
 
 def bulk_order(self,
     batchOrders: List,
-    recvWindow:  int = None,
+    recvWindow:  int = recvWindow,
 ) -> dict:
     ''' Bulk order
     POST /openApi/swap/v2/trade/batchOrders
@@ -55,7 +56,7 @@ def bulk_order(self,
     return res['data']
 
 def close_all_positions(self,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' One-Click Close All Positions
     POST /openApi/swap/v2/trade/closeAllPositions
@@ -73,7 +74,7 @@ def close_all_positions(self,
 async def cancel_order(self,
     orderId:    int,
     symbol:     str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Cancel an Order
     DELETE /openApi/swap/v2/trade/order
@@ -93,7 +94,7 @@ async def cancel_order(self,
 async def cancel_orders(self,
     symbol:      str,
     orderIdList: List[int],
-    recvWindow:  int = None,
+    recvWindow:  int = recvWindow,
 ) -> dict:
     ''' Cancel a Batch of Orders
     DELETE /openApi/swap/v2/trade/batchOrders
@@ -111,7 +112,7 @@ async def cancel_orders(self,
 
 async def cancel_all_orders(self,
     symbol:     str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Cancel All Orders
     DELETE /openApi/swap/v2/trade/allOpenOrders
@@ -129,7 +130,7 @@ async def cancel_all_orders(self,
 
 async def current_orders(self,
     symbol:     str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Query all current pending orders
     GET /openApi/swap/v2/trade/openOrders
@@ -148,7 +149,7 @@ async def current_orders(self,
 async def order(self,
     symbol:     str,
     orderId:    int,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Query Order
     GET /openApi/swap/v2/trade/order
@@ -167,7 +168,7 @@ async def order(self,
 
 def margin_mode(self,
     symbol:     str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Query Margin Mode
     GET /openApi/swap/v2/trade/marginType
@@ -186,7 +187,7 @@ def margin_mode(self,
 async def switch_margin_mode(self,
     symbol:     str,
     marginType: str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Switch Margin Mode
     POST /openApi/swap/v2/trade/marginType
@@ -205,7 +206,7 @@ async def switch_margin_mode(self,
 
 def leverage(self,
     symbol:     str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Query Leverage
     GET /openApi/swap/v2/trade/leverage
@@ -225,7 +226,7 @@ async def switch_leverage(self,
     symbol:     str,
     side:       str,
     leverage:   int,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Switch Leverage
     POST /openApi/swap/v2/trade/leverage
@@ -249,7 +250,7 @@ def force_orders(self,
     startTime:     int = None,
     endTime:       int = None,
     limit:         int = None,
-    recvWindow:    int = None,
+    recvWindow:    int = recvWindow,
 ) -> dict:
     ''' User Force Orders
     GET /openApi/swap/v2/trade/forceOrders
@@ -275,7 +276,7 @@ def orders_history(self,
     startTime:  int = None,
     endTime:    int = None,
     limit:      int = 500,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' User History Orders
     GET /openApi/swap/v2/trade/allOrders
@@ -300,7 +301,7 @@ def adjust_isolated_margin(self,
     amount:       float,
     type:         int,
     positionSide: str = None,
-    recvWindow:   int = None,
+    recvWindow:   int = recvWindow,
 ) -> dict:
     ''' Adjust isolated margin
     POST /openApi/swap/v2/trade/positionMargin

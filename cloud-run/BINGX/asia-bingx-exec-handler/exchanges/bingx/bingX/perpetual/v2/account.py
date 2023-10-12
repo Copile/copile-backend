@@ -3,9 +3,10 @@ bingX.perpetual.v2.account
 '''
 
 from ...error import ClientError
+from ...api import recvWindow
 
 async def balance(self,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Get Perpetual Swap Account Asset Information
     GET /openApi/swap/v2/user/balance
@@ -22,7 +23,7 @@ async def balance(self,
 
 async def positions(self,
     symbol: str,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Perpetual Swap Positions
     GET /openApi/swap/v2/user/positions
@@ -44,7 +45,7 @@ def income(self,
     startTime: int = None,
     endTime: int = None,
     limit: int = None,
-    recvWindow: int = None,
+    recvWindow: int = recvWindow,
 ) -> dict:
     ''' Perpetual Swap Account PnL
     GET /openApi/swap/v2/user/income
