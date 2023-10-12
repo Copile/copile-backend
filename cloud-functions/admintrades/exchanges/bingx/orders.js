@@ -69,7 +69,7 @@ async function getBingXOrders(apiKey, apiSecret, traderId) {
 
     return await Promise.all(
       orders.map(async ({ orderId, symbol, side, type, price, origQty, status }) => {
-        const tradeDoc = await getTradeDoc(traderId, symbol, "bingx", side);
+        const tradeDoc = await getTradeDoc(traderId, symbol, "bingx", side, price);
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();
 

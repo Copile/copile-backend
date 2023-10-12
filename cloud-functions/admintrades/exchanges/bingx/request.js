@@ -23,12 +23,6 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 
   try {
     const response = await axios.get(url, { headers, timeout: 5000 });
-    if (response.data.code !== 0)
-      throw new CustomError({
-        message: `Failed to send BingX API request to ${path}: ${response.data.message}`,
-        source: "makeSignedRequest",
-        status: 500,
-      });
     return response.data.data;
   } catch (error) {
     if(error instanceof CustomError) throw error;
@@ -48,7 +42,7 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
 async function getServerTime() {
   const path = "/openApi/swap/v2/server/time";
   const url = `${apiConfig.protocol}://${apiConfig.host}${path}`;
-  const response = await axios.get(url, { timeout: 10000 });
+  const response = await axios.get(url, { timeout: 5000 });
   const serverTime = response.data.data.serverTime;
   return serverTime;
 }
@@ -126,7 +120,6 @@ async function getOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     if (!data || !data.orders) return;
     const orders = data.orders;
-    console.log("BingX order types : ", orders.map((order) => order.type));
     return orders;
   } catch (error) {
     throw new CustomError({

@@ -49,7 +49,7 @@ async function getBinanceOrders(apiKey, apiSecret, traderId) {
     return await Promise.all(
       orders.map(
         async ({ symbol, side, type, price, origQty, orderId, status }) => {
-          const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side);
+          const tradeDoc = await getTradeDoc(traderId, symbol, "binance", side, price);
           if (!tradeDoc) return;
 
           const tradeData = tradeDoc.data();
