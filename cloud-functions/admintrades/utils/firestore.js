@@ -11,18 +11,8 @@ const db = new Firestore();
  * @param {string} side Trade side (e.g., "Buy" or "Sell").
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function fetchLatestTradeDoc(traderId, symbol, exchange, side, price) {
+async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   try {
-    // Calculate the number of decimal places in the price
-    const decimalPlaces = (price.toString().split(".")[1] || []).length;
-
-    // Calculate a dynamic tolerance value based on the number of decimal places
-    const tolerance = Math.pow(10, -decimalPlaces - 1);
-
-    const lowerPrice = price - tolerance;
-    const higherPrice = price + tolerance;
-
-    // Fetch data based on other filters but not price
     const tradeQuerySnapshot = await db
       .collection("traders")
       .doc(traderId)
@@ -31,7 +21,7 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side, price) {
       .where("exchange", "==", exchange)
       .where("side", "==", side)
       .orderBy("created_at", "desc")
-      .limit(10) // Limit can be adjusted based on your specific needs
+      .limit(1)
       .get();
 
     if (tradeQuerySnapshot.empty) {
@@ -41,20 +31,7 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side, price) {
       return null;
     }
 
-    // Find the first document that matches the price range
-    const matchingDoc = tradeQuerySnapshot.docs.find((doc) => {
-      const docPrice = parseFloat(doc.data().price);
-      return docPrice >= lowerPrice && docPrice <= higherPrice;
-    });
-
-    if (!matchingDoc) {
-      console.log(
-        `No trade document found within the price range for trader ${traderId}, symbol ${symbol}, exchange ${exchange}, and side ${side}`
-      );
-      return null;
-    }
-
-    return matchingDoc;
+    return tradeQuerySnapshot.docs[0];
   } catch (error) {
     throw new CustomError({
       message: `Error fetching trade document: ${error.message}`,
@@ -70,8 +47,7 @@ async function mapPositionToTrade(position, traderId, exchange) {
       traderId,
       position.symbol,
       exchange,
-      position.side,
-      position.entry_price
+      position.side
     );
     if (!tradeDoc) return;
 
@@ -100,15 +76,14 @@ async function mapPositionToTrade(position, traderId, exchange) {
  * @param {string} side Trade side.
  * @returns {Promise} Returns a promise that resolves with the latest trade document or null.
  */
-async function getTradeDoc(traderId, symbol, exchange, side, price) {
+async function getTradeDoc(traderId, symbol, exchange, side) {
   const formattedSide =
     side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
   const tradeDoc = await fetchLatestTradeDoc(
     traderId,
     symbol,
     exchange,
-    formattedSide,
-    price
+    formattedSide
   );
   return tradeDoc;
 }
