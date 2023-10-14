@@ -53,6 +53,25 @@ ws.subscribeV5('order', 'linear').catch(err => {
   console.error('Failed to subscribe:', err);
 });
 
+function discordMessage(order) {
+  const embed = new EmbedBuilder()
+    .setTitle(order_actions[order.detection]["text"])
+    .setColor(order_actions[order.detection]["color"])
+    .addFields(
+      { name: 'Symbol', value: order.symbol, inline: true},
+      { name: 'Price', value: order.price, inline: true},
+      { name: 'Type', value: order.type, inline: false},
+      { name: 'Quantity', value: order.qty, inline: true},
+      { name: 'Order ID', value: order.orderId },
+    );
+
+  webhookClient.send({
+    username: 'Bybit Bot',
+    avatarURL: 'https://www.bybit.com/common-static/cht-static/user-svc/img/kol_sign_up/default-avatar.png',
+    embeds: [embed],
+  });
+}
+
 function getAction(order) {
   const actionMap = {
     "UNKNOWN": {
@@ -104,22 +123,7 @@ ws.on('update', (orders) => {
         order.price = order.detection in trigger_price_detection ? orders[i].triggerPrice : orders[i].price;
       
         console.log(order);
-        const embed = new EmbedBuilder()
-          .setTitle(order_actions[order.detection]["text"])
-          .setColor(order_actions[order.detection]["color"])
-          .addFields(
-            { name: 'Symbol', value: order.symbol, inline: true},
-            { name: 'Price', value: order.price, inline: true},
-            { name: 'Type', value: order.type, inline: false},
-            { name: 'Quantity', value: order.qty, inline: true},
-            { name: 'Order ID', value: order.orderId },
-          );
-    
-        webhookClient.send({
-          username: 'Bybit Bot',
-          avatarURL: 'https://www.bybit.com/common-static/cht-static/user-svc/img/kol_sign_up/default-avatar.png',
-          embeds: [embed],
-        });
+        discordMessage(order);
       }
     } catch(error) {
       console.error('Error processing WebSocket message:', error);
