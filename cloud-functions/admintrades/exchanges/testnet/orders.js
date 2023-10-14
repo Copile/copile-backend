@@ -43,7 +43,8 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
           traderId,
           order.symbol,
           "testnet",
-          order.side
+          order.side,
+          order.price
         );
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();

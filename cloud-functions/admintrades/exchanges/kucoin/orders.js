@@ -116,7 +116,7 @@ async function getKucoinOrders(apiKey, apiSecret, apiPassphrase, traderId) {
 
     return await Promise.all(
       filteredOrders.map(async ({ id, symbol, side, price, size, status }) => {
-        const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side);
+        const tradeDoc = await getTradeDoc(traderId, symbol, "kucoin", side, price);
         if (!tradeDoc) return;
         const tradeData = tradeDoc.data();
 
