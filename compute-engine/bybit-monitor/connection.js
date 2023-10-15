@@ -1,12 +1,10 @@
 const { WebsocketClient } = require('bybit-api');
 const { discordMessage } = require('./discord/webhook.js');
-const { storeTrade, storeSL } = require('./firestore/firestore.js');
+const tradeHandling = require('./utils/tradeHandling.js');
 const getAction  = require('./utils/getAction.js');
-const reformatOrder = require('./utils/reformatOrder.js');
 
 const API_KEY = "ZuhzXiG2TmZOASqM2T";
 const API_SECRET = "OQSn8YsDKfE3XShN3bgD68uWiOxblJdUGwRD";
-const accountId = "duelendigerdreckigerbastard"
 
 const wsConfig = {
   key: API_KEY,
@@ -20,17 +18,6 @@ const ws = new WebsocketClient(wsConfig);
 ws.subscribeV5('order', 'linear').catch(err => {
   console.error('Failed to subscribe:', err);
 });
-
-async function storingOrder(order) {
-  switch(order.detection) {
-    case 'new_order':
-      await storeTrade(accountId, order);
-      break;
-    case 'new_stop_loss' || 'new_take_profit':
-      await reformatOrder(accountId, order);
-      break
-  }
-}
 
 ws.on('update', async (orders) => {
   try {
@@ -51,7 +38,6 @@ ws.on('update', async (orders) => {
       return 0;
     });
 
-    console.log(orders);
     let orders_length = orders.length;
   
     for (let i = 0; i < orders_length; i++) {
@@ -65,10 +51,10 @@ ws.on('update', async (orders) => {
         "detection": getAction(orders[i])
       };
     
-      const trigger_price_detection = ["new_take_profit", "new_stop_loss", "cancelled_take_profit", "cancelled_stop_loss"];
+      let trigger_price_detection = ["new_take_profit", "new_stop_loss", "cancelled_take_profit", "cancelled_stop_loss"];
       order.entry = trigger_price_detection.includes(order.detection) ? orders[i].triggerPrice : orders[i].price;
       
-      await storingOrder(order);
+      await tradeHandling(order);
       await discordMessage(order);
     }
   } catch (error) {

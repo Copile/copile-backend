@@ -44,10 +44,9 @@ const {
     FIELD_SL_AMOUNT
 } = config;
 
-// Function to fetch the latest trade document for a trader
+// Function to fetch the latest trade document ID for a trader
 async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
     try {
-        console.log(traderId, symbol, exchange, side);
         const tradeQuerySnapshot = await db
             .collection("traders")
             .doc(traderId)
@@ -65,13 +64,15 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
             );
             return null;
         }
-        console.log(tradeQuerySnapshot.docs[0]);
-        return tradeQuerySnapshot.docs[0];
+
+        const latestTradeDocId = tradeQuerySnapshot.docs[0].id;
+
+        return latestTradeDocId;
     } catch (error) {
         throw new CustomError({
-            message: `Error fetching trade document: ${error.message}`,
+            message: `Error fetching trade document ID: ${error.message}`,
             status: 500,
-            source: "fetchLatestTradeDoc",
+            source: "fetchLatestTradeDocId",
         });
     }
 }
