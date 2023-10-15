@@ -11,6 +11,8 @@
     "license": "ISC",
     "dependencies": {
         "bybit-api": "^3.7.3",
-        "discord.js": "^14.13.0"
+        "discord.js": "^14.13.0",
+        "firebase-admin": "11.11.0",
+        "uuid": "^9.0.1"
     }
 }

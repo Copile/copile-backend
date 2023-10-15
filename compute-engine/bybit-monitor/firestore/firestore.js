@@ -1,15 +1,25 @@
-const { Firestore } = require("@google-cloud/firestore");
+//const { Firestore } = require("@google-cloud/firestore");
 const fs = require('fs');
 const CustomError = require("./error");
+const { v4: uuidv4 } = require('uuid');
+
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./serviceAccount.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 // Initialize Firestore
-const db = new Firestore();
+const db = admin.firestore();
 
 // Load configuration from config.json file
-const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+const config = require("./config.json");
 
 // Destructure configuration variables
 const {
+    COLLECTION_TRADERS,
     COLLECTION_TRADES,
     COLLECTION_TAKE_PROFITS,
     COLLECTION_STOP_LOSSES,
@@ -22,7 +32,6 @@ const {
     FIELD_QUANTITY,
     FIELD_ENTRY,
     FIELD_LEVERAGE,
-    FIELD_MARGIN,
     FIELD_EXCHANGE,
     FIELD_CREATED_AT,
     FIELD_TP_NUMBER,
@@ -38,6 +47,7 @@ const {
 // Function to fetch the latest trade document for a trader
 async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
     try {
+        console.log(traderId, symbol, exchange, side);
         const tradeQuerySnapshot = await db
             .collection("traders")
             .doc(traderId)
@@ -55,7 +65,7 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
             );
             return null;
         }
-
+        console.log(tradeQuerySnapshot.docs[0]);
         return tradeQuerySnapshot.docs[0];
     } catch (error) {
         throw new CustomError({
@@ -67,153 +77,218 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
 }
 
 // Function to store trade information
-async function store_trade(account_id, order_dict) {
-    const trade_doc_ref = db.collection(COLLECTION_TRADERS)
-        .doc(account_id)
-        .collection(COLLECTION_TRADES)
-        .doc(order_dict.trade_id);
+async function storeTrade(accountId, orderDict) {
+    try {
+        let tradeId = String(uuidv4());
 
-    await trade_doc_ref.set({
-        [FIELD_TRADE_ID]: String(order_dict.trade_id),
-        [FIELD_ORDER_ID]: order_dict.order_id,
-        [FIELD_SYMBOL]: order_dict.symbol,
-        [FIELD_ORDER_TYPE]: order_dict.type,
-        [FIELD_SIDE]: order_dict.side.charAt(0).toUpperCase() + order_dict.side.slice(1),
-        [FIELD_QUANTITY]: order_dict.quantity,
-        [FIELD_ENTRY]: order_dict.entry,
-        [FIELD_LEVERAGE]: order_dict.leverage,
-        [FIELD_MARGIN]: order_dict.margin,
-        [FIELD_EXCHANGE]: order_dict.exchange,
-        [FIELD_CREATED_AT]: Math.floor(Date.now() / 1000),
-    });
+        const trade_doc_ref = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
+
+        await trade_doc_ref.set({
+            [FIELD_TRADE_ID]: tradeId,
+            [FIELD_ORDER_ID]: orderDict.orderId,
+            [FIELD_SYMBOL]: orderDict.symbol,
+            [FIELD_ORDER_TYPE]: orderDict.type,
+            [FIELD_SIDE]: orderDict.side.charAt(0).toUpperCase() + orderDict.side.slice(1),
+            [FIELD_QUANTITY]: orderDict.quantity,
+            [FIELD_ENTRY]: orderDict.entry,
+            [FIELD_LEVERAGE]: orderDict.leverage,
+            [FIELD_EXCHANGE]: "bybit",
+            [FIELD_CREATED_AT]: Math.floor(Date.now() / 1000),
+        });
+    } catch (error) {
+        throw new CustomError({
+            message: `Error storing new trade: ${error.message}`,
+            status: 500,
+            source: "storeTrade",
+        });
+    }
 }
 
 // Function to store take profit information
-async function store_tp(account_id, tp_dict) {
-    const tp_doc_ref = db.collection(COLLECTION_TRADERS)
-        .doc(account_id)
-        .collection(COLLECTION_TRADES)
-        .doc(tp_dict.trade_id)
-        .collection(COLLECTION_TAKE_PROFITS)
-        .doc(tp_dict.tp_document_id);
+async function storeTP(accountId, tpDict) {
+    try {
+        const tp_doc_ref = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tpDict.tradeId)
+            .collection(COLLECTION_TAKE_PROFITS)
+            .doc(tpDict.tpDocumentId);
 
-    await tp_doc_ref.set({
-        [FIELD_ORDER_ID]: String(tp_dict.order_id),
-        [FIELD_EXECUTED]: "1",
-        [FIELD_TP_NUMBER]: tp_dict.tp_number,
-        [FIELD_TP_VALUE]: tp_dict.tp_value,
-        [FIELD_TP_PERCENTAGE]: tp_dict.tp_percentage,
-        [FIELD_TP_AMOUNT]: tp_dict.tp_amount,
-    });
+        await tp_doc_ref.set({
+            [FIELD_ORDER_ID]: String(tpDict.orderId),
+            [FIELD_EXECUTED]: "1",
+            [FIELD_TP_NUMBER]: tpDict.tpNumber,
+            [FIELD_TP_VALUE]: tpDict.tpValue,
+            [FIELD_TP_PERCENTAGE]: tpDict.tpPercentage,
+            [FIELD_TP_AMOUNT]: tpDict.tpAmount,
+        });
+    } catch (error) {
+        throw new CustomError({
+            message: `Error storing new take-profit: ${error.message}`,
+            status: 500,
+            source: "storeTP",
+        });
+    }
 }
 
 // Function to store stop loss information
-async function store_sl(account_id, sl_dict) {
-    const sl_doc_ref = db.collection(COLLECTION_TRADERS)
-        .doc(account_id)
-        .collection(COLLECTION_TRADES)
-        .doc(sl_dict.trade_id)
-        .collection(COLLECTION_STOP_LOSSES)
-        .doc(sl_dict.sl_document_id);
+async function storeSL(accountId, slDict) {
+    try {
+        const sl_doc_ref = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(slDict.tradeId)
+            .collection(COLLECTION_STOP_LOSSES)
+            .doc(slDict.slDocumentId);
 
-    await sl_doc_ref.set({
-        [FIELD_ORDER_ID]: String(sl_dict.order_id),
-        [FIELD_EXECUTED]: "1",
-        [FIELD_SL_PERCENTAGE]: sl_dict.sl_percentage,
-        [FIELD_SL_NUMBER]: sl_dict.sl_number,
-        [FIELD_SL_VALUE]: sl_dict.sl_value,
-        [FIELD_SL_AMOUNT]: sl_dict.sl_amount,
-    });
+        await sl_doc_ref.set({
+            [FIELD_ORDER_ID]: String(slDict.orderId),
+            [FIELD_EXECUTED]: "1",
+            [FIELD_SL_PERCENTAGE]: slDict.slPercentage,
+            [FIELD_SL_NUMBER]: slDict.slNumber,
+            [FIELD_SL_VALUE]: slDict.slValue,
+            [FIELD_SL_AMOUNT]: slDict.slAmount,
+        });
+    } catch (error) {
+        throw new CustomError({
+            message: `Error storing new stop-loss: ${error.message}`,
+            status: 500,
+            source: "storeSL",
+        });
+    }
 }
 
 // Function to delete a trade document
-async function delete_order(account_id, trade_id) {
-    const trade_doc_ref = db.collection(COLLECTION_TRADERS)
-        .doc(account_id)
-        .collection(COLLECTION_TRADES)
-        .doc(trade_id);
+async function deleteOrder(accountId, tradeId) {
+    try {
+        const trade_doc_ref = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
 
-    await trade_doc_ref.delete();
+        await trade_doc_ref.delete();
+    } catch (error) {
+        throw new CustomError({
+            message: `Error deleting order: ${error.message}`,
+            status: 500,
+            source: "deleteOrder",
+        });
+    }
 }
 
 // Function to delete a take profit or stop loss order
 const deleteTpSlOrder = async (accountId, tradeId, documentId, isTpOrSl) => {
-    const tradeRef = db.collection(COLLECTION_TRADERS)
-        .doc(accountId)
-        .collection(COLLECTION_TRADES)
-        .doc(tradeId);
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
 
-    if (isTpOrSl === 'tp') {
-        await tradeRef.collection(COLLECTION_TAKE_PROFITS).doc(documentId).delete();
-    } else if (isTpOrSl === 'sl') {
-        await tradeRef.collection(COLLECTION_STOP_LOSSES).doc(documentId).delete();
+        if (isTpOrSl === 'tp') {
+            await tradeRef.collection(COLLECTION_TAKE_PROFITS).doc(documentId).delete();
+        } else if (isTpOrSl === 'sl') {
+            await tradeRef.collection(COLLECTION_STOP_LOSSES).doc(documentId).delete();
+        }
+    } catch (error) {
+        throw new CustomError({
+            message: `Error deleting tp/sl order: ${error.message}`,
+            status: 500,
+            source: "deleteTpSlOrder",
+        });
     }
 };
 
 // Function to get trade information
 const getTradeInfo = async (accountId, tradeId) => {
-    const tradeRef = db.collection(COLLECTION_TRADERS)
-        .doc(accountId)
-        .collection(COLLECTION_TRADES)
-        .doc(tradeId);
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
 
-    const tradeInfo = (await tradeRef.get()).data();
-    return tradeInfo;
+        const tradeInfo = (await tradeRef.get()).data();
+        return tradeInfo;
+    } catch (error) {
+        throw new CustomError({
+            message: `Error getting trade info: ${error.message}`,
+            status: 500,
+            source: "getTradeInfo",
+        });
+    }
 };
 
 // Function to get take profit or stop loss information
 const getTpSlInfo = async (accountId, tradeId, documentId, isTpOrSl) => {
-    const tradeRef = db.collection(COLLECTION_TRADERS)
-        .doc(accountId)
-        .collection(COLLECTION_TRADES)
-        .doc(tradeId);
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
 
-    let tpSlInfo;
-    if (isTpOrSl === 'tp') {
-        tpSlInfo = (await tradeRef.collection(COLLECTION_TAKE_PROFITS).doc(documentId).get()).data();
-    } else if (isTpOrSl === 'sl') {
-        tpSlInfo = (await tradeRef.collection(COLLECTION_STOP_LOSSES).doc(documentId).get()).data();
+        let tpSlInfo;
+        if (isTpOrSl === 'tp') {
+            tpSlInfo = (await tradeRef.collection(COLLECTION_TAKE_PROFITS).doc(documentId).get()).data();
+        } else if (isTpOrSl === 'sl') {
+            tpSlInfo = (await tradeRef.collection(COLLECTION_STOP_LOSSES).doc(documentId).get()).data();
+        }
+        return tpSlInfo;
+    } catch (error) {
+        throw new CustomError({
+            message: `Error getting tp/sl info: ${error.message}`,
+            status: 500,
+            source: "getTpSlInfo",
+        });
     }
-    return tpSlInfo;
 };
 
 // Function to get all take profit and stop loss orders for a trade
 const getTpSlOrders = async (accountId, tradeId) => {
-    const tradeRef = db.collection(COLLECTION_TRADERS)
-        .doc(accountId)
-        .collection(COLLECTION_TRADES)
-        .doc(tradeId);
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
 
-    const [tpCollection, slCollection] = await Promise.all([
-        tradeRef.collection(COLLECTION_TAKE_PROFITS).get(),
-        tradeRef.collection(COLLECTION_STOP_LOSSES).get()
-    ]);
+        const [tpCollection, slCollection] = await Promise.all([
+            tradeRef.collection(COLLECTION_TAKE_PROFITS).get(),
+            tradeRef.collection(COLLECTION_STOP_LOSSES).get()
+        ]);
 
-    let tpSlOrders = [];
+        let tpSlOrders = [];
 
-    tpCollection.forEach(doc => {
-        let tpData = doc.data();
-        tpData.documentId = doc.id;
-        tpData.tradeType = 'tp';
-        tpSlOrders.push(tpData);
-    });
+        tpCollection.forEach(doc => {
+            let tpData = doc.data();
+            tpData.documentId = doc.id;
+            tpData.tradeType = 'tp';
+            tpSlOrders.push(tpData);
+        });
 
-    slCollection.forEach(doc => {
-        let slData = doc.data();
-        slData.documentId = doc.id;
-        slData.tradeType = 'sl';
-        tpSlOrders.push(slData);
-    });
+        slCollection.forEach(doc => {
+            let slData = doc.data();
+            slData.documentId = doc.id;
+            slData.tradeType = 'sl';
+            tpSlOrders.push(slData);
+        });
 
-    return tpSlOrders;
+        return tpSlOrders;
+    } catch (error) {
+        throw new CustomError({
+            message: `Error getting tp/sl orders: ${error.message}`,
+            status: 500,
+            source: "getTpSlOrders",
+        });
+    }
 };
 
 module.exports = {
     fetchLatestTradeDoc,
-    store_trade,
-    store_tp,
-    store_sl,
-    delete_order,
+    storeTrade,
+    storeTP,
+    storeSL,
+    deleteOrder,
     deleteTpSlOrder,
     getTradeInfo,
     getTpSlInfo,
