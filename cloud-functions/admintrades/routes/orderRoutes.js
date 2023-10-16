@@ -139,10 +139,6 @@ router.post("/order/:exchange", validateTrader, async (req, res, next) => {
     const traderId = req.get("traderId");
     const tradeIds = req.body.tradeIds;
 
-    console.log("tradeIds", tradeIds);
-    console.log("typeof tradeIds", typeof tradeIds);
-    console.log("Is tradeIds an array?", Array.isArray(tradeIds));
-
     if (!traderId) {
       throw new CustomError({
         message: "trader name missing.",
