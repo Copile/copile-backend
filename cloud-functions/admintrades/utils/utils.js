@@ -29,9 +29,92 @@ const EXCHANGE = {
  * @returns {Promise<Object>} An object containing arrays of take profit and stop loss details.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
+// async function getTradeProfitLossDetails(
+//   traderId,
+//   tradeId,
+//   exchange,
+//   symbol,
+//   apiKey = null,
+//   apiSecret = null,
+//   apiPassphrase = null
+// ) {
+//   try {
+//     const tradeDocRef = db
+//       .collection("traders")
+//       .doc(traderId)
+//       .collection("trades")
+//       .doc(tradeId);
+
+//     // Fetch take-profits and stop-losses
+//     const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
+//       tradeDocRef.collection("take-profits").get(),
+//       tradeDocRef.collection("stop-losses").get(),
+//     ]);
+
+//     let takeProfitData = [];
+//     let stopLossData = [];
+
+//     takeProfitQuerySnapshot.forEach((doc) => {
+//       const data = doc.data();
+//       data.tp_price = data.tp_value;
+//       delete data.tp_value;
+//       data.tp_id = doc.id;
+//       takeProfitData.push(data);
+//     });
+
+//     stopLossQuerySnapshot.forEach((doc) => {
+//       const data = doc.data();
+//       data.sl_price = data.sl_value;
+//       delete data.sl_value;
+//       data.sl_id = doc.id;
+//       stopLossData.push(data);
+//     });
+
+//     // Get active orders once for both takeProfit and stopLoss
+//     const activeOrders = await getActiveOrders(
+//       apiKey,
+//       apiSecret,
+//       apiPassphrase,
+//       exchange,
+//       symbol
+//     );
+
+//     if(!activeOrders) return;
+
+//     const [takeProfitNewData, stopLossNewData] = await Promise.all([
+//       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
+//       checkStopLossStatus(exchange, stopLossData, activeOrders),
+//     ]);
+
+//     // Remove orderID field
+//     takeProfitNewData.forEach((data) => {
+//       delete data.orderID;
+//     });
+
+//     stopLossNewData.forEach((data) => {
+//       delete data.orderID;
+//     });
+
+//     return {
+//       take_profits: takeProfitNewData,
+//       stop_losses: stopLossNewData,
+//     };
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       throw error;
+//     }
+//     throw new CustomError({
+//       message: `Failed to get trade profit/loss details: ${error.message}`,
+//       status: 400,
+//       source: "getTradeProfitLossDetails",
+//     });
+//   }
+// }
+
+// Second1 adjustment
 async function getTradeProfitLossDetails(
   traderId,
-  tradeId,
+  tradeIds, // Now an array of trade IDs
   exchange,
   symbol,
   apiKey = null,
@@ -39,66 +122,72 @@ async function getTradeProfitLossDetails(
   apiPassphrase = null
 ) {
   try {
-    const tradeDocRef = db
-      .collection("traders")
-      .doc(traderId)
-      .collection("trades")
-      .doc(tradeId);
+    // Loop over tradeIds and fetch details for each trade
+    const tradesData = await Promise.all(
+      tradeIds.map(async (tradeId) => {
+        const tradeDocRef = db
+          .collection("traders")
+          .doc(traderId)
+          .collection("trades")
+          .doc(tradeId);
 
-    // Fetch take-profits and stop-losses
-    const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
-      tradeDocRef.collection("take-profits").get(),
-      tradeDocRef.collection("stop-losses").get(),
-    ]);
+        // Fetch take-profits and stop-losses
+        const [takeProfitQuerySnapshot, stopLossQuerySnapshot] =
+          await Promise.all([
+            tradeDocRef.collection("take-profits").get(),
+            tradeDocRef.collection("stop-losses").get(),
+          ]);
 
-    let takeProfitData = [];
-    let stopLossData = [];
+        let takeProfitData = [];
+        let stopLossData = [];
 
-    takeProfitQuerySnapshot.forEach((doc) => {
-      const data = doc.data();
-      data.tp_price = data.tp_value;
-      delete data.tp_value;
-      data.tp_id = doc.id;
-      takeProfitData.push(data);
-    });
+        takeProfitQuerySnapshot.forEach((doc) => {
+          const data = doc.data();
+          data.tp_price = data.tp_value;
+          delete data.tp_value;
+          data.tp_id = doc.id;
+          takeProfitData.push(data);
+        });
 
-    stopLossQuerySnapshot.forEach((doc) => {
-      const data = doc.data();
-      data.sl_price = data.sl_value;
-      delete data.sl_value;
-      data.sl_id = doc.id;
-      stopLossData.push(data);
-    });
+        stopLossQuerySnapshot.forEach((doc) => {
+          const data = doc.data();
+          data.sl_price = data.sl_value;
+          delete data.sl_value;
+          data.sl_id = doc.id;
+          stopLossData.push(data);
+        });
 
-    // Get active orders once for both takeProfit and stopLoss
-    const activeOrders = await getActiveOrders(
-      apiKey,
-      apiSecret,
-      apiPassphrase,
-      exchange,
-      symbol
+        // Get active orders once for both takeProfit and stopLoss
+        const activeOrders = await getActiveOrders(
+          exchange,
+          apiKey,
+          apiSecret,
+          apiPassphrase
+        );
+
+        const [takeProfitNewData, stopLossNewData] = await Promise.all([
+          checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
+          checkStopLossStatus(exchange, stopLossData, activeOrders),
+        ]);
+
+        // Remove orderID field
+        takeProfitNewData.forEach((data) => {
+          delete data.orderID;
+        });
+
+        stopLossNewData.forEach((data) => {
+          delete data.orderID;
+        });
+
+        return {
+          trade_id: tradeId,
+          take_profits: takeProfitNewData,
+          stop_losses: stopLossNewData,
+        };
+      })
     );
 
-    if(!activeOrders) return;
-
-    const [takeProfitNewData, stopLossNewData] = await Promise.all([
-      checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
-      checkStopLossStatus(exchange, stopLossData, activeOrders),
-    ]);
-
-    // Remove orderID field
-    takeProfitNewData.forEach((data) => {
-      delete data.orderID;
-    });
-
-    stopLossNewData.forEach((data) => {
-      delete data.orderID;
-    });
-
-    return {
-      take_profits: takeProfitNewData,
-      stop_losses: stopLossNewData,
-    };
+    return tradesData;
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
