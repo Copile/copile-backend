@@ -116,7 +116,6 @@ async function getTradeProfitLossDetails(
   traderId,
   tradeIds, // Now an array of trade IDs
   exchange,
-  symbol,
   apiKey = null,
   apiSecret = null,
   apiPassphrase = null
