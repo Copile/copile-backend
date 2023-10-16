@@ -33,6 +33,7 @@ async function getTradeProfitLossDetails(
   traderId,
   tradeId,
   exchange,
+  // Second1 adjustment
   // symbol,
   apiKey = null,
   apiSecret = null,
@@ -44,6 +45,14 @@ async function getTradeProfitLossDetails(
       .doc(traderId)
       .collection("trades")
       .doc(tradeId);
+
+    // Second1 adjustment
+    // Fetch the trade data
+    const tradeDoc = await tradeDocRef.get();
+    const tradeData = tradeDoc.data();
+
+    // Extract the symbol from the trade data
+    const symbol = tradeData.symbol;
 
     // Fetch take-profits and stop-losses
     const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
