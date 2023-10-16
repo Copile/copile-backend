@@ -134,7 +134,7 @@ const validateTrader = require("../middleware/validation");
 const router = express.Router();
 const db = new Firestore();
 
-router.post("/order/:exchange", validateTrader, async (req, res, next) => {
+router.get("/order/:exchange", validateTrader, async (req, res, next) => {
   try {
     const traderId = req.get("traderId");
     const tradeIds = req.body.tradeIds;
