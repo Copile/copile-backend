@@ -71,12 +71,12 @@
 //         });
 //       }
 
-//       const apiKey = keys.api_key;
-//       const apiSecret = await decryptData(keys.api_secret, traderId);
-//       let apiPassphrase = null;
-//       if ("api_passphrase" in keys) {
-//         apiPassphrase = await decryptData(keys.api_passphrase, traderId);
-//       }
+// const apiKey = keys.api_key;
+// const apiSecret = await decryptData(keys.api_secret, traderId);
+// let apiPassphrase = null;
+// if ("api_passphrase" in keys) {
+//   apiPassphrase = await decryptData(keys.api_passphrase, traderId);
+// }
 
 //       if (exchange === "kucoin" && !apiPassphrase) {
 //         throw new CustomError({
