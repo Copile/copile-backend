@@ -221,6 +221,25 @@ const getTradeInfo = async (accountId, tradeId) => {
     }
 };
 
+// Function to update the trade quantity
+const updateTradeQuantity = async (accountId, tradeId, newQuantity) => {
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
+
+        await tradeRef.update({ 'quantity': newQuantity });
+        return `Trade quantity successfully updated to ${newQuantity}`;
+    } catch (error) {
+        throw new CustomError({
+            message: `Error updating trade quantity: ${error.message}`,
+            status: 500,
+            source: "updateTradeQuantity",
+        });
+    }
+};
+
 // Function to get take profit or stop loss information
 const getTpSlInfo = async (accountId, tradeId, documentId, isTpOrSl) => {
     try {
@@ -241,6 +260,49 @@ const getTpSlInfo = async (accountId, tradeId, documentId, isTpOrSl) => {
             message: `Error getting tp/sl info: ${error.message}`,
             status: 500,
             source: "getTpSlInfo",
+        });
+    }
+};
+
+// New function to get a TP or SL order by orderID
+const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
+
+        let collectionName = isTpOrSl === 'tp' ? COLLECTION_TAKE_PROFITS : COLLECTION_STOP_LOSSES;
+
+        const orderCollection = await tradeRef.collection(collectionName)
+            .where("orderID", "==", orderID)
+            .get();
+
+        let orderData = null;
+
+        orderCollection.forEach(doc => {
+            if (doc.exists) {
+                orderData = doc.data();
+                orderData.documentId = doc.id;
+                orderData.tradeType = isTpOrSl;
+            }
+        });
+
+        if (orderData) {
+            return orderData;
+        } else {
+            throw new CustomError({
+                message: `Order with ID ${orderID} not found`,
+                status: 404,
+                source: "getTpOrSlOrderByOrderId",
+            });
+        }
+
+    } catch (error) {
+        throw new CustomError({
+            message: `Error getting tp/sl order by orderID: ${error.message}`,
+            status: 500,
+            source: "getTpOrSlOrderByOrderId",
         });
     }
 };
@@ -287,6 +349,8 @@ const getTpSlOrders = async (accountId, tradeId) => {
 module.exports = {
     fetchLatestTradeDoc,
     storeTrade,
+    updateTradeQuantity,
+    getSpecficOrder,
     storeTP,
     storeSL,
     deleteOrder,
