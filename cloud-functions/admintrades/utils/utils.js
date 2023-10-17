@@ -61,16 +61,13 @@ async function getTradeProfitLossDetails(
     ]);
 
     if (takeProfitQuerySnapshot.empty && stopLossQuerySnapshot.empty) {
-      return {
-        take_profits: [],
-        stop_losses: [],
-      };
+      return;
     }
 
     let takeProfitData = [];
     let stopLossData = [];
 
-    if (takeProfitQuerySnapshot) {
+    if (!takeProfitQuerySnapshot.empty) {
       takeProfitQuerySnapshot.forEach((doc) => {
         const data = doc.data();
         data.tp_price = data.tp_value;
@@ -80,7 +77,7 @@ async function getTradeProfitLossDetails(
       });
     }
 
-    if (stopLossQuerySnapshot) {
+    if (!stopLossQuerySnapshot.empty) {
       stopLossQuerySnapshot.forEach((doc) => {
         const data = doc.data();
         data.sl_price = data.sl_value;
@@ -99,12 +96,7 @@ async function getTradeProfitLossDetails(
       symbol
     );
 
-    if (!activeOrders) {
-      return {
-        take_profits: [],
-        stop_losses: [],
-      };
-    }
+    if (!activeOrders) return;
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
