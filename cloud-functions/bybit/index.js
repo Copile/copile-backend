@@ -533,6 +533,7 @@ async function getBybitBalance(apiKey, apiSecret) {
       strict_param_validation: true,
     });
     const balance = await client.getBalances(coin = 'USDT');
+    console.log(balance);
     return balance.result.list[0].availableBalance;
   } catch (e) {
     console.log("Error in getBybitBalance: ", e);
