@@ -341,6 +341,11 @@ async function getBybitTrades(apiKey, apiSecret, entityCollection, entityId) {
       settleCoin: "USDT",
     });
 
+    if (!positionData || !positionData.result || !positionData.result.list) {
+      return [];
+    }
+    
+
     const trades = positionData.result.list
       .filter((position) => position.size !== 0)
       .map(async (position) => {
@@ -561,6 +566,10 @@ async function getBybitOrders(apiKey, apiSecret, entityCollection, entityId) {
       orderFilter: "order",
       settleCoin: "USDT",
     });
+
+    if(!orders || !orders.result || !orders.result.list) {
+      return [];
+    }
 
     // Filter the orders to only show reduceOnly false and orderStatus "New"
     const filteredOrders = orders.result.list.filter(
