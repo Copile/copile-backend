@@ -96,13 +96,7 @@ router.get(
         apiPassphrase
       );
 
-      if (details) {
-        res.status(200).json(details);
-      }/* else {
-        res.status(404).json({
-          message: "No details found for this trade",
-        });
-      }*/
+      res.status(200).json(details);
     } catch (e) {
       if (e instanceof CustomError) {
         next(e);
