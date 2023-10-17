@@ -219,13 +219,8 @@ router.post("/order/:exchange", validateTrader, async (req, res, next) => {
       )
     );
     const details = await Promise.all(detailsPromises);
-    
+
     res.status(200).json(details);
-    /*else {
-        res.status(404).json({
-          message: "No details found for this trade",
-        });
-      }*/
   } catch (e) {
     if (e instanceof CustomError) {
       next(e);
