@@ -82,7 +82,8 @@ async function getTradeProfitLossDetails(
       exchange,
       apiKey,
       apiSecret,
-      apiPassphrase
+      apiPassphrase,
+      symbol
     );
 
     if (!activeOrders) {
@@ -135,7 +136,7 @@ async function getTradeProfitLossDetails(
 async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
   try {
     const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
-    return await session.getOrderStatuses();
+    return await session.getOrderStatuses(symbol);
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
