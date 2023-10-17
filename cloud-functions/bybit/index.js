@@ -18,12 +18,10 @@ app.all("/trades", async (req, res) => {
 
   const entity = await getEntity(entityCollection, entityId);
   if (!entity) {
-    return res
-      .status(404)
-      .json({
-        success: false,
-        error: `${entityCollection.slice(0, -1)} not found`,
-      });
+    return res.status(404).json({
+      success: false,
+      error: `${entityCollection.slice(0, -1)} not found`,
+    });
   }
 
   const exchange = "bybit";
@@ -69,12 +67,10 @@ app.all("/trades", async (req, res) => {
       orders: orders,
     });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the trade details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the trade details.",
+    });
   }
 });
 
@@ -89,12 +85,10 @@ app.all("/order", async (req, res) => {
 
     const entity = await getEntity(entityCollection, entityId);
     if (!entity) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: `${entityCollection.slice(0, -1)} not found`,
-        });
+      return res.status(404).json({
+        success: false,
+        error: `${entityCollection.slice(0, -1)} not found`,
+      });
     }
 
     // const tradeId = req.params.tradeId;
@@ -171,12 +165,10 @@ app.all("/balance", async (req, res) => {
     const exchangesData = traderDoc.data().exchanges || {};
 
     if (!exchangesData || !("bybit" in exchangesData)) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "No exchange found or unsupported exchange",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "No exchange found or unsupported exchange",
+      });
     }
 
     const keys = exchangesData.bybit;
@@ -198,12 +190,10 @@ app.all("/balance", async (req, res) => {
       .status(200)
       .json({ success: true, balance: balance, executionTime });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "An error occurred while fetching the balance details.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the balance details.",
+    });
   }
 });
 
@@ -231,12 +221,10 @@ app.get("/symbolData", async (req, res) => {
     const response = await axios.get(url);
     return res.json(response.data);
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to fetch data from the external API",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch data from the external API",
+    });
   }
 });
 
@@ -263,12 +251,10 @@ app.get("/supportedExchanges", async (req, res) => {
     const response = await axios.get(url);
     return res.json(response.data);
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to fetch data from the external API",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch data from the external API",
+    });
   }
 });
 
@@ -344,7 +330,6 @@ async function getBybitTrades(apiKey, apiSecret, entityCollection, entityId) {
     if (!positionData || !positionData.result || !positionData.result.list) {
       return [];
     }
-    
 
     const trades = positionData.result.list
       .filter((position) => position.size !== 0)
@@ -547,7 +532,7 @@ async function getBybitBalance(apiKey, apiSecret) {
       secret: apiSecret,
       strict_param_validation: true,
     });
-    const balance = await client.getBalances((coin = "USDT"));
+    const balance = await client.getBalances(coin = 'USDT');
     return balance.result.list[0].availableBalance;
   } catch (e) {
     console.log("Error in getBybitBalance: ", e);
@@ -567,7 +552,7 @@ async function getBybitOrders(apiKey, apiSecret, entityCollection, entityId) {
       settleCoin: "USDT",
     });
 
-    if(!orders || !orders.result || !orders.result.list) {
+    if (!orders || !orders.result || !orders.result.list) {
       return [];
     }
 
