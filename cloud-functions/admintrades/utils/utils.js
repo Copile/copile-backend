@@ -67,25 +67,21 @@ async function getTradeProfitLossDetails(
     let takeProfitData = [];
     let stopLossData = [];
 
-    if (!takeProfitQuerySnapshot.empty) {
-      takeProfitQuerySnapshot.forEach((doc) => {
-        const data = doc.data();
-        data.tp_price = data.tp_value;
-        delete data.tp_value;
-        data.tp_id = doc.id;
-        takeProfitData.push(data);
-      });
-    }
+    takeProfitQuerySnapshot.forEach((doc) => {
+      const data = doc.data();
+      data.tp_price = data.tp_value;
+      delete data.tp_value;
+      data.tp_id = doc.id;
+      takeProfitData.push(data);
+    });
 
-    if (!stopLossQuerySnapshot.empty) {
-      stopLossQuerySnapshot.forEach((doc) => {
-        const data = doc.data();
-        data.sl_price = data.sl_value;
-        delete data.sl_value;
-        data.sl_id = doc.id;
-        stopLossData.push(data);
-      });
-    }
+    stopLossQuerySnapshot.forEach((doc) => {
+      const data = doc.data();
+      data.sl_price = data.sl_value;
+      delete data.sl_value;
+      data.sl_id = doc.id;
+      stopLossData.push(data);
+    });
 
     // Get active orders once for both takeProfit and stopLoss
     const activeOrders = await getActiveOrders(
