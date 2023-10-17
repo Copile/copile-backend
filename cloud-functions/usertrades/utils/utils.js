@@ -52,7 +52,10 @@ async function getTradeProfitLossDetails(
     ]);
 
     if (takeProfitQuerySnapshot.empty && stopLossQuerySnapshot.empty) {
-      return;
+      return {
+        take_profits: [],
+        stop_losses: [],
+      };
     }
 
     let takeProfitData = [];
@@ -86,7 +89,12 @@ async function getTradeProfitLossDetails(
       apiPassphrase
     );
 
-    if (!activeOrders) return;
+    if (!activeOrders) {
+      return {
+        take_profits: [],
+        stop_losses: [],
+      };
+    }
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
