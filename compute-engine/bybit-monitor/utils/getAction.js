@@ -7,6 +7,7 @@ function getAction(order) {
         "true": {
           "default": "partial_close",
           "TakeProfit": "new_take_profit",
+          "PartialTakeProfit": "new_take_profit",
           "StopLoss": "new_stop_loss",
         }
       },
@@ -17,6 +18,7 @@ function getAction(order) {
         "true": {
           "default": "Unknown",
           "TakeProfit": "cancelled_take_profit",
+          "PartialTakeProfit": "cancelled_take_profit",
           "StopLoss": "cancelled_stop_loss",
         }
       }

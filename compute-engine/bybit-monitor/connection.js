@@ -22,7 +22,7 @@ ws.subscribeV5('order', 'linear').catch(err => {
 ws.on('update', async (orders) => {
   try {
     orders = orders.data;
-
+    console.log(orders);
     // Sort the orders based on the 'getAction'  
     orders.sort((a, b) => {
       const actionA = getAction(a);
