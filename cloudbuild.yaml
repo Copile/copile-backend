@@ -19,8 +19,8 @@ steps:
           region=$(echo "$function_config" | jq -r '.region')
           entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
-          # Check if the current function is notifications or admintrades before deploying
-          if [ "$name" = "bybit" ]; then
+          # Check if the current function is notifications, admintrades, bybit or usertrades before deploying
+          if [ "$name" = "bybit" ] || [ "$name" = "usertrades" ]; then
             echo "Deploying function: $name"
             # Deploy Cloud Function with specified settings
             gcloud functions deploy $name \

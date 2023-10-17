@@ -33,7 +33,8 @@ async function getTradeProfitLossDetails(
   userId,
   tradeId,
   exchange,
-  symbol,
+  // Second1 adjustment
+  // symbol,
   apiKey = null,
   apiSecret = null,
   apiPassphrase = null
@@ -44,6 +45,14 @@ async function getTradeProfitLossDetails(
       .doc(userId)
       .collection("trades")
       .doc(tradeId);
+
+    // Second1 adjustment
+    // Fetch the trade data
+    const tradeDoc = await tradeDocRef.get();
+    const tradeData = tradeDoc.data();
+
+    // Extract the symbol from the trade data
+    const symbol = tradeData.symbol;
 
     // Fetch take-profits and stop-losses
     const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
@@ -133,7 +142,13 @@ async function getTradeProfitLossDetails(
  * @returns {Promise<Array>} An array of active orders.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
+async function getActiveOrders(
+  exchange,
+  apiKey,
+  apiSecret,
+  apiPassphrase,
+  symbol
+) {
   try {
     const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
     return await session.getOrderStatuses(symbol);

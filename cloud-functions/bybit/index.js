@@ -120,11 +120,12 @@ app.all("/order", async (req, res) => {
     const detailsPromises = tradeIds.map((tradeId) =>
       getTradeProfitLossDetails(
         entityCollection,
+        entityId,
         tradeId,
         exchange,
         apiKey,
-        apiSecret,
-        apiPassphrase
+        apiSecret
+        // apiPassphrase
       )
     );
     const details = await Promise.all(detailsPromises);
@@ -532,7 +533,7 @@ async function getBybitBalance(apiKey, apiSecret) {
       secret: apiSecret,
       strict_param_validation: true,
     });
-    const balance = await client.getBalances(coin = 'USDT');
+    const balance = await client.getBalances((coin = "USDT"));
     console.log(balance);
     return balance.result.list[0].availableBalance;
   } catch (e) {
