@@ -1,5 +1,4 @@
 const { WebsocketClient } = require('bybit-api');
-const { discordMessage } = require('./discord/webhook.js');
 const tradeHandling = require('./utils/tradeHandling.js');
 const getAction  = require('./utils/getAction.js');
 
@@ -55,7 +54,6 @@ ws.on('update', async (orders) => {
       order.entry = trigger_price_detection.includes(order.detection) ? orders[i].triggerPrice : orders[i].price;
       
       await tradeHandling(order);
-      await discordMessage(order);
     }
   } catch (error) {
     console.error('Error processing WebSocket message:', error);

@@ -1,4 +1,5 @@
 const { storeTrade, storeTP, storeSL, fetchLatestTradeDoc, getTradeInfo, updateTradeQuantity, deleteOrder, deleteTpSlOrder, getSpecficOrder } = require('../firestore/firestore.js');
+const { discordMessage } = require('../discord/webhook.js');
 const CustomError = require("../firestore/error.js");
 const { v4: uuidv4 } = require('uuid');
 
@@ -23,7 +24,11 @@ async function tradeHandling(order) {
           break;
         case 'new_take_profit':
           order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, "bybit", order.side == "Buy" ? "Sell" : "Buy");
-          tradeInfo = await getTradeInfo(accountId, order.tradeId)
+          TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, "tp");
+          if (TpExists != null) { 
+            await deleteTpSlOrder(accountId, order.tradeId, TpExists.documentId, "tp")
+          }
+          tradeInfo = await getTradeInfo(accountId, order.tradeId);
           order.tpValue = order.entry
           order.tpAmount = order.quantity
           order.tpNumber = 1

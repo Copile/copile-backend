@@ -291,11 +291,7 @@ const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
         if (orderData) {
             return orderData;
         } else {
-            throw new CustomError({
-                message: `Order with ID ${orderID} not found`,
-                status: 404,
-                source: "getTpOrSlOrderByOrderId",
-            });
+            return null;
         }
 
     } catch (error) {
