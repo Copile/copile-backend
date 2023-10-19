@@ -1,3 +1,5 @@
+
+// Identifies the meaning of the order and returns it
 function getAction(order) {
     const actionMap = {
       "UNKNOWN": {

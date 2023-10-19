@@ -5,6 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 
 const accountId = "duelendigerdreckigerbastard"
 
+/*
+  Function to handle the general process of 
+  storing/deleting/updating data in the db as well as starting the submitTrade process */ 
 async function tradeHandling(order) {
     try {
       console.log(order);

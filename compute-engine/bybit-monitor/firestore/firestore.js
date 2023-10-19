@@ -303,6 +303,35 @@ const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
     }
 };
 
+// Function to get all take profit orders for a trade
+const getTpOrders = async (accountId, tradeId) => {
+    try {
+        const tradeRef = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES)
+            .doc(tradeId);
+
+        tpCollection = await tradeRef.collection(COLLECTION_TAKE_PROFITS);
+
+        let tpOrders = [];
+
+        tpCollection.forEach(doc => {
+            let tpData = doc.data();
+            tpData.documentId = doc.id;
+            tpData.tradeType = 'tp';
+            tpOrders.push(tpData);
+        });
+
+        return tpOrders;
+    } catch (error) {
+        throw new CustomError({
+            message: `Error getting tp/sl orders: ${error.message}`,
+            status: 500,
+            source: "getTpOrders",
+        });
+    }
+};
+
 // Function to get all take profit and stop loss orders for a trade
 const getTpSlOrders = async (accountId, tradeId) => {
     try {
@@ -353,5 +382,6 @@ module.exports = {
     deleteTpSlOrder,
     getTradeInfo,
     getTpSlInfo,
-    getTpSlOrders
+    getTpSlOrders,
+    getTpOrders
 };
