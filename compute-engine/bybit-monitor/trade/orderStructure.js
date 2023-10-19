@@ -71,3 +71,12 @@ class partialClose {
     this.percentage = percentage;
   }
 }
+
+module.exports = {
+  bulkOrder,
+  bulkTP,
+  stopLoss,
+  cancelOrder,
+  cancelAll,
+  partialClose
+};

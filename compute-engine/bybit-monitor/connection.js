@@ -1,9 +1,13 @@
 const { WebsocketClient } = require('bybit-api');
-const tradeHandling = require('./utils/tradeHandling.js');
+const tradeExecution = require('./utils/tradeExecution.js');
 const getAction  = require('./utils/getAction.js');
 
 const API_KEY = "ZuhzXiG2TmZOASqM2T";
 const API_SECRET = "OQSn8YsDKfE3XShN3bgD68uWiOxblJdUGwRD";
+
+const accountId = 'duelendigerdreckigerbastard';
+const traderExchange = 'bybit';
+const exchanges = ["binance", "kucoin", "bybit", "bingx"];
 
 const wsConfig = {
   key: API_KEY,
@@ -53,9 +57,15 @@ ws.on('update', async (orders) => {
       let trigger_price_detection = ["new_take_profit", "new_stop_loss", "cancelled_take_profit", "cancelled_stop_loss"];
       order.entry = trigger_price_detection.includes(order.detection) ? orders[i].triggerPrice : orders[i].price;
       
-      await tradeHandling(order);
+      await tradeExecution(order);
     }
   } catch (error) {
     console.error('Error processing WebSocket message:', error);
   }
 });
+
+module.exports = {
+  accountId,
+  traderExchange,
+  exchanges
+};
