@@ -1,5 +1,4 @@
 //const { Firestore } = require("@google-cloud/firestore");
-const fs = require('fs');
 const CustomError = require("./error");
 const { v4: uuidv4 } = require('uuid');
 

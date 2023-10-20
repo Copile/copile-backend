@@ -5,9 +5,10 @@ const getAction  = require('./utils/getAction.js');
 const API_KEY = "ZuhzXiG2TmZOASqM2T";
 const API_SECRET = "OQSn8YsDKfE3XShN3bgD68uWiOxblJdUGwRD";
 
-const accountId = 'duelendigerdreckigerbastard';
+const accountId = 'user_2UswCCf3nyfzdLWQi2mdw2mRm3S';
 const traderExchange = 'bybit';
 const exchanges = ["binance", "kucoin", "bybit", "bingx"];
+const plans = ["prod_zhuvKZEdoBqnG"];
 
 const wsConfig = {
   key: API_KEY,
@@ -67,5 +68,6 @@ ws.on('update', async (orders) => {
 module.exports = {
   accountId,
   traderExchange,
-  exchanges
+  exchanges,
+  plans
 };

@@ -9,7 +9,7 @@ const {
     } = require('../firestore/firestore.js');
 
 const { v4: uuidv4 } = require('uuid');
-const {accountId} = require("../connection.js")
+const accountId = require('../connection.js').accountId;
 
 async function handleNewStopLoss(order) {
     // Initialize and populate new stop-loss properties

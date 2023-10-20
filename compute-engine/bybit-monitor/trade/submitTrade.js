@@ -7,8 +7,22 @@ const {
     partialClose
   } = require("./orderStructure.js");
 
-const { accountId, traderExchange, exchanges } = require("../connection.js")
-const addTasktoQueue = require('./addTasktoQueue.js')
+const { accountId, traderExchange, exchanges, plans } = require("../connection.js");
+const { getTpOrders } = require("../firestore/firestore.js");
+const addTasktoQueue = require('./addTasktoQueue.js');
+
+// Function to sum up the tp_percentage of each document in the tpOrders array
+const sumTpPercentage = (tpOrders) => {
+  let totalTpPercentage = 0;
+
+  tpOrders.forEach(tpOrder => {
+      if (tpOrder.tp_percentage) {
+        totalTpPercentage += tpOrder.tp_percentage;
+      }
+  });
+
+  return totalTpPercentage;
+};
 
 async function submitTrade(order) {
     try {
@@ -17,7 +31,7 @@ async function submitTrade(order) {
       switch (order.detection) {
         case 'new_order':
             // Submit new order
-            body = new bulkOrder(accountId, order.tradeId, traderExchange, exchanges, "test", order, [], [])
+            body = new bulkOrder(accountId, order.tradeId, traderExchange, exchanges, plans, order, [], [])
             break;
   
         case 'new_stop_loss':
@@ -27,17 +41,25 @@ async function submitTrade(order) {
   
         case 'new_take_profit':
             // Submit new take profit or potential bulkTP
-            await handleNewTakeProfit(order);
+            let tpOrders = await getTpOrders(accountId, order.tradeId);
+            sumTp = sumTpPercentage(tpOrders);
+            if (sumTp >= 0.98) {
+              body = new bulkTP(accountId, order.tradeId, tpOrders)
+            }
             break;
-  
+        
         case 'partial_close':
             // Submit partial close
             body = new partialClose(accountId, order.tradeId, order.percentage)
             break;
+        
         case 'cancelled_order':
+            // Submit cancel all orders
             body = new cancelAll(accountId, order.tradeId)
             break;
+
         case 'cancelled_stop_loss':
+            // Cancel stop-loss
             body = new cancelOrder(accountId, order.tradeId, order.documentId, "sl")
             break;
   

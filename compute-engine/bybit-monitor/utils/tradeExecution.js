@@ -5,6 +5,8 @@ const {
   handleCancelledOrder,
 } = require('./tradeHandlers');
 const CustomError = require('../firestore/error.js');
+const { storeTrade } = require('../firestore/firestore.js');
+const accountId = require('../connection.js');
 
 /**
  * Handles various trade operations like storing, deleting, and updating trades.
@@ -13,8 +15,8 @@ const CustomError = require('../firestore/error.js');
  */
 async function tradeExecution(order) {
   try {
+    console.log(accountId);
     console.log(order);
-
     switch (order.detection) {
       case 'new_order':
         // Handle new order
@@ -56,7 +58,7 @@ async function tradeExecution(order) {
     throw new CustomError({
       message: `Error handling the trade: ${error.message}`,
       status: 500,
-      source: 'tradeHandling',
+      source: 'tradeExecution',
     });
   }
 }
