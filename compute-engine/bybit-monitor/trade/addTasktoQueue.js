@@ -1,10 +1,10 @@
 // const { CloudTasksClient } = require('@google-cloud/tasks');
 const CustomError = require("../firestore/error.js");
 const endpoints = require('./endpoints.json');
-const path = require('path');
-require('dotenv').config({ path: '../.env' });
+const axios = require('axios');
 
-const targetUrl = process.env.targetUrl;
+require('dotenv').config({ path: '../.env' });
+const targetUrl = process.env.TARGET_URL;
 
 // async function addTaskToQueue(action, body) {
 //     // Initialize the Google Cloud Tasks client
@@ -55,26 +55,27 @@ const targetUrl = process.env.targetUrl;
 
 async function addTaskToQueue(accountId, action, body) {
   // Define the target URL for the task
-  let url = targetUrl + endpoints[action]; // Replace with your actual URL
+    let url = targetUrl + endpoints[action];
+    console.log(url);
+    console.log(body);
+    try {
+        // Make the API call to create the task
+        // const response = await axios.post(url, body, {
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         'traderId': accountId
+        //     }
+        // });
 
-  try {
-      // Make the API call to create the task
-      const response = await axios.post(url, body, {
-          headers: {
-              'Content-Type': 'application/json',
-              'traderId': accountId
-          }
-      });
-
-      // Log the response from the server
-      console.log(`Created task with response: ${JSON.stringify(response.data)}`);
-  } catch (error) {
-      throw new CustomError({
-          message: `Error creating task for queue: ${error.message}`,
-          status: 500,
-          source: "addTaskToQueue",
-      });
-  }
+        // Log the response from the server
+        //console.log(`Created task with response: ${JSON.stringify(response.data)}`);
+    } catch (error) {
+        throw new CustomError({
+            message: `Error creating task for queue: ${error.message}`,
+            status: 500,
+            source: "addTaskToQueue",
+        });
+    }
 }
 
 module.exports = addTaskToQueue;

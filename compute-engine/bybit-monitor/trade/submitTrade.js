@@ -14,6 +14,7 @@ const exchanges = process.env.EXCHANGES.split(",");
 const plans = [process.env.PLANS];
 const { getTpOrders } = require("../firestore/firestore.js");
 const addTasktoQueue = require('./addTasktoQueue.js');
+const CustomError = require('../firestore/error.js');
 
 // Function to sum up the tp_percentage of each document in the tpOrders array
 const sumTpPercentage = (tpOrders) => {
@@ -40,7 +41,7 @@ async function submitTrade(order) {
   
         case 'new_stop_loss':
             // Submit new stop loss
-            body = new stopLoss(accountId, tradeId, order.slDocumentId, order.slNumber, order.slValue, order.slPercentage)
+            body = new stopLoss(accountId, order.tradeId, order.slDocumentId, order.slNumber, order.slValue, order.slPercentage)
             break;
   
         case 'new_take_profit':
@@ -54,7 +55,7 @@ async function submitTrade(order) {
         
         case 'partial_close':
             // Submit partial close
-            body = new partialClose(accountId, order.tradeId, order.percentage)
+            body = new partialClose(accountId, order.tradeId, order.partialPercentage)
             break;
         
         case 'cancelled_order':
@@ -74,7 +75,7 @@ async function submitTrade(order) {
             source: 'submitTrade',
           });
       }
-      await addTasktoQueue(order.detection, body);
+      body !== undefined ? await addTasktoQueue(accountId, order.detection, body) : console.log("Take-Profits didn't reach 100 % yet!")
 
       return order;
     } catch (error) {

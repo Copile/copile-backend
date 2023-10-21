@@ -42,15 +42,7 @@ async function tradeExecution(order) {
         // Handle cancelled orders
         order = await handleCancelledOrder(order);
         break;
-
-      default:
-        throw new CustomError({
-          message: `Unknown order detection type: ${order.detection}`,
-          status: 400,
-          source: 'tradeHandling',
-        });
     }
-    await submitTrade(order);
     return order;
   } catch (error) {
     throw new CustomError({
