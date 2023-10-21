@@ -3,10 +3,10 @@ const {
   handleNewTakeProfit,
   handlePartialClose,
   handleCancelledOrder,
+  handelNewOrder
 } = require('./tradeHandlers');
 const CustomError = require('../firestore/error.js');
-const { storeTrade } = require('../firestore/firestore.js');
-const accountId = require('../connection.js');
+const submitTrade = require('../trade/submitTrade.js');
 
 /**
  * Handles various trade operations like storing, deleting, and updating trades.
@@ -14,35 +14,33 @@ const accountId = require('../connection.js');
  * @returns {Object} - Returns the modified order object.
  */
 async function tradeExecution(order) {
-  try {
-    console.log(accountId);
-    console.log(order);
+  try { 
     switch (order.detection) {
       case 'new_order':
         // Handle new order
-        await storeTrade(accountId, order);
+        order = await handelNewOrder(order);
         break;
 
       case 'new_stop_loss':
         // Handle new stop loss
-        await handleNewStopLoss(order);
+        order = await handleNewStopLoss(order);
         break;
 
       case 'new_take_profit':
         // Handle new take profit
-        await handleNewTakeProfit(order);
+        order = await handleNewTakeProfit(order);
         break;
 
       case 'partial_close':
         // Handle partial close
-        await handlePartialClose(order);
+        order = await handlePartialClose(order);
         break;
 
       case 'cancelled_order':
       case 'cancelled_take_profit':
       case 'cancelled_stop_loss':
         // Handle cancelled orders
-        await handleCancelledOrder(order);
+        order = await handleCancelledOrder(order);
         break;
 
       default:
@@ -52,7 +50,7 @@ async function tradeExecution(order) {
           source: 'tradeHandling',
         });
     }
-
+    await submitTrade(order);
     return order;
   } catch (error) {
     throw new CustomError({

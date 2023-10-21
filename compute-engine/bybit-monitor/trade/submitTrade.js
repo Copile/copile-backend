@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '../.env' });
 const {
     bulkOrder,
     bulkTP,
@@ -7,7 +8,10 @@ const {
     partialClose
   } = require("./orderStructure.js");
 
-const { accountId, traderExchange, exchanges, plans } = require("../connection.js");
+const accountId = process.env.ACCOUNT_ID;
+const traderExchange = process.env.TRADER_EXCHANGE;
+const exchanges = process.env.EXCHANGES.split(",");
+const plans = [process.env.PLANS];
 const { getTpOrders } = require("../firestore/firestore.js");
 const addTasktoQueue = require('./addTasktoQueue.js');
 
@@ -81,4 +85,5 @@ async function submitTrade(order) {
       });
     }
   }
-  
+
+module.exports = submitTrade;

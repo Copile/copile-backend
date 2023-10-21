@@ -1,9 +1,10 @@
 // const { CloudTasksClient } = require('@google-cloud/tasks');
 const CustomError = require("../firestore/error.js");
 const endpoints = require('./endpoints.json');
+const path = require('path');
+require('dotenv').config({ path: '../.env' });
 
-const targetUrl = "https://us-central1-copile.cloudfunctions.net/submitTrade/"
-const accountId = require('../connection.js');
+const targetUrl = process.env.targetUrl;
 
 // async function addTaskToQueue(action, body) {
 //     // Initialize the Google Cloud Tasks client
@@ -52,7 +53,7 @@ const accountId = require('../connection.js');
 //     }
 // }
 
-async function addTaskToQueue(action, body) {
+async function addTaskToQueue(accountId, action, body) {
   // Define the target URL for the task
   let url = targetUrl + endpoints[action]; // Replace with your actual URL
 

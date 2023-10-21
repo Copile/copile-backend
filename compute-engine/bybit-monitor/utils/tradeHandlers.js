@@ -6,10 +6,17 @@ const {
     deleteOrder,
     deleteTpSlOrder,
     getSpecficOrder,
+    storeTrade,
     } = require('../firestore/firestore.js');
-
 const { v4: uuidv4 } = require('uuid');
-const accountId = require('../connection.js').accountId;
+require('dotenv').config({ path: '../.env' });
+const accountId = process.env.ACCOUNT_ID;
+
+async function handelNewOrder(order) {
+  // Store new order
+  await storeTrade(accountId, order);
+  return order
+}
 
 async function handleNewStopLoss(order) {
     // Initialize and populate new stop-loss properties
@@ -22,6 +29,7 @@ async function handleNewStopLoss(order) {
   
     // Store the new stop-loss in the database
     await storeSL(accountId, order);
+    return order
 }
   
 async function handleNewTakeProfit(order) {
@@ -42,6 +50,7 @@ async function handleNewTakeProfit(order) {
   
     // Store the new take-profit in the database
     await storeTP(accountId, order);
+    return order
 }
   
 async function handlePartialClose(order) {
@@ -58,6 +67,7 @@ async function handlePartialClose(order) {
     } else {
       await updateTradeQuantity(accountId, order.tradeId, tradeInfo.quantity - order.quantity);
     }
+    return order
 }
   
 async function handleCancelledOrder(order) {
@@ -73,6 +83,7 @@ async function handleCancelledOrder(order) {
     } else {
       await deleteTpSlOrder(accountId, order.tradeId, order.documentId, 'tp');
     }
+    return order
 }
 
 module.exports = {
@@ -80,4 +91,5 @@ module.exports = {
     handleNewTakeProfit,
     handlePartialClose,
     handleCancelledOrder,
+    handelNewOrder
 };
