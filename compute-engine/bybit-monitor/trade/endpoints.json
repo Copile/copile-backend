@@ -1,0 +1,10 @@
+{
+    "new_order": "bulkOrder",
+    "new_take_profit": "bulkTP",
+    "new_stop_loss": "submitSL",
+    "replace_stop_loss": "replaceSL",
+    "cancelled_order": "cancelAllOrders",
+    "cancelled_stop_loss": "cancelOrder",
+    "cancelled_take_profit": "cancelAllTPs",
+    "partial_close": "partialClose"
+}

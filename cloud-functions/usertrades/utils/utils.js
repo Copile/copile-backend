@@ -33,7 +33,8 @@ async function getTradeProfitLossDetails(
   userId,
   tradeId,
   exchange,
-  symbol,
+  // Second1 adjustment
+  // symbol,
   apiKey = null,
   apiSecret = null,
   apiPassphrase = null
@@ -45,11 +46,26 @@ async function getTradeProfitLossDetails(
       .collection("trades")
       .doc(tradeId);
 
+    // Second1 adjustment
+    // Fetch the trade data
+    const tradeDoc = await tradeDocRef.get();
+    const tradeData = tradeDoc.data();
+
+    // Extract the symbol from the trade data
+    const symbol = tradeData.symbol;
+
     // Fetch take-profits and stop-losses
     const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
       tradeDocRef.collection("take-profits").get(),
       tradeDocRef.collection("stop-losses").get(),
     ]);
+
+    if (takeProfitQuerySnapshot.empty && stopLossQuerySnapshot.empty) {
+      return {
+        take_profits: [],
+        stop_losses: [],
+      };
+    }
 
     let takeProfitData = [];
     let stopLossData = [];
@@ -75,8 +91,16 @@ async function getTradeProfitLossDetails(
       exchange,
       apiKey,
       apiSecret,
-      apiPassphrase
+      apiPassphrase,
+      symbol
     );
+
+    if (!activeOrders) {
+      return {
+        take_profits: [],
+        stop_losses: [],
+      };
+    }
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
@@ -118,15 +142,16 @@ async function getTradeProfitLossDetails(
  * @returns {Promise<Array>} An array of active orders.
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
-async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
+async function getActiveOrders(
+  exchange,
+  apiKey,
+  apiSecret,
+  apiPassphrase,
+  symbol
+) {
   try {
-    const session = createSession(
-      exchange,
-      apiKey,
-      apiSecret,
-      apiPassphrase
-    );
-    return await session.getOrderStatuses();
+    const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
+    return await session.getOrderStatuses(symbol);
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
@@ -140,6 +165,8 @@ async function getActiveOrders(exchange, apiKey, apiSecret, apiPassphrase) {
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
+  console.log("activeOrders", activeOrders);
+  console.log("orderID", orderID);
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       return Number(order.stopPrice).toFixed(2) === Number(price).toFixed(2);

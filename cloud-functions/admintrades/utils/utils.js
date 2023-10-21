@@ -33,7 +33,8 @@ async function getTradeProfitLossDetails(
   traderId,
   tradeId,
   exchange,
-  symbol,
+  // Second1 adjustment
+  // symbol,
   apiKey = null,
   apiSecret = null,
   apiPassphrase = null
@@ -45,11 +46,23 @@ async function getTradeProfitLossDetails(
       .collection("trades")
       .doc(tradeId);
 
+    // Second1 adjustment
+    // Fetch the trade data
+    const tradeDoc = await tradeDocRef.get();
+    const tradeData = tradeDoc.data();
+
+    // Extract the symbol from the trade data
+    const symbol = tradeData.symbol;
+
     // Fetch take-profits and stop-losses
     const [takeProfitQuerySnapshot, stopLossQuerySnapshot] = await Promise.all([
       tradeDocRef.collection("take-profits").get(),
       tradeDocRef.collection("stop-losses").get(),
     ]);
+
+    if (takeProfitQuerySnapshot.empty && stopLossQuerySnapshot.empty) {
+      return;
+    }
 
     let takeProfitData = [];
     let stopLossData = [];
@@ -79,7 +92,7 @@ async function getTradeProfitLossDetails(
       symbol
     );
 
-    if(!activeOrders) return;
+    if (!activeOrders) return;
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
