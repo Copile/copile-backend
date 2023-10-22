@@ -121,3 +121,6 @@ pids
 
 # config folder
 /config
+
+# serviceAccKeys.json
+/serviceAccKeys.json
