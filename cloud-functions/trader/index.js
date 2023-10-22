@@ -274,9 +274,9 @@ app.get("/account", async (req, res) => {
         read_only_api_secret &&
         read_only_api_secret !== "x"
       ) {
-        existingReadOnlyApis.readOnly[exchange] = true;
+        existingReadOnlyApis[exchange] = true;
       } else {
-        existingReadOnlyApis.readOnly[exchange] = false;
+        existingReadOnlyApis[exchange] = false;
       }
     }
 
