@@ -6,5 +6,6 @@
     "cancelled_order": "cancelAllOrders",
     "cancelled_stop_loss": "cancelOrder",
     "cancelled_take_profit": "cancelAllTPs",
+    "cancel_all_orders": "cancelAllOrders",
     "partial_close": "partialClose"
 }

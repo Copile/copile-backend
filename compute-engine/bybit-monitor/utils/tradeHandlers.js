@@ -13,6 +13,7 @@ const { v4: uuidv4 } = require('uuid');
 const CustomError = require('../firestore/error.js');
 require('dotenv').config({ path: '../.env' });
 const accountId = process.env.ACCOUNT_ID;
+const exchange = process.env.TRADER_EXCHANGE
 
 async function handelNewOrder(order) {
   try {
@@ -31,7 +32,7 @@ async function handelNewOrder(order) {
 
 async function handleNewStopLoss(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, 'bybit', order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     order.slDocumentId = String(uuidv4());
     order.slNumber = 1;
     order.slValue = order.entry;
@@ -51,7 +52,7 @@ async function handleNewStopLoss(order) {
 
 async function handleNewTakeProfit(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, 'bybit', order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     const TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
     if (TpExists !== null) {
       await deleteTpSlOrder(accountId, order.tradeId, TpExists.documentId, 'tp');
@@ -77,7 +78,7 @@ async function handleNewTakeProfit(order) {
 
 async function handlePartialClose(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, 'bybit', order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     const tradeInfo = await getTradeInfo(accountId, order.tradeId);
 
     order.partialPercentage = parseFloat((order.quantity / tradeInfo.quantity).toFixed(2));
@@ -99,15 +100,22 @@ async function handlePartialClose(order) {
 
 async function handleCancelledOrder(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, 'bybit', order.side === 'Buy' ? 'Sell' : 'Buy');
-    const tpSlDocument = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
-    order.documentId = tpSlDocument.documentId;
+    let tradeSide = order.side;
+    if (order.detection !== 'cancelled_order') {
+      tradeSide = order.side === 'Buy' ? 'Sell' : 'Buy';
+    }
+
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, tradeSide);
 
     if (order.detection === 'cancelled_order') {
       await deleteOrder(accountId, order.tradeId);
     } else {
-      await deleteTpSlOrder(accountId, order.tradeId, order.documentId, 'tp');
+      orderType = order.detection.includes("take_profit") ? 'tp' : "sl"
+      let tpSlDocument = await getSpecficOrder(accountId, order.tradeId, order.orderId, orderType);
+      order.documentId = tpSlDocument.documentId;
+      await deleteTpSlOrder(accountId, order.tradeId, order.documentId, orderType);
     }
+
     return order;
   } catch (error) {
     throw new CustomError({
@@ -117,6 +125,7 @@ async function handleCancelledOrder(order) {
     });
   }
 }
+
 
 module.exports = {
     handleNewStopLoss,

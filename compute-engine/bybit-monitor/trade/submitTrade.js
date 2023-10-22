@@ -55,7 +55,12 @@ async function submitTrade(order) {
         
         case 'partial_close':
             // Submit partial close
-            body = new partialClose(accountId, order.tradeId, order.partialPercentage)
+            if (order.partialPercentage < 1) {
+              body = new partialClose(accountId, order.tradeId, order.partialPercentage)
+            } else {
+              order.detection = "cancel_all_orders"
+              body = new cancelAll(accountId, order.tradeId)
+            }
             break;
         
         case 'cancelled_order':

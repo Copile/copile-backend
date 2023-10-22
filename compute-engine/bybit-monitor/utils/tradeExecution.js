@@ -43,6 +43,7 @@ async function tradeExecution(order) {
         order = await handleCancelledOrder(order);
         break;
     }
+    await submitTrade(order);
     return order;
   } catch (error) {
     throw new CustomError({
