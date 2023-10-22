@@ -256,7 +256,8 @@ app.get("/account", async (req, res) => {
     const traderData = traderDocumentSnapshot.data();
 
     // Extracting exchange APIs with valid keys and secrets
-    const existingApis = { readOnly: {} };
+    const existingApis = {};
+    const existingReadOnlyApis = {};
     for (const exchange in traderData.exchanges) {
       const { api_key, api_secret, read_only_api_key, read_only_api_secret } =
         traderData.exchanges[exchange];
@@ -273,9 +274,9 @@ app.get("/account", async (req, res) => {
         read_only_api_secret &&
         read_only_api_secret !== "x"
       ) {
-        existingApis.readOnly[exchange] = true;
+        existingReadOnlyApis.readOnly[exchange] = true;
       } else {
-        existingApis.readOnly[exchange] = false;
+        existingReadOnlyApis.readOnly[exchange] = false;
       }
     }
 
@@ -289,6 +290,7 @@ app.get("/account", async (req, res) => {
     const responseData = {
       success: true,
       existingApis,
+      existingReadOnlyApis,
       always_exchanges: traderData.always_exchanges,
       connected_discord: traderData.connected_discord,
       connected_telegram: traderData.connected_telegram,
