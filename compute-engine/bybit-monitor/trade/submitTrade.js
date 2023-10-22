@@ -1,11 +1,12 @@
 require('dotenv').config({ path: '../.env' });
 const {
-    bulkOrder,
-    bulkTP,
-    stopLoss,
-    cancelOrder,
-    cancelAll,
-    partialClose
+    BulkOrder,
+    BulkTP,
+    StopLoss,
+    CancelOrder,
+    CancelAll,
+    PartialClose,
+    ReplaceSl
   } = require("./orderStructure.js");
 
 const accountId = process.env.ACCOUNT_ID;
@@ -15,6 +16,7 @@ const plans = [process.env.PLANS];
 const { getTpOrders } = require("../firestore/firestore.js");
 const addTasktoQueue = require('./addTasktoQueue.js');
 const CustomError = require('../firestore/error.js');
+const { v4: uuidv4 } = require('uuid');
 
 // Function to sum up the tp_percentage of each document in the tpOrders array
 const sumTpPercentage = (tpOrders) => {
@@ -36,12 +38,16 @@ async function submitTrade(order) {
       switch (order.detection) {
         case 'new_order':
             // Submit new order
-            body = new bulkOrder(accountId, order.tradeId, traderExchange, exchanges, plans, order, [], [])
+            body = new BulkOrder(accountId, order.tradeId, traderExchange, exchanges, plans, order, [], [])
             break;
   
         case 'new_stop_loss':
             // Submit new stop loss
-            body = new stopLoss(accountId, order.tradeId, order.slDocumentId, order.slNumber, order.slValue, order.slPercentage)
+            if (!order.existed) { 
+              body = new StopLoss(accountId, order.tradeId, order.slDocumentId, order.slNumber, order.slValue, order.slPercentage)
+            } else {
+              body = new ReplaceSl(accountId, order.tradeId, order.slDocumentId, String(uuidv4()), order.slNumber, order.slValue, order.slPercentage)
+            }
             break;
   
         case 'new_take_profit':
@@ -49,28 +55,28 @@ async function submitTrade(order) {
             let tpOrders = await getTpOrders(accountId, order.tradeId);
             sumTp = sumTpPercentage(tpOrders);
             if (sumTp >= 0.98) {
-              body = new bulkTP(accountId, order.tradeId, tpOrders)
+              body = new BulkTP(accountId, order.tradeId, tpOrders)
             }
             break;
         
         case 'partial_close':
             // Submit partial close
             if (order.partialPercentage < 1) {
-              body = new partialClose(accountId, order.tradeId, order.partialPercentage)
+              body = new PartialClose(accountId, order.tradeId, order.partialPercentage)
             } else {
               order.detection = "cancel_all_orders"
-              body = new cancelAll(accountId, order.tradeId)
+              body = new CancelAll(accountId, order.tradeId)
             }
             break;
         
         case 'cancelled_order':
             // Submit cancel all orders
-            body = new cancelAll(accountId, order.tradeId)
+            body = new CancelAll(accountId, order.tradeId)
             break;
 
         case 'cancelled_stop_loss':
             // Cancel stop-loss
-            body = new cancelOrder(accountId, order.tradeId, order.documentId, "sl")
+            body = new CancelOrder(accountId, order.tradeId, order.documentId, "sl")
             break;
   
         default:

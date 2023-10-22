@@ -33,6 +33,11 @@ async function handelNewOrder(order) {
 async function handleNewStopLoss(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
+    let SlExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'sl');
+    if (SlExists !== null) {
+      order.existed = true;
+      await deleteTpSlOrder(accountId, order.tradeId, SlExists.documentId, 'sl');
+    }
     order.slDocumentId = String(uuidv4());
     order.slNumber = 1;
     order.slValue = order.entry;
