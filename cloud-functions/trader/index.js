@@ -256,7 +256,7 @@ app.get("/account", async (req, res) => {
     const traderData = traderDocumentSnapshot.data();
 
     // Extracting exchange APIs with valid keys and secrets
-    const existingApis = {};
+    const existingApis = { readOnly: {} };
     for (const exchange in traderData.exchanges) {
       const { api_key, api_secret, read_only_api_key, read_only_api_secret } =
         traderData.exchanges[exchange];
