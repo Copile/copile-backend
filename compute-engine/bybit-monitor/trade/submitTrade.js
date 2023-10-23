@@ -6,7 +6,8 @@ const {
     CancelOrder,
     CancelAll,
     PartialClose,
-    ReplaceSl
+    ReplaceSl,
+    ReplaceTP
   } = require("./orderStructure.js");
 
 const accountId = process.env.ACCOUNT_ID;
@@ -46,6 +47,7 @@ async function submitTrade(order) {
             if (!order.existed) { 
               body = new StopLoss(accountId, order.tradeId, order.slDocumentId, order.slNumber, order.slValue, order.slPercentage)
             } else {
+              order.detection = "replace_stop_loss";
               body = new ReplaceSl(accountId, order.tradeId, order.slDocumentId, String(uuidv4()), order.slNumber, order.slValue, order.slPercentage)
             }
             break;
@@ -54,8 +56,11 @@ async function submitTrade(order) {
             // Submit new take profit or potential bulkTP
             let tpOrders = await getTpOrders(accountId, order.tradeId);
             sumTp = sumTpPercentage(tpOrders);
-            if (sumTp >= 0.98) {
+            if (!order.existed && sumTp >= 0.98) {
               body = new BulkTP(accountId, order.tradeId, tpOrders)
+            } else {
+              order.detection = "replace_take_profit";
+              body = new ReplaceTP(accountId, order.tradeId, order.tpDocumentId, String(uuidv4()), order.tpNumber, order.tpValue, order.tpPercentage)
             }
             break;
         
@@ -78,7 +83,17 @@ async function submitTrade(order) {
             // Cancel stop-loss
             body = new CancelOrder(accountId, order.tradeId, order.documentId, "sl")
             break;
-  
+
+        case 'cancelled_take_profit':
+            // Cancel stop-loss
+            body = new CancelOrder(accountId, order.tradeId, order.documentId, "tp")
+            break;
+        
+        case 'no_action_needed':
+            // Handle orders that don't require any action
+            body = undefined;
+            break;
+
         default:
           throw new CustomError({
             message: `Unknown order detection type: ${order.detection}`,
@@ -86,7 +101,7 @@ async function submitTrade(order) {
             source: 'submitTrade',
           });
       }
-      body !== undefined ? await addTasktoQueue(accountId, order.detection, body) : console.log("Take-Profits didn't reach 100 % yet!")
+      body !== undefined ? await addTasktoQueue(accountId, order.detection, body) : console.log("Order doesn't require any action: " + order)
 
       return order;
     } catch (error) {

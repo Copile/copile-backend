@@ -62,6 +62,20 @@ class ReplaceSl {
   }
 }
 
+class ReplaceTP {
+  constructor(traderId, tradeId, documentId, tpId, tpNumber, tpValue, tpPercentage) {
+    this.traderId = traderId;
+    this.tradeId = tradeId;
+    this.orderId = documentId;
+    this.payload = {
+      tp_id: tpId,
+      tp_number: tpNumber,
+      tp_value: tpValue,
+      tp_percentage: tpPercentage
+    }
+  }
+}
+
 class CancelOrder {
   constructor(traderId, tradeId, documentId, orderType) {
     this.traderId = traderId;
@@ -93,5 +107,6 @@ module.exports = {
   CancelOrder,
   CancelAll,
   PartialClose,
-  ReplaceSl
+  ReplaceSl,
+  ReplaceTP
 };
