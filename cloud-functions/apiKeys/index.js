@@ -14,4 +14,4 @@ middleware(app);
 app.use(routes);
 
 // Export the app
-exports.trades = app;
+exports.validate = app;

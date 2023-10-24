@@ -8,7 +8,7 @@ const CustomError = require("./utils/error");
 const router = express.Router();
 const db = new Firestore();
 
-router.get("/validate/:exchange", validateEntity, async (req, res, next) => {
+router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
   const entityId = req.get("traderId") || req.get("userId");
   const exchange = req.params.exchange;
 
