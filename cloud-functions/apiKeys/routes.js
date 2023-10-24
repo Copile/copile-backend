@@ -47,9 +47,10 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
     if (e instanceof CustomError) {
       next(e);
     } else {
+      console.log(e);
       next(
         new CustomError({
-          message: "An error occurred while fetching the balance details.",
+          message: "An error occurred while fetching the API Key Permissions.",
           status: 500,
           source: "validateAPIKeys",
         })

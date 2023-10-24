@@ -28,9 +28,9 @@ class BinanceSession extends ExchangeSession {
         throw error;
       }
       throw new CustomError({
-        message: `Failed to fetch Binance orders: ${error.message}`,
+        message: `Failed to fetch Binance API Perms: ${error.message}`,
         status: 500,
-        source: "getOrders",
+        source: "getAPIPerms",
       });
     }
   }
