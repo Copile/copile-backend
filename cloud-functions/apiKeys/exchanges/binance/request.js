@@ -35,7 +35,7 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
     return response.data;
   } catch (error) {
     throw new CustomError({
-      message: `Request to ${url} failed: ${error.message}`,
+      message: `Request to ${url} failed: ${error}`,
       status: 400,
       source: "makeSignedRequest",
     });
@@ -76,8 +76,11 @@ async function getAPIPerms(apiKey, apiSecret) {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
     return data;
   } catch (error) {
+    if(error instanceof CustomError) {
+      throw error;
+    }
     throw new CustomError({
-      message: `Failed to get Binance APi Key Permissions: ${error.message}`,
+      message: `Failed to get Binance APi Key Permissions: ${error}`,
       status: 400,
       source: "getAPIPerms",
     });
