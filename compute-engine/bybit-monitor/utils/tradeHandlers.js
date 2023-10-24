@@ -15,7 +15,7 @@ require('dotenv').config({ path: '../.env' });
 const accountId = process.env.ACCOUNT_ID;
 const exchange = process.env.TRADER_EXCHANGE
 
-async function handelNewOrder(order) {
+async function handleNewOrder(order) {
   try {
     let tradeId = String(uuidv4());
     order.tradeId = tradeId;
@@ -151,5 +151,5 @@ module.exports = {
     handleNewTakeProfit,
     handlePartialClose,
     handleCancelledOrder,
-    handelNewOrder
+    handleNewOrder
 };

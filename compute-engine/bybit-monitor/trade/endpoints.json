@@ -6,7 +6,7 @@
     "replace_take_profit": "replaceTP",
     "cancelled_order": "cancelAllOrders",
     "cancelled_stop_loss": "cancelOrder",
-    "cancelled_take_profit": "cancelAllTPs",
+    "cancelled_take_profit": "cancelOrder",
     "cancel_all_orders": "cancelAllOrders",
     "partial_close": "partialClose"
 }
