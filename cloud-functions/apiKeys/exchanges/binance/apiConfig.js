@@ -15,7 +15,6 @@ async function getBinanceAPIPerms(apiKey, apiSecret) {
     const response = await getAPIPerms(apiKey, apiSecret);
     return response;
   } catch (error) {
-    // If it's already a custom error, throw it as-is
     if (error instanceof CustomError) {
       throw error;
     }
