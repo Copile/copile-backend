@@ -3,7 +3,7 @@ const axios = require("axios");
 const querystring = require("querystring");
 const CustomError = require("../../utils/error");
 
-const API_HOST = "fapi.binance.com";
+const API_HOST = "api.binance.com";
 const API_PROTOCOL = "https";
 const TIMEOUT = 1000 * 60 * 3; // 3 minutes
 
