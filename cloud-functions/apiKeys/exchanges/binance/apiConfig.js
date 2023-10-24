@@ -1,6 +1,5 @@
-const { getBalance } = require("./request");
 const CustomError = require("../../utils/error");
-const getAPIPerms = require("./request");
+const { getAPIPerms } = require("./request");
 
 /**
  * Retrieves the API Key Permissions for a Binance account.

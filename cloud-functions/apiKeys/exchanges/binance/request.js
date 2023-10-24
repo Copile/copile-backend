@@ -84,5 +84,5 @@ async function getAPIPerms(apiKey, apiSecret) {
 }
 
 module.exports = {
-  getAPIPerms,
+  getAPIPerms
 };
