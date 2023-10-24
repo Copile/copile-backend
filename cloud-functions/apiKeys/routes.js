@@ -13,8 +13,8 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
   const exchange = req.params.exchange;
 
   const apiKey = req.body.api_key;
-  const apiSecret = req.body.api_secret;
-  const apiPassphrase = req.body.api_passphrase || null;
+  var apiSecret = req.body.api_secret;
+  var apiPassphrase = req.body.api_passphrase || null;
 
   if (exchange === "bybit") {
     throw new CustomError({
