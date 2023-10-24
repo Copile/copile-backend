@@ -3,6 +3,7 @@
     "new_take_profit": "bulkTP",
     "new_stop_loss": "submitSL",
     "replace_stop_loss": "replaceSL",
+    "replace_take_profit": "replaceTP",
     "cancelled_order": "cancelAllOrders",
     "cancelled_stop_loss": "cancelOrder",
     "cancelled_take_profit": "cancelAllTPs",

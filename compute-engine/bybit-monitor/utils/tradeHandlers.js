@@ -36,7 +36,13 @@ async function handleNewStopLoss(order) {
     let SlExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'sl');
     if (SlExists !== null) {
       order.existed = true;
-      await deleteTpSlOrder(accountId, order.tradeId, SlExists.documentId, 'sl');
+      if (SlExists.sl_amount == order.quantity && SlExists.sl_value == order.entry) {
+        order.detection = "no_action_needed";
+      } else {
+        await deleteTpSlOrder(accountId, order.tradeId, SlExists.documentId, 'sl');
+      }
+    } else {
+      order.existed = false;
     }
     order.slDocumentId = String(uuidv4());
     order.slNumber = 1;
@@ -59,8 +65,16 @@ async function handleNewTakeProfit(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     const TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
+    
     if (TpExists !== null) {
-      await deleteTpSlOrder(accountId, order.tradeId, TpExists.documentId, 'tp');
+      order.existed = true;
+      if (TpExists.tp_amount == order.quantity && TpExists.tp_value == order.entry) {
+        order.detection = "no_action_needed";
+      } else {
+        await deleteTpSlOrder(accountId, order.tradeId, TpExists.documentId, 'tp');
+      }
+    } else {
+      order.existed = false;
     }
 
     const tradeInfo = await getTradeInfo(accountId, order.tradeId);
