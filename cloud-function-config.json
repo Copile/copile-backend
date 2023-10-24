@@ -14,6 +14,13 @@
     "entry_point": "trades"
   },
   {
+    "name": "apiKeys",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "validate"
+  },
+  {
     "name": "bybit",
     "runtime": "nodejs18",
     "memory": "1GB",
