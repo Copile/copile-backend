@@ -11,7 +11,7 @@ const limiter = rateLimit({
   windowMs: WINDOW_MS,
   max: MAX_REQUESTS,
   message: 'Too many requests, please try again later.',
-  keyGenerator: (req) => req.get('traderId') || req.get('userId') || NO_TRADER,
+  keyGenerator: (req) => req.get('traderId') || req.get('userId') || NO_TRADER_OR_USER,
 });
 
 module.exports = limiter;
