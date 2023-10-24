@@ -14,7 +14,7 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
 
   const apiKey = req.body.api_key;
   const apiSecret = req.body.api_secret;
-  const apiPassphrase = req.body.api_passphrase;
+  const apiPassphrase = req.body.api_passphrase || null;
 
   if (exchange === "bybit") {
     throw new CustomError({
@@ -25,21 +25,6 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
   }
 
   try {
-    var collection = db.collection("traders");
-    if(req.get("userId")) {
-        collection = db.collection("users");
-    }
-    const entityRef = collection.doc(entityId);
-    const entityDoc = await entityRef.get();
-
-    if (!entityDoc.exists) {
-      throw new CustomError({
-        message: `Entity ${entityId} not found`,
-        status: 404,
-        source: "validateAPIKeys",
-      });
-    }
-
     apiSecret = (await decryptData(apiSecret, entityId));
 
     if (apiPassphrase) {
