@@ -31,6 +31,7 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
       `${url}?${queryString}&signature=${signature}`,
       { headers, timeout: TIMEOUT }
     );
+    console.log(response);
     return response.data;
   } catch (error) {
     throw new CustomError({

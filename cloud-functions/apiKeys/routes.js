@@ -42,7 +42,7 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
     const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
     const apiPerms = await session.getAPIPerms();
 
-    return res.status(200).json({ success: true, apiPerms: apiPerms });
+    return res.status(200).json({apiPerms: apiPerms });
   } catch (e) {
     if (e instanceof CustomError) {
       next(e);
