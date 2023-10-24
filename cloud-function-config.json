@@ -17,7 +17,7 @@
     "name": "apiKeys",
     "runtime": "nodejs18",
     "memory": "256MB",
-    "region": "us-central1",
+    "region": "europe-west2",
     "entry_point": "validate"
   },
   {
