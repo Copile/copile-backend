@@ -60,7 +60,7 @@ app.post("/updateExchange", async (req, res) => {
 app.post("/updateMargin", async (req, res) => {
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
-  const { worker_id, margin, percentage, option, preferred_exchange } = req.body;
+  const { product_id, worker_id, margin, percentage, option, preferred_exchange } = req.body;
 
   try {
     // Get user document from Firestore
@@ -71,7 +71,9 @@ app.post("/updateMargin", async (req, res) => {
     }
 
     // Get worker document
-    const workerDocRef = db.collection(`users/${userId}/plans`).doc(worker_id);
+    const workerDocRef = db
+      .collection(`users/${userId}/plans/${product_id}/workers`)
+      .doc(worker_id);
 
     const workerDoc = await workerDocRef.get();
 
