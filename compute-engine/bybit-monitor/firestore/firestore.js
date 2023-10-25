@@ -218,6 +218,28 @@ const getTradeInfo = async (accountId, tradeId) => {
     }
 };
 
+// Function to check if an order with a specific orderId already exists
+async function orderExists(accountId, orderId) {
+    try {
+        const tradesCollection = db.collection(COLLECTION_TRADERS)
+            .doc(accountId)
+            .collection(COLLECTION_TRADES);
+
+        const querySnapshot = await tradesCollection
+            .where(FIELD_ORDER_ID, "==", orderId)
+            .get();
+
+        return !querySnapshot.empty;
+
+    } catch (error) {
+        throw new CustomError({
+            message: `Error checking if order exists: ${error.message}`,
+            status: 500,
+            source: "orderExists",
+        });
+    }
+}
+
 // Function to update the trade quantity
 const updateTradeQuantity = async (accountId, tradeId, newQuantity) => {
     try {
@@ -380,5 +402,6 @@ module.exports = {
     getTradeInfo,
     getTpSlInfo,
     getTpSlOrders,
-    getTpOrders
+    getTpOrders,
+    orderExists
 };

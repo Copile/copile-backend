@@ -7,7 +7,8 @@ const {
     deleteTpSlOrder,
     getSpecficOrder,
     storeTrade,
-    updateTradeQuantity
+    updateTradeQuantity,
+    orderExists
     } = require('../firestore/firestore.js');
 const { v4: uuidv4 } = require('uuid');
 const CustomError = require('../firestore/error.js');
@@ -17,6 +18,11 @@ const exchange = process.env.TRADER_EXCHANGE
 
 async function handleNewOrder(order) {
   try {
+    let orderCheck = await orderExists(accountId, order.orderId);
+    if (orderCheck) {
+      order.detection = "no_action_needed";
+      return order;
+    }
     let tradeId = String(uuidv4());
     order.tradeId = tradeId;
     await storeTrade(accountId, order);

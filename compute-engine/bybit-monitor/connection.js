@@ -10,7 +10,10 @@ const wsConfig = {
   key: API_KEY,
   secret: API_SECRET,
   testnet: true,
-  market: "v5"
+  market: "v5",
+  pongTimeout: 1000,
+  pingInterval: 10000,
+  reconnectTimeout: 500,
 };
 
 const ws = new WebsocketClient(wsConfig);
