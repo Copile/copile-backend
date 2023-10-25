@@ -141,6 +141,10 @@ app.get("/exchanges", async (req, res) => {
     const responseData = {
       success: true,
       existingApis,
+      socials: {
+        telegram: traderData.telegram,
+        discord: traderData.discord,
+      },
     };
 
     res.json(responseData);
