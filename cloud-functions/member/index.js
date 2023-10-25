@@ -169,28 +169,23 @@ app.get("/plans", async (req, res) => {
 
     // Extract the data from the plans documents
     const plansData = [];
-    plansSnapshot.forEach(async (doc) => {
+    for (const doc of plansSnapshot.docs) {
       if (doc.exists) {
         const planData = doc.data();
         const workersRef = plansRef.doc(doc.id).collection("workers");
         const workersSnapshot = await workersRef.get();
         const workersData = [];
-        workersSnapshot.forEach((workerDoc) => {
+        for (const workerDoc of workersSnapshot.docs) {
           if (workerDoc.exists) {
             const workerData = workerDoc.data();
             workerData.id = workerDoc.id; // Add the worker ID to the data
             workersData.push(workerData);
           }
-        });
+        }
         planData.workers = workersData; // Add the workers data to the plan data
         plansData.push(planData);
       }
-    });
-
-    const responseData = {
-      success: true,
-      plans: plansData,
-    };
+    }
 
     // example response data:
     // {
@@ -217,6 +212,11 @@ app.get("/plans", async (req, res) => {
     //     // ... more plans
     //   ]
     // }
+
+    const responseData = {
+      success: true,
+      plans: plansData,
+    };
 
     res.json(responseData);
   } catch (error) {
