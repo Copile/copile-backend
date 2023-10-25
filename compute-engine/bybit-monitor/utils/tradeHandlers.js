@@ -15,7 +15,7 @@ require('dotenv').config({ path: '../.env' });
 const accountId = process.env.ACCOUNT_ID;
 const exchange = process.env.TRADER_EXCHANGE
 
-async function handelNewOrder(order) {
+async function handleNewOrder(order) {
   try {
     let tradeId = String(uuidv4());
     order.tradeId = tradeId;
@@ -65,7 +65,7 @@ async function handleNewTakeProfit(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     const TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
-    
+
     if (TpExists !== null) {
       order.existed = true;
       if (TpExists.tp_amount == order.quantity && TpExists.tp_value == order.entry) {
@@ -151,5 +151,5 @@ module.exports = {
     handleNewTakeProfit,
     handlePartialClose,
     handleCancelledOrder,
-    handelNewOrder
+    handleNewOrder
 };

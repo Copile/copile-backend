@@ -1,6 +1,5 @@
 from .binlib.um_futures import UMFutures
 from ..firestore_functions import store_tp
-import asyncio
 
 async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, trade_info, precision, keys):
     try:

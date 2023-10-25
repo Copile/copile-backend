@@ -1,6 +1,3 @@
-import json
-import asyncio
-
 async def distribute_percentages(orders):
     # Extract the tp_percentage for each order
     tps = [order["tp_percentage"] for order in orders]

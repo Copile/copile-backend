@@ -1,5 +1,4 @@
 from .binlib.um_futures import UMFutures
-import asyncio
 
 async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
     try:

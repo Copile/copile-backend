@@ -1,5 +1,4 @@
 from .binlib.um_futures import UMFutures
-import asyncio
 
 async def get_precision(account_id, symbol, keys):
     try:

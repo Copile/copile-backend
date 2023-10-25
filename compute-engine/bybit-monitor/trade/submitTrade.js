@@ -56,11 +56,14 @@ async function submitTrade(order) {
             // Submit new take profit or potential bulkTP
             let tpOrders = await getTpOrders(accountId, order.tradeId);
             sumTp = sumTpPercentage(tpOrders);
+            
             if (!order.existed && sumTp >= 0.98) {
               body = new BulkTP(accountId, order.tradeId, tpOrders)
-            } else {
+            } else if (order.existed == true) {
               order.detection = "replace_take_profit";
               body = new ReplaceTP(accountId, order.tradeId, order.tpDocumentId, String(uuidv4()), order.tpNumber, order.tpValue, order.tpPercentage)
+            } else {
+              body = undefined
             }
             break;
         

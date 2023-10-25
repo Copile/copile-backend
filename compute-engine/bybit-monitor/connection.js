@@ -36,7 +36,9 @@ ws.on('update', async (orders) => {
 
       return 0;
     });
-    console.log(orders);
+
+    let updated_orders = new Array()
+
     let orders_length = orders.length;
     for (let i = 0; i < orders_length; i++) {
       let order = {
@@ -45,14 +47,14 @@ ws.on('update', async (orders) => {
         "quantity": orders[i].qty,
         "orderId": orders[i].orderId,
         "side": orders[i].side,
-        "leverage": "25",
+        "leverage": "20",
         "detection": getAction(orders[i])
       };
       let trigger_price_detection = ["new_take_profit", "new_stop_loss", "cancelled_take_profit", "cancelled_stop_loss"];
       order.entry = trigger_price_detection.includes(order.detection) ? orders[i].triggerPrice : orders[i].price;
-      console.log(order);
-      await tradeExecution(order);
+      updated_orders.push(order);
     }
+    await tradeExecution(updated_orders);
   } catch (error) {
     console.error('Error processing WebSocket message:', error);
   }

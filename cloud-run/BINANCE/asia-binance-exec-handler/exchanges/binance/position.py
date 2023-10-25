@@ -1,5 +1,4 @@
 from .binlib.um_futures import UMFutures
-import asyncio
 
 async def get_position(account_id, trade_if, trade_info, keys):
     try:

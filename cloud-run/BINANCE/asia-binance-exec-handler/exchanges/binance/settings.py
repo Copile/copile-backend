@@ -1,5 +1,4 @@
 from .binlib.um_futures import UMFutures
-import asyncio
 
 async def change_margin_type(symbol, keys):
     try:    
