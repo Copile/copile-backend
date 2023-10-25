@@ -113,6 +113,10 @@ app.post("/createLicense", async (req, res) => {
     workersSnapshot.forEach(async (doc) => {
       const worker = doc.data();
       worker.enabled = false; // Initialize as disabled
+      worker.margin = "x"; // Initialize as "x"
+      worker.percentage = "x"; // Initialize as "x"
+      worker.option = "x"; // Initialize as "x"
+      worker.preferred_exchange = "x"; // Initialize as "x"
 
       const planRef = await userRef.collection("plans").doc(product_id);
       plandata.product = product_id;
