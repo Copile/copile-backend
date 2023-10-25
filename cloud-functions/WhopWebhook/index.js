@@ -114,12 +114,16 @@ app.post("/createLicense", async (req, res) => {
     const workersRef = productRef.collection("workers");
     const workersSnapshot = await workersRef.get();
     workersSnapshot.forEach(async (doc) => {
+      const worker = doc.data();
+      worker.enabled = false; // Initialize as disabled
+
+      const planRef = await userRef.collection("plans").doc(product_id);
       plandata.product = product_id;
       plandata.product_name = product_name;
       plandata.license = license;
       plandata.account_id = account_id;
-      plandata.enabled = false; // Initialize as disabled
-      await userRef.collection("plans").doc(doc.id).set(plandata);
+      await planRef.set(plandata);
+      await planRef.collection("workers").doc(worker.id).set(worker);
     });
 
     console.log("Created user with the id: " + user);
