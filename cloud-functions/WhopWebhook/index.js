@@ -34,12 +34,9 @@ const userdata = {
 // default plan data object
 const plandata = {
   product: "",
+  product_name: "",
   license: "",
   account_id: "",
-  margin: "x",
-  percentage: "x",
-  option: "x",
-  preferred_exchange: "x",
 };
 
 // Async function to delete a document and its subcollections
