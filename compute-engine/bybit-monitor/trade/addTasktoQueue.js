@@ -69,6 +69,7 @@ async function addTaskToQueue(accountId, action, body) {
 
         // Log the response from the server
         //console.log(`Created task with response: ${JSON.stringify(response.data)}`);
+        return
     } catch (error) {
         throw new CustomError({
             message: `Error creating task for queue: ${error.message}`,

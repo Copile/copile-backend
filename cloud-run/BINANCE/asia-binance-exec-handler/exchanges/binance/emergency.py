@@ -1,7 +1,5 @@
 from .binlib.um_futures import UMFutures
-from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status
 from .clear import clear_orders
-import asyncio
 
 async def send_emergency(account_id, trade_id, trade_info, keys):
     try:

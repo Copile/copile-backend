@@ -56,7 +56,7 @@ async function submitTrade(order) {
             // Submit new take profit or potential bulkTP
             let tpOrders = await getTpOrders(accountId, order.tradeId);
             sumTp = sumTpPercentage(tpOrders);
-            console.log(order.existed + " " + sumTp);
+            
             if (!order.existed && sumTp >= 0.98) {
               body = new BulkTP(accountId, order.tradeId, tpOrders)
             } else if (order.existed == true) {

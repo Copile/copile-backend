@@ -1,6 +1,5 @@
 from .binlib.um_futures import UMFutures
 from ..firestore_functions import get_user_plan
-import asyncio
 
 async def get_user_margin(account_id, plan_id, keys):
     try:

@@ -65,7 +65,7 @@ async function handleNewTakeProfit(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
     const TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
-    
+
     if (TpExists !== null) {
       order.existed = true;
       if (TpExists.tp_amount == order.quantity && TpExists.tp_value == order.entry) {

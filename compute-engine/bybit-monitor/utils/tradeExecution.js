@@ -20,12 +20,14 @@ async function tradeExecution(orders) {
     // Checking if any order is a partial_close order
     const hasPartialClose = orders.some(order => order.detection === 'partial_close');
 
+    let processedOrders = []; 
+
     // If any order has "partial_close", send all orders to tradeScan to see if they belong together
     if (hasPartialClose) {
       orders = await tradeScan(orders);
     }
-    console.log(orders);
     let orders_length = orders.length;
+
     for (let i = 0; i < orders_length; i++) {
       let order;
       switch (orders[i].detection) {
@@ -33,22 +35,22 @@ async function tradeExecution(orders) {
           // Handle new order
           order = await handleNewOrder(orders[i]);
           break;
-  
+
         case 'new_stop_loss':
           // Handle new stop loss
           order = await handleNewStopLoss(orders[i]);
           break;
-  
+          
         case 'new_take_profit':
           // Handle new take profit
           order = await handleNewTakeProfit(orders[i]);
           break;
-  
+
         case 'partial_close':
           // Handle partial close
           order = await handlePartialClose(orders[i]);
           break;
-  
+
         case 'cancelled_order':
         case 'cancelled_take_profit':
         case 'cancelled_stop_loss':
@@ -57,8 +59,11 @@ async function tradeExecution(orders) {
           break;
       }
       await submitTrade(order);
-      return order;   
+      processedOrders.push(order);  
     }
+
+    return processedOrders;
+
   } catch (error) {
     throw new CustomError({
       message: `Error handling the trade: ${error.message}`,

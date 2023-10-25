@@ -5,11 +5,51 @@ import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from exchanges import bybit
-from exchanges.firestore_functions import get_trade_info, get_tp_sl_orders, get_user_keys, change_executed_status_tp_sl, change_collection
-from exchanges.create_cloud_task import create_task
+from exchanges.firestore_functions import get_trade_info, get_tp_sl_orders, get_user_keys, change_collection, get_tp_sl_info
 from exchanges.partial import distribute_percentages
 
 app = FastAPI()
+
+@app.post('/replace_tp')
+async def replace_sl(data: dict):
+    user_type = data['user_type']
+    change_collection(user_type)
+    trade_id = data['trade_id']
+    account_id = data['account_id']
+    order_id = data['document_id']
+    payload = data['payload']
+    exchange = data['exchange']
+
+    # Validate the inputs
+    trade_info, keys = await asyncio.gather(
+        get_trade_info(account_id, trade_id),
+        get_user_keys(account_id, exchange)
+    )
+    
+    try:
+        fetch_quantity, precision = await asyncio.gather(
+            get_tp_sl_info(account_id, trade_id, order_id, "tp"),
+            bybit.precision.get_precision(account_id, trade_info["symbol"], keys)
+        )
+
+        # Get current quantity of tp
+        tp_quantity = fetch_quantity["tp_amount"]
+
+        # Cancel the order
+        await bybit.cancel.send_cancel(account_id, trade_id, order_id, "tp", trade_info, keys)
+
+        # Resend the tp with the updated payload
+        await bybit.profit.send_profit(account_id, trade_id, payload['tp_id'], payload['tp_number'], payload['tp_value'], payload['tp_percentage'], float(tp_quantity), trade_info, precision, keys)
+
+        return {"message": f"Replaced take-profit order for trade {trade_id}"}, 200
+
+    except ConnectionError as error:
+        print(error)
+        raise HTTPException(status_code=503, detail="Connection error. Please try again later.")
+
+    except Exception as error:
+        print(error)
+        raise HTTPException(status_code=500, detail=str(error))
 
 @app.post('/replace_sl')
 async def replace_sl(data: dict):

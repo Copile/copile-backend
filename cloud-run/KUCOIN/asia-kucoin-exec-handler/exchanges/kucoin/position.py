@@ -1,5 +1,4 @@
 from .kuclib.client import Trade
-import asyncio
 
 async def get_position(account_id, trade_id, trade_info, keys):
     symbol = trade_info["symbol"]
