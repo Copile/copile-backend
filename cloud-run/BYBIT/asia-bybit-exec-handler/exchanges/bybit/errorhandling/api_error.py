@@ -1,4 +1,3 @@
-
 import json
 
 """Exception raised for API errors.
@@ -8,15 +7,22 @@ import json
 """
 class ApiError(Exception):
     error_messages = {}
+    error_messages
 
     @classmethod
     def load_error_messages(cls):
         if not cls.error_messages:
             try:
-                with open('cloud-run\BYBIT\error-handling\error.json', 'r') as f:
+                with open('cloud-run\BYBIT\\asia-bybit-exec-handler\exchanges\\bybit\errorhandling\error.json', 'r') as f:
                     cls.error_messages = json.load(f)
             except FileNotFoundError:
                 print("Error file not found")
+
+    @classmethod
+    def get_error_message(cls, error_code):
+        cls.load_error_messages()
+        error_message = cls.error_messages.get(str(error_code), "Unknown error")
+        return (str(error_code), error_message)
 
     def __init__(self, error_code):
         self.error_message = self.error_messages.get(str(error_code), "Unknown error")
