@@ -60,7 +60,8 @@ app.post("/updateExchange", async (req, res) => {
 app.post("/updateMargin", async (req, res) => {
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
-  const { product_id, worker_id, margin, percentage, option, preferred_exchange } = req.body;
+  const { product_id, worker_id, margin, percentage, option, preferred_exchange, enabled } =
+    req.body;
 
   console.log("userId", userId);
   console.log("product_id", product_id);
