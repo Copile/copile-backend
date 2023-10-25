@@ -1,5 +1,4 @@
 from .kuclib.client import Trade
-import asyncio
 
 async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
     symbol = trade_info["symbol"]

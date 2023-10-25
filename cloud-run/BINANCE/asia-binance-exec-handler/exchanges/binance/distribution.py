@@ -1,8 +1,5 @@
 from .binlib.um_futures import UMFutures
 from ..shuffle import rearrange_tps
-from .position import get_position
-from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status
-import asyncio
 
 async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, quantity, precision, keys):
     try:

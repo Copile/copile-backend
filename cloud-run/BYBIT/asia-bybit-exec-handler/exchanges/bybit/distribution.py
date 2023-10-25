@@ -1,6 +1,5 @@
 from .pybit.unified_trading import HTTP
 from ..shuffle import rearrange_tps
-import asyncio
 
 async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, quantity, precision, keys):
 

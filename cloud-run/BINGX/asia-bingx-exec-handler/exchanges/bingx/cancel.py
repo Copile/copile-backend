@@ -1,6 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import get_tp_sl_info, delete_order, check_executed_status, change_executed_status_tp_sl, delete_tp_sl_order
-import asyncio
 
 async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info, keys):
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])

@@ -1,6 +1,5 @@
 //const { Firestore } = require("@google-cloud/firestore");
 const CustomError = require("./error");
-const { v4: uuidv4 } = require('uuid');
 
 var admin = require("firebase-admin");
 
@@ -79,15 +78,14 @@ async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
 // Function to store trade information
 async function storeTrade(accountId, orderDict) {
     try {
-        let tradeId = String(uuidv4());
 
         const trade_doc_ref = db.collection(COLLECTION_TRADERS)
             .doc(accountId)
             .collection(COLLECTION_TRADES)
-            .doc(tradeId);
+            .doc(orderDict.tradeId);
 
         await trade_doc_ref.set({
-            [FIELD_TRADE_ID]: tradeId,
+            [FIELD_TRADE_ID]: orderDict.tradeId,
             [FIELD_ORDER_ID]: orderDict.orderId,
             [FIELD_SYMBOL]: orderDict.symbol,
             [FIELD_ORDER_TYPE]: orderDict.type,
@@ -310,7 +308,7 @@ const getTpOrders = async (accountId, tradeId) => {
             .collection(COLLECTION_TRADES)
             .doc(tradeId);
 
-        tpCollection = await tradeRef.collection(COLLECTION_TAKE_PROFITS);
+        tpCollection = await tradeRef.collection(COLLECTION_TAKE_PROFITS).get();
 
         let tpOrders = [];
 
@@ -324,7 +322,7 @@ const getTpOrders = async (accountId, tradeId) => {
         return tpOrders;
     } catch (error) {
         throw new CustomError({
-            message: `Error getting tp/sl orders: ${error.message}`,
+            message: `Error getting tp orders: ${error.message}`,
             status: 500,
             source: "getTpOrders",
         });

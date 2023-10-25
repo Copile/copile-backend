@@ -3,7 +3,6 @@ from .decryption import decryptData
 import time
 import asyncio
 import json
-import os
 
 db = firestore.AsyncClient()
 

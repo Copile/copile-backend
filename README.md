@@ -1,6 +1,6 @@
-# Copile Backend
+# Copile Backend 
 
-Welcome to the official Copile Backend repository! This repository contains the backend components of the Copile project, including Cloud Functions and Cloud Run services. This document provides an overview of the repository's structure, services, and deployment process.
+Welcome to the Copile Backend repository! This repository contains the backend components of the Copile project, including Cloud Functions and Cloud Run services. This document provides an overview of the repository's structure, services, and deployment process.
 
 ## Repository Structure
 

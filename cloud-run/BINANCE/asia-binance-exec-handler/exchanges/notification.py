@@ -1,6 +1,5 @@
 import os
 import uuid
-import datetime
 from google.cloud import tasks_v2
 from google.protobuf import duration_pb2, timestamp_pb2
 import json

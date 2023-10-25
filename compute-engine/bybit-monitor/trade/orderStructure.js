@@ -1,5 +1,5 @@
 
-class bulkOrder {
+class BulkOrder {
     constructor(traderId, tradeId, traderExchange, exchanges, plans, payload, take_profits, stop_losses) {
       this.traderId = traderId;
       this.tradeId = tradeId;
@@ -27,7 +27,7 @@ class bulkOrder {
     }
 }
 
-class bulkTP {
+class BulkTP {
   constructor(traderId, tradeId, takeProfits) {
     this.traderId = traderId;
     this.tradeId = tradeId;
@@ -35,7 +35,7 @@ class bulkTP {
   }
 }
 
-class stopLoss {
+class StopLoss {
   constructor(traderId, tradeId, slId, slNumber, slValue, slPercentage) {
     this.traderId = traderId;
     this.tradeId = tradeId;
@@ -48,7 +48,35 @@ class stopLoss {
   }
 }
 
-class cancelOrder {
+class ReplaceSl {
+  constructor(traderId, tradeId, documentId, slId, slNumber, slValue, slPercentage) {
+    this.traderId = traderId;
+    this.tradeId = tradeId;
+    this.orderId = documentId;
+    this.payload = {
+      sl_id: slId,
+      sl_number: slNumber,
+      sl_value: slValue,
+      sl_percentage: slPercentage
+    }
+  }
+}
+
+class ReplaceTP {
+  constructor(traderId, tradeId, documentId, tpId, tpNumber, tpValue, tpPercentage) {
+    this.traderId = traderId;
+    this.tradeId = tradeId;
+    this.orderId = documentId;
+    this.payload = {
+      tp_id: tpId,
+      tp_number: tpNumber,
+      tp_value: tpValue,
+      tp_percentage: tpPercentage
+    }
+  }
+}
+
+class CancelOrder {
   constructor(traderId, tradeId, documentId, orderType) {
     this.traderId = traderId;
     this.tradeId = tradeId;
@@ -57,14 +85,14 @@ class cancelOrder {
   }
 }
 
-class cancelAll {
+class CancelAll {
   constructor(traderId, tradeId) {
     this.traderId = traderId;
     this.tradeId = tradeId
   }
 }
 
-class partialClose {
+class PartialClose {
   constructor(traderId, tradeId, percentage) {
     this.traderId = traderId;
     this.tradeId = tradeId;
@@ -73,10 +101,12 @@ class partialClose {
 }
 
 module.exports = {
-  bulkOrder,
-  bulkTP,
-  stopLoss,
-  cancelOrder,
-  cancelAll,
-  partialClose
+  BulkOrder,
+  BulkTP,
+  StopLoss,
+  CancelOrder,
+  CancelAll,
+  PartialClose,
+  ReplaceSl,
+  ReplaceTP
 };

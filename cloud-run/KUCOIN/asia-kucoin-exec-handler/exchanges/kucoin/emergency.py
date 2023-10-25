@@ -1,6 +1,5 @@
 from .kuclib.client import Trade
 from .clear import clear_orders
-import asyncio
 
 async def send_emergency(account_id, trade_id, trade_info, keys):
     symbol = trade_info["symbol"]

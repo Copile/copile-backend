@@ -1,5 +1,4 @@
 from decimal import Decimal, getcontext
-import asyncio
 
 async def rearrange_tps(quantity, precision, tps_amount, min_qty):
     
