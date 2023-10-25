@@ -60,9 +60,7 @@ app.post("/updateExchange", async (req, res) => {
 app.post("/updateMargin", async (req, res) => {
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
-  // license_key can be replaced by product id as its more fitting. Would just need to also adjust
-  // the query snapshot to use product id instead of license key
-  const { license_key, margin, percentage, option, preferred_exchange, worker_id } = req.body;
+  const { worker_id, margin, percentage, option, preferred_exchange } = req.body;
 
   try {
     // Get user document from Firestore
@@ -72,19 +70,16 @@ app.post("/updateMargin", async (req, res) => {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    // Get plan document that matches the license key
-    const plansCollectionRef = db.collection(`users/${userId}/plans`);
-    const planQuerySnapshot = await plansCollectionRef.where("license", "==", license_key).get();
+    // Get worker document
+    const workerDocRef = db.collection(`users/${userId}/plans`).doc(worker_id);
 
-    if (planQuerySnapshot.empty) {
+    const workerDoc = await workerDocRef.get();
+
+    if (!workerDoc.exists) {
       return res
         .status(404)
-        .json({ success: false, error: "Plan not found for this user and license key" });
+        .json({ success: false, error: "Worker not found for this user and worker id" });
     }
-
-    // Get worker document
-    const planDocRef = planQuerySnapshot.docs[0].ref;
-    const workerDocRef = planDocRef.collection("workers").doc(worker_id);
 
     // Update worker document with new margin, percentage, option, preferred_exchange values
     const updateFields = {};
