@@ -74,9 +74,9 @@ app.post("/createLicense", async (req, res) => {
     const product_name = userbody["data"]["product"]["name"];
     const license = userbody["data"]["license_key"];
 
-    // Fetch the group and product from Firestore
+    // Fetch the group from Firestore
     const groupsRef = db.collection("groups");
-    const groupSnapshot = await groupsRef.where("product_id", "==", product_id).get();
+    const groupSnapshot = await groupsRef.where("products", "array-contains", product_id).get();
 
     if (groupSnapshot.empty) {
       console.log("No group found for product_id:", product_id);
