@@ -106,6 +106,10 @@ app.post("/updateMargin", async (req, res) => {
       updateFields.preferred_exchange = preferred_exchange.toLowerCase();
     }
 
+    if (typeof enabled === "boolean") {
+      updateFields.enabled = enabled;
+    }
+
     await workerDocRef.update(updateFields);
 
     res.json({ success: true });
