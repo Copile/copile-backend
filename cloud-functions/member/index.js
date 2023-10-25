@@ -62,6 +62,10 @@ app.post("/updateMargin", async (req, res) => {
 
   const { product_id, worker_id, margin, percentage, option, preferred_exchange } = req.body;
 
+  console.log("userId", userId);
+  console.log("product_id", product_id);
+  console.log("worker_id", worker_id);
+
   try {
     // Get user document from Firestore
     const userDoc = await db.collection("users").doc(userId).get();
