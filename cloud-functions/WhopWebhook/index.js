@@ -112,7 +112,6 @@ app.post("/createLicense", async (req, res) => {
     const workersSnapshot = await workersRef.get();
     workersSnapshot.forEach(async (doc) => {
       const worker = doc.data();
-      worker.worker_id = doc.id; // Use worker_id instead of id
       worker.enabled = false; // Initialize as disabled
       worker.margin = "x"; // Initialize as "x"
       worker.percentage = "x"; // Initialize as "x"
