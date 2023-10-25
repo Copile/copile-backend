@@ -33,7 +33,7 @@ const userdata = {
 
 // default plan data object
 const plandata = {
-  product: "",
+  product_id: "",
   product_name: "",
   license: "",
   account_id: "",
@@ -112,19 +112,21 @@ app.post("/createLicense", async (req, res) => {
     const workersSnapshot = await workersRef.get();
     workersSnapshot.forEach(async (doc) => {
       const worker = doc.data();
+      worker.worker_id = doc.id; // Use worker_id instead of id
       worker.enabled = false; // Initialize as disabled
       worker.margin = "x"; // Initialize as "x"
       worker.percentage = "x"; // Initialize as "x"
       worker.option = "x"; // Initialize as "x"
       worker.preferred_exchange = "x"; // Initialize as "x"
+      worker.product_id = product_id;
 
       const planRef = await userRef.collection("plans").doc(product_id);
-      plandata.product = product_id;
+      plandata.product_id = product_id;
       plandata.product_name = product_name;
       plandata.license = license;
       plandata.account_id = account_id;
       await planRef.set(plandata);
-      await planRef.collection("workers").doc(worker.id).set(worker);
+      await planRef.collection("workers").doc(worker.worker_id).set(worker);
     });
 
     console.log("Created user with the id: " + user);
