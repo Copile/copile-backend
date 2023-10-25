@@ -60,7 +60,6 @@ async function deleteDocumentAndSubcollections(documentRef) {
   await documentRef.delete();
 }
 
-// Route to create license
 app.post("/createLicense", async (req, res) => {
   try {
     let userbody = req.body;
@@ -78,9 +77,22 @@ app.post("/createLicense", async (req, res) => {
     // Fetch the group and product from Firestore
     const groupsRef = db.collection("groups");
     const groupSnapshot = await groupsRef.where("product_id", "==", product_id).get();
+
+    if (groupSnapshot.empty) {
+      console.log("No group found for product_id:", product_id);
+      return res.status(404).send(JSON.stringify({ error: "Group not found" }));
+    }
+
     const group = groupSnapshot.docs[0].data();
     const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
-    const product = (await productRef.get()).data();
+    const productSnapshot = await productRef.get();
+
+    if (!productSnapshot.exists) {
+      console.log("No product found for product_id:", product_id);
+      return res.status(404).send(JSON.stringify({ error: "Product not found" }));
+    }
+
+    const product = productSnapshot.data();
 
     const userRef = db.collection("users").doc(user);
     const userSnapshot = await userRef.get();
@@ -117,6 +129,64 @@ app.post("/createLicense", async (req, res) => {
     return res.status(500).send(JSON.stringify({ error: "Internal server error" }));
   }
 });
+
+// // Route to create license
+// app.post("/createLicense", async (req, res) => {
+//   try {
+//     let userbody = req.body;
+
+//     if (userbody["action"] !== "membership.went_valid") {
+//       return res.status(400).send(JSON.stringify({ error: "Invalid action" }));
+//     }
+
+//     const user = userbody["data"]["user"]["id"];
+//     const account_id = userbody["data"]["id"];
+//     const product_id = userbody["data"]["product"]["id"];
+//     const product_name = userbody["data"]["product"]["name"];
+//     const license = userbody["data"]["license_key"];
+
+//     // Fetch the group and product from Firestore
+//     const groupsRef = db.collection("groups");
+//     const groupSnapshot = await groupsRef.where("product_id", "==", product_id).get();
+//     const group = groupSnapshot.docs[0].data();
+//     const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
+//     const product = (await productRef.get()).data();
+
+//     const userRef = db.collection("users").doc(user);
+//     const userSnapshot = await userRef.get();
+
+//     if (userSnapshot.exists) {
+//       // User exists, update the user's data
+//       userdata.account = user;
+//       userdata.group_id = group.id; // Associate the user with the group
+//       await userRef.update(userdata);
+//     } else {
+//       // User does not exist, create a new user document
+//       userdata.account = user;
+//       userdata.group_id = group.id; // Associate the user with the group
+//       await userRef.set(userdata);
+//       await createUserKey(user);
+//     }
+
+//     // For each worker in the product, create a new document in the plans subcollection
+//     const workersRef = productRef.collection("workers");
+//     const workersSnapshot = await workersRef.get();
+//     workersSnapshot.forEach(async (doc) => {
+//       plandata.product = product_id;
+//       plandata.product_name = product_name;
+//       plandata.license = license;
+//       plandata.account_id = account_id;
+//       plandata.enabled = false; // Initialize as disabled
+//       await userRef.collection("plans").doc(doc.id).set(plandata);
+//     });
+
+//     console.log("Created user with the id: " + user);
+//     return res.send(JSON.stringify({ status: 200 }));
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).send(JSON.stringify({ error: "Internal server error" }));
+//   }
+// });
 
 // In this adjusted code, when a user's membership becomes invalid, the webhook deletes the product
 // and its workers from the user's plans. If the user has no other plans, the user is also deleted.
