@@ -22,7 +22,7 @@ steps:
           # Check if the current function is notifications, admintrades, bybit or usertrades before deploying
           # if [ "$name" = "member" ] || [ "$name" = "x" ]; then
 
-          if [ "$name" = "member" ]; then
+          if [ "$name" = "apiKeys" ]; then
             echo "Deploying function: $name"
             # Deploy Cloud Function with specified settings
             gcloud functions deploy $name \

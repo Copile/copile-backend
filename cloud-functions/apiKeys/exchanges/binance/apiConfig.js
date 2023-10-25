@@ -12,7 +12,10 @@ const { getAPIPerms } = require("./request");
 async function getBinanceAPIPerms(apiKey, apiSecret) {
   try {
     const response = await getAPIPerms(apiKey, apiSecret);
-    console.log(response);
+    const status = response.status;
+    if(response.data){
+      return response.data;
+    }
     return response;
   } catch (error) {
     if (error instanceof CustomError) {
