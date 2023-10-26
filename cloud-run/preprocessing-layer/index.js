@@ -622,6 +622,7 @@ app.post("/bulkOrder", async (req, res) => {
     }
 
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
+
     const traderExecData = {
       trade_id: tradeId,
       account_id: traderId,
@@ -631,52 +632,39 @@ app.post("/bulkOrder", async (req, res) => {
       user_type: "traders",
     };
 
-    const traderTask =
-      traderId === process.env.testID
-        ? addTaskToQueue("bulk_order", traderExecData, "test")
-        : addTaskToQueue("bulk_order", traderExecData, "trader");
+    const traderTask = traderId === process.env.testID ? addTaskToQueue("bulk_order", traderExecData, "test") : addTaskToQueue("bulk_order", traderExecData, "trader");
 
-    const plansRef = firestore.collectionGroup("plans");
+    const workersRef = firestore.collectionGroup("workers");
     const tasksToAdd = [traderTask];
 
-    const allMatchingPlans = await Promise.all(
-      plans.map((planId) => plansRef.where("product", "==", planId).get())
-    );
+    const allMatchingWorkers = await workersRef.where("id", "==", traderId).where("enabled", "==", true).get();
     const userIds = new Set();
 
-    allMatchingPlans.forEach((matchingPlans) => {
-      matchingPlans.forEach((doc) => {
-        userIds.add(doc.ref.parent.parent.id);
-      });
+    allMatchingWorkers.forEach((doc) => {
+      userIds.add(doc.ref.parent.parent.parent.parent.id);
     });
 
     const userTasks = Array.from(userIds).map(async (userId) => {
       try {
-        const userSnapshot = await firestore.collection("users").doc(userId).get();
-        const user = userSnapshot.data();
-        const planId = plans[0]; // Modify this to get the correct planId if multiple plans are possible
-        const preferredExchangeDoc = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(planId);
-        const ExchangeDoc = await preferredExchangeDoc.get();
-        const preferredExchange = ExchangeDoc.get("preferred_exchange");
+        const workerDoc = allMatchingWorkers.docs.find(doc => doc.ref.parent.parent.parent.parent.id === userId);
+        const workerData = workerDoc.data();
+        const preferredExchange = workerData.preferred_exchange;
 
         let currentTradeData = {
           trade_id: tradeId,
           account_id: userId,
           payload: payload,
           exchange: "",
-          plan_id: planId,
+          plan_id: plans[0],
           user_type: "users",
         };
 
-        if (
-          exchanges.includes(preferredExchange) &&
+        const userSnapshot = await firestore.collection("users").doc(userId).get();
+        const user = userSnapshot.data();
+
+        if (exchanges.includes(preferredExchange) &&
           user.exchanges[preferredExchange]?.api_key !== "x" &&
-          user.exchanges[preferredExchange]?.api_secret !== "x"
-        ) {
+          user.exchanges[preferredExchange]?.api_secret !== "x") {
           currentTradeData.exchange = preferredExchange;
           return addTaskToQueue("bulk_order", currentTradeData, "user");
         } else {
