@@ -127,7 +127,7 @@ app.post("/createLicense", async (req, res) => {
       plandata.license = license;
       plandata.account_id = account_id;
       await planRef.set(plandata);
-      await planRef.collection("workers").doc(worker.worker_id).set(worker);
+      await planRef.collection("workers").doc(worker.id).set(worker);
     }
     // });
 
