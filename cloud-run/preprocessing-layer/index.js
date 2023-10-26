@@ -612,19 +612,16 @@ app.post("/cancelAllTPs", async (req, res) => {
   }
 });
 
+// gl chief. - second1
 app.post("/bulkOrder", async (req, res) => {
   try {
-    console.log("Received bulk order request");
     const trade = JSON.parse(req.body);
-    console.log(`Processing trade data: ${JSON.stringify(trade)}`);
 
     if (!trade) {
-      console.log("Invalid trade data received");
       return res.status(400).json({ success: false, message: "Invalid trade data" });
     }
 
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
-    console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
     const traderExecData = {
       trade_id: tradeId,
       account_id: traderId,
@@ -634,97 +631,66 @@ app.post("/bulkOrder", async (req, res) => {
       user_type: "traders",
     };
 
-    console.log(`Preparing to add task for trader: ${traderId}`);
     const traderTask =
       traderId === process.env.testID
         ? addTaskToQueue("bulk_order", traderExecData, "test")
         : addTaskToQueue("bulk_order", traderExecData, "trader");
-    console.log(`Added task for trader: ${traderId}`);
 
     const plansRef = firestore.collectionGroup("plans");
     const tasksToAdd = [traderTask];
 
-    console.log("Fetching all matching plans from Firestore");
     const allMatchingPlans = await Promise.all(
-      plans.map(async (planId) => {
-        const plansSnapshot = await plansRef.where("product_id", "==", planId).get();
-        const matchingPlans = [];
-        for (const doc of plansSnapshot.docs) {
-          const workerRef = doc.ref.collection("workers").doc(traderId);
-          const workerDoc = await workerRef.get();
-          if (workerDoc.exists && workerDoc.data().enabled) {
-            matchingPlans.push(doc);
-          }
-        }
-        return matchingPlans;
-      })
+      plans.map((planId) => plansRef.where("product", "==", planId).get())
     );
-
     const userIds = new Set();
 
-    console.log("Adding user IDs of all matching plans to a set");
     allMatchingPlans.forEach((matchingPlans) => {
       matchingPlans.forEach((doc) => {
         userIds.add(doc.ref.parent.parent.id);
       });
     });
 
-    console.log("Preparing to process each user");
     const userTasks = Array.from(userIds).map(async (userId) => {
       try {
-        console.log(`Processing user: ${userId}`);
-        const planDocRef = firestore
+        const userSnapshot = await firestore.collection("users").doc(userId).get();
+        const user = userSnapshot.data();
+        const planId = plans[0]; // Modify this to get the correct planId if multiple plans are possible
+        const preferredExchangeDoc = firestore
           .collection("users")
           .doc(userId)
           .collection("plans")
-          .doc(tradeId);
-        const planDocSnapshot = await planDocRef.get();
-        const planData = planDocSnapshot.data();
-        const preferredExchange = planData.preferred_exchange;
+          .doc(planId);
+        const ExchangeDoc = await preferredExchangeDoc.get();
+        const preferredExchange = ExchangeDoc.get("preferred_exchange");
 
-        const workerRef = planDocRef.collection("workers").doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
+        let currentTradeData = {
+          trade_id: tradeId,
+          account_id: userId,
+          payload: payload,
+          exchange: "",
+          plan_id: planId,
+          user_type: "users",
+        };
 
-        const userSnapshot = await firestore.collection("users").doc(userId).get();
-        const user = userSnapshot.data();
+        if (
+          exchanges.includes(preferredExchange) &&
+          user.exchanges[preferredExchange]?.api_key !== "x" &&
+          user.exchanges[preferredExchange]?.api_secret !== "x"
+        ) {
+          currentTradeData.exchange = preferredExchange;
+          return addTaskToQueue("bulk_order", currentTradeData, "user");
+        } else {
+          const validExchanges = Object.entries(user.exchanges).filter(
+            ([exchangeName, exchangeData]) =>
+              exchanges.includes(exchangeName) &&
+              exchangeData.api_key !== "x" &&
+              exchangeData.api_secret !== "x"
+          );
 
-        if (worker && worker.enabled) {
-          console.log(`User ${userId} has enabled worker, adding task`);
-          let currentTradeData = {
-            trade_id: tradeId,
-            account_id: userId,
-            payload: payload,
-            exchange: "",
-            plan_id: planId,
-            user_type: "users",
-          };
-
-          if (
-            exchanges.includes(preferredExchange) &&
-            user.exchanges[preferredExchange]?.api_key !== "x" &&
-            user.exchanges[preferredExchange]?.api_secret !== "x"
-          ) {
-            console.log(`User ${userId} has valid preferred exchange, adding task`);
-            currentTradeData.exchange = preferredExchange;
+          if (validExchanges.length > 0) {
+            const randomIndex = Math.floor(Math.random() * validExchanges.length);
+            currentTradeData.exchange = validExchanges[randomIndex][0];
             return addTaskToQueue("bulk_order", currentTradeData, "user");
-          } else {
-            console.log(
-              `User ${userId} does not have valid preferred exchange, checking other exchanges`
-            );
-            const validExchanges = Object.entries(user.exchanges).filter(
-              ([exchangeName, exchangeData]) =>
-                exchanges.includes(exchangeName) &&
-                exchangeData.api_key !== "x" &&
-                exchangeData.api_secret !== "x"
-            );
-
-            if (validExchanges.length > 0) {
-              console.log(`User ${userId} has valid exchanges, adding task`);
-              const randomIndex = Math.floor(Math.random() * validExchanges.length);
-              currentTradeData.exchange = validExchanges[randomIndex][0];
-              return addTaskToQueue("bulk_order", currentTradeData, "user");
-            }
           }
         }
       } catch (error) {
@@ -732,19 +698,161 @@ app.post("/bulkOrder", async (req, res) => {
       }
     });
 
-    console.log("Adding user tasks to tasks to add");
     tasksToAdd.push(...userTasks);
 
-    console.log("Executing all tasks");
     await Promise.allSettled(tasksToAdd);
-    console.log("All tasks executed successfully");
     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
   } catch (error) {
-    console.log(`Error executing bulk order: ${error.message}`);
-    console.log("Whole error:", error);
+    console.log(error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
+
+/*
+ * -----------------------------------------------------------------------------------------------
+ * This is a large, multi-line comment divider. It is used to separate different sections of code.
+ * -----------------------------------------------------------------------------------------------
+ */
+
+// app.post("/bulkOrder", async (req, res) => {
+//   try {
+//     console.log("Received bulk order request");
+//     const trade = JSON.parse(req.body);
+//     console.log(`Processing trade data: ${JSON.stringify(trade)}`);
+
+//     if (!trade) {
+//       console.log("Invalid trade data received");
+//       return res.status(400).json({ success: false, message: "Invalid trade data" });
+//     }
+
+//     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
+//     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
+//     const traderExecData = {
+//       trade_id: tradeId,
+//       account_id: traderId,
+//       margin: margin,
+//       exchange: trader_exchange,
+//       payload: payload,
+//       user_type: "traders",
+//     };
+
+//     console.log(`Preparing to add task for trader: ${traderId}`);
+//     const traderTask =
+//       traderId === process.env.testID
+//         ? addTaskToQueue("bulk_order", traderExecData, "test")
+//         : addTaskToQueue("bulk_order", traderExecData, "trader");
+//     console.log(`Added task for trader: ${traderId}`);
+
+//     const plansRef = firestore.collectionGroup("plans");
+//     const tasksToAdd = [traderTask];
+
+//     console.log("Fetching all matching plans from Firestore");
+//     const allMatchingPlans = await Promise.all(
+//       plans.map(async (planId) => {
+//         const plansSnapshot = await plansRef.where("product_id", "==", planId).get();
+//         const matchingPlans = [];
+//         for (const doc of plansSnapshot.docs) {
+//           const workerRef = doc.ref.collection("workers").doc(traderId);
+//           const workerDoc = await workerRef.get();
+//           if (workerDoc.exists && workerDoc.data().enabled) {
+//             matchingPlans.push(doc);
+//           }
+//         }
+//         return matchingPlans;
+//       })
+//     );
+
+//     const userIds = new Set();
+
+//     console.log("Adding user IDs of all matching plans to a set");
+//     allMatchingPlans.forEach((matchingPlans) => {
+//       matchingPlans.forEach((doc) => {
+//         userIds.add(doc.ref.parent.parent.id);
+//       });
+//     });
+
+//     console.log("Preparing to process each user");
+//     const userTasks = Array.from(userIds).map(async (userId) => {
+//       try {
+//         console.log(`Processing user: ${userId}`);
+//         const planDocRef = firestore
+//           .collection("users")
+//           .doc(userId)
+//           .collection("plans")
+//           .doc(tradeId);
+//         const planDocSnapshot = await planDocRef.get();
+//         const planData = planDocSnapshot.data();
+//         const preferredExchange = planData.preferred_exchange;
+
+//         const workerRef = planDocRef.collection("workers").doc(traderId);
+//         const workerSnapshot = await workerRef.get();
+//         const worker = workerSnapshot.data();
+
+//         const userSnapshot = await firestore.collection("users").doc(userId).get();
+//         const user = userSnapshot.data();
+
+//         if (worker && worker.enabled) {
+//           console.log(`User ${userId} has enabled worker, adding task`);
+//           let currentTradeData = {
+//             trade_id: tradeId,
+//             account_id: userId,
+//             payload: payload,
+//             exchange: "",
+//             plan_id: planId,
+//             user_type: "users",
+//           };
+
+//           if (
+//             exchanges.includes(preferredExchange) &&
+//             user.exchanges[preferredExchange]?.api_key !== "x" &&
+//             user.exchanges[preferredExchange]?.api_secret !== "x"
+//           ) {
+//             console.log(`User ${userId} has valid preferred exchange, adding task`);
+//             currentTradeData.exchange = preferredExchange;
+//             return addTaskToQueue("bulk_order", currentTradeData, "user");
+//           } else {
+//             console.log(
+//               `User ${userId} does not have valid preferred exchange, checking other exchanges`
+//             );
+//             const validExchanges = Object.entries(user.exchanges).filter(
+//               ([exchangeName, exchangeData]) =>
+//                 exchanges.includes(exchangeName) &&
+//                 exchangeData.api_key !== "x" &&
+//                 exchangeData.api_secret !== "x"
+//             );
+
+//             if (validExchanges.length > 0) {
+//               console.log(`User ${userId} has valid exchanges, adding task`);
+//               const randomIndex = Math.floor(Math.random() * validExchanges.length);
+//               currentTradeData.exchange = validExchanges[randomIndex][0];
+//               return addTaskToQueue("bulk_order", currentTradeData, "user");
+//             }
+//           }
+//         }
+//       } catch (error) {
+//         console.log(`Error processing user ${userId}: ${error.message}`);
+//       }
+//     });
+
+//     console.log("Adding user tasks to tasks to add");
+//     tasksToAdd.push(...userTasks);
+
+//     console.log("Executing all tasks");
+//     await Promise.allSettled(tasksToAdd);
+//     console.log("All tasks executed successfully");
+//     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
+//   } catch (error) {
+//     console.log(`Error executing bulk order: ${error.message}`);
+//     console.log("Whole error:", error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// });
+
+/*
+ * -----------------------------------------------------------------------------------------------
+ * This is a large, multi-line comment divider. It is used to separate different sections of code.
+ * -----------------------------------------------------------------------------------------------
+ */
 
 // // Endpoint for bulk order processing
 // app.post("/bulkOrder", async (req, res) => {
