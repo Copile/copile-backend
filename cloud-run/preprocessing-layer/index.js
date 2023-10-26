@@ -674,6 +674,9 @@ app.post("/bulkOrder", async (req, res) => {
         const workerSnapshot = await workerRef.get();
         const worker = workerSnapshot.data();
 
+        const userSnapshot = await firestore.collection("users").doc(userId).get();
+        const user = userSnapshot.data();
+
         if (worker && worker.enabled) {
           console.log(`User ${userId} has enabled worker, adding task`);
           let currentTradeData = {
