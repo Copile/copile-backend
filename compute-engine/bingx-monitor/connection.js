@@ -12,12 +12,12 @@ async function setPath() {
   path = process.env.BINGX_URL + await createListenKey();
 }
 
-const CHANNEL = {"notice:":"no need to subscribe to any specific channel,please check the highlight msg in the api docs"};
+const CHANNEL = {"e":"ORDER_TRADE_UPDATE"};
 
 function init() {
   setPath().then(() => {
     socket = new WebSocket(path);
-    socket.on('open', onOpen);
+    //socket.on('open', onOpen);
     socket.on('message', onMessage);
     socket.on('error', onError);
 
@@ -37,10 +37,10 @@ function init() {
   });
 }
 
-function onOpen() {
-  console.log("WebSocket connected");
-  socket.send(JSON.stringify(CHANNEL));
-}
+// function onOpen() {
+//   console.log("WebSocket connected");
+//   socket.send(JSON.stringify(CHANNEL));
+// }
 
 function onError(error) {
   console.log("WebSocket error:", error);
