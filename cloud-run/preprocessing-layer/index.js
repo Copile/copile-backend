@@ -729,8 +729,7 @@ app.post("/bulkOrder", async (req, res) => {
     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
   } catch (error) {
     console.log(`Error executing bulk order: ${error.message}`);
-    console.log("Error code:", error.code);
-    console.log("Error details:", error.details);
+    console.log("Whole error:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
