@@ -110,7 +110,10 @@ app.post("/createLicense", async (req, res) => {
     // For each worker in the product, create a new document in the plans subcollection
     const workersRef = productRef.collection("workers");
     const workersSnapshot = await workersRef.get();
-    workersSnapshot.forEach(async (doc) => {
+
+
+    // workersSnapshot.forEach(async (doc) => {
+      for (const doc of workersSnapshot.docs) {
       const worker = doc.data();
       worker.enabled = false; // Initialize as disabled
       worker.margin = "x"; // Initialize as "x"
