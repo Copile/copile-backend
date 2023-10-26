@@ -11,6 +11,8 @@ app.enable("trust proxy");
 app.use(bodyParser.text({ type: "*/*" }));
 
 async function addTaskToQueue(type, trade_data, user_type) {
+  console.log("Trade data received by addTaskToQueue: ", trade_data);
+
   let parent;
   let url;
 
@@ -74,9 +76,13 @@ async function addTaskToQueue(type, trade_data, user_type) {
     },
   };
   const request = { parent, task };
-  const [response] = await client.createTask(request);
-  const name = response.name;
-  console.log(`Created task ${name}`);
+  try {
+    const [response] = await client.createTask(request);
+    const name = response.name;
+    console.log(`Created task ${name}`);
+  } catch (error) {
+    console.error(`Error creating task: ${error.message}`);
+  }
 }
 
 async function getExchangeForTrade(traderId, tradeId) {
@@ -368,6 +374,7 @@ app.post("/submitSL", async (req, res) => {
             exchange: doc.get("exchange"),
             user_type: "users",
           };
+
           tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
         }
       }
@@ -605,6 +612,7 @@ app.post("/cancelAllTPs", async (req, res) => {
   }
 });
 
+// Endpoint for bulk order processing
 app.post("/bulkOrder", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
@@ -617,6 +625,7 @@ app.post("/bulkOrder", async (req, res) => {
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
 
+    // Prepare the trader execution data
     const traderExecData = {
       trade_id: tradeId,
       account_id: traderId,
@@ -626,20 +635,31 @@ app.post("/bulkOrder", async (req, res) => {
       user_type: "traders",
     };
 
+    // Add the trader task to the queue
     const traderTask =
       traderId === process.env.testID
         ? addTaskToQueue("bulk_order", traderExecData, "test")
         : addTaskToQueue("bulk_order", traderExecData, "trader");
     console.log(`Added task for trader: ${traderId}`);
 
+    // Reference to the Firestore collection group "plans"
+    // This is a query that will fetch all documents in the "plans" collection group
     const plansRef = firestore.collectionGroup("plans");
     const tasksToAdd = [traderTask];
 
+    // Fetch all matching plans from Firestore
+    // This is done by mapping over the plans array and for each planId,
+    // we perform a query where we fetch all documents in the "plans" collection group where the "product_id" field equals the planId
+    console.log("Fetching all matching plans from Firestore");
     const allMatchingPlans = await Promise.all(
       plans.map((planId) => plansRef.where("product_id", "==", planId).get())
     );
     const userIds = new Set();
 
+    // Add the user IDs of all matching plans to a set
+    // This is done by iterating over all matching plans and for each plan,
+    // we add the ID of the parent document (which is the user ID) to the set
+    console.log("Adding user IDs of all matching plans to a set");
     allMatchingPlans.forEach((matchingPlans) => {
       matchingPlans.forEach((doc) => {
         userIds.add(doc.ref.parent.parent.id);
@@ -647,6 +667,7 @@ app.post("/bulkOrder", async (req, res) => {
     });
     console.log(`Found matching plans for users: ${Array.from(userIds)}`);
 
+    // Process each user
     const userTasks = Array.from(userIds).map(async (userId) => {
       try {
         console.log(`Processing user: ${userId}`);
@@ -654,7 +675,10 @@ app.post("/bulkOrder", async (req, res) => {
         const user = userSnapshot.data();
         const planId = plans[0]; // Modify this to get the correct planId if multiple plans are possible
 
-        // Fetch the worker document
+        // Fetch the worker document from Firestore
+        // This is done by accessing the "users" collection, fetching the document with the ID equal to the userId,
+        // then accessing the "plans" subcollection, fetching the document with the ID equal to the planId,
+        // then accessing the "workers" subcollection, and finally fetching the document with the ID equal to the traderId
         const workerRef = firestore
           .collection("users")
           .doc(userId)
@@ -665,6 +689,7 @@ app.post("/bulkOrder", async (req, res) => {
         const workerSnapshot = await workerRef.get();
 
         // Check if the worker document exists and if the worker is enabled
+        // This is done by checking if the workerSnapshot exists and if the "enabled" field in the workerSnapshot data is true
         if (!workerSnapshot.exists || !workerSnapshot.data().enabled) {
           console.log(
             `Worker document not found or not enabled for user ${userId}, plan ${planId}, worker ${traderId}`
@@ -672,6 +697,9 @@ app.post("/bulkOrder", async (req, res) => {
           return; // Skip this user and move on to the next one
         }
 
+        // Fetch the preferred exchange document from Firestore
+        // This is done by accessing the "users" collection, fetching the document with the ID equal to the userId,
+        // then accessing the "plans" subcollection, and finally fetching the document with the ID equal to the planId
         const preferredExchangeDoc = firestore
           .collection("users")
           .doc(userId)
@@ -680,6 +708,7 @@ app.post("/bulkOrder", async (req, res) => {
         const ExchangeDoc = await preferredExchangeDoc.get();
         const preferredExchange = ExchangeDoc.get("preferred_exchange");
 
+        // Prepare the trade data for the current user
         let currentTradeData = {
           trade_id: tradeId,
           account_id: userId,
@@ -689,6 +718,8 @@ app.post("/bulkOrder", async (req, res) => {
           user_type: "users",
         };
 
+        // If the user's preferred exchange is valid, add a task for the user with the preferred exchange
+        // This is done by checking if the exchanges array includes the preferredExchange and if the API key and secret for the preferredExchange are not "x"
         if (
           exchanges.includes(preferredExchange) &&
           user.exchanges[preferredExchange]?.api_key !== "x" &&
@@ -700,6 +731,8 @@ app.post("/bulkOrder", async (req, res) => {
           );
           return addTaskToQueue("bulk_order", currentTradeData, "user");
         } else {
+          // If the user's preferred exchange is not valid, find a valid exchange
+          // This is done by filtering the entries of the user's exchanges object to only include entries where the exchange name is included in the exchanges array and the API key and secret are not "x"
           const validExchanges = Object.entries(user.exchanges).filter(
             ([exchangeName, exchangeData]) =>
               exchanges.includes(exchangeName) &&
@@ -707,6 +740,8 @@ app.post("/bulkOrder", async (req, res) => {
               exchangeData.api_secret !== "x"
           );
 
+          // If there are valid exchanges, add a task for the user with a random valid exchange
+          // This is done by generating a random index and using it to fetch a random exchange from the validExchanges array
           if (validExchanges.length > 0) {
             const randomIndex = Math.floor(Math.random() * validExchanges.length);
             currentTradeData.exchange = validExchanges[randomIndex][0];
@@ -721,8 +756,10 @@ app.post("/bulkOrder", async (req, res) => {
       }
     });
 
+    // Add all user tasks to the tasks to add
     tasksToAdd.push(...userTasks);
 
+    // Wait for all tasks to settle
     await Promise.allSettled(tasksToAdd);
     console.log(`All tasks settled for trade: ${tradeId}`);
     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
@@ -731,6 +768,7 @@ app.post("/bulkOrder", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
+
 app.post("/partialClose", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
