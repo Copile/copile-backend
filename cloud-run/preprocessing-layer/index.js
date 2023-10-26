@@ -655,7 +655,16 @@ app.post("/bulkOrder", async (req, res) => {
           .collection("workers")
           .doc(traderId);
         const workerSnapshot = await workerRef.get();
+
+        if (!workerSnapshot.exists) {
+          console.log(
+            `Worker document not found for user ${userId}, plan ${planId}, worker ${traderId}`
+          );
+        }
+
         const worker = workerSnapshot.data();
+
+        console.log("worker:", worker);
 
         if (worker.enabled) {
           const preferredExchangeDoc = firestore
