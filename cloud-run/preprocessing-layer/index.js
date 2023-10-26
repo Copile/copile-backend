@@ -646,8 +646,20 @@ app.post("/bulkOrder", async (req, res) => {
 
     console.log("Fetching all matching plans from Firestore");
     const allMatchingPlans = await Promise.all(
-      plans.map((planId) => plansRef.where("product_id", "==", planId).get())
+      plans.map(async (planId) => {
+        const plansSnapshot = await plansRef.where("product_id", "==", planId).get();
+        const matchingPlans = [];
+        for (const doc of plansSnapshot.docs) {
+          const workerRef = doc.ref.collection("workers").doc(traderId);
+          const workerDoc = await workerRef.get();
+          if (workerDoc.exists && workerDoc.data().enabled) {
+            matchingPlans.push(doc);
+          }
+        }
+        return matchingPlans;
+      })
     );
+
     const userIds = new Set();
 
     console.log("Adding user IDs of all matching plans to a set");
