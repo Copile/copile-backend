@@ -4,10 +4,10 @@ from .margin import get_user_margin
 from .settings import get_market
 import asyncio
 
-async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys):
+async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, precision, keys):
     try:
         if type(margin) == str:
-            margin = await get_user_margin(account_id, margin, keys)
+            margin = await get_user_margin(account_id, margin, trader_id, keys)
 
         # Connecting to Bybit API
         session = HTTP(

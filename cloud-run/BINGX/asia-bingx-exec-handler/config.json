@@ -2,6 +2,7 @@
   "COLLECTION_TRADERS": "traders",
   "COLLECTION_TRADES": "trades",
   "COLLECTION_PLANS": "plans",
+  "COLLECTION_WORKERS": "workers",
   "COLLECTION_TAKE_PROFITS": "take-profits",
   "COLLECTION_STOP_LOSSES": "stop-losses",
   "FIELD_TRADE_ID": "tradeID",

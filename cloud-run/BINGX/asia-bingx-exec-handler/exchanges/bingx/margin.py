@@ -4,9 +4,9 @@ from ..notification import send_notification
 from .error_handler import handle_error
 import asyncio
 
-async def get_user_margin(account_id, plan_id, keys):
+async def get_user_margin(account_id, plan_id, trader_id, keys):
     try:
-        plan_object = await get_user_plan(account_id, plan_id)
+        plan_object = await get_user_plan(account_id, plan_id, trader_id)
         client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
         if plan_object["option"] == "percent":

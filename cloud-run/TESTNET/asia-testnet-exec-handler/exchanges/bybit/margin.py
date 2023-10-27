@@ -2,9 +2,9 @@ from .pybit.unified_trading import HTTP
 from ..firestore_functions import get_user_plan
 import asyncio
 
-async def get_user_margin(account_id, plan_id, keys):
+async def get_user_margin(account_id, plan_id, trader_id, keys):
     try:
-        plan_object = await get_user_plan(account_id, plan_id)
+        plan_object = await get_user_plan(account_id, plan_id, trader_id)
 
         # Connecting to Bybit API
         session = HTTP(

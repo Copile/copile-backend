@@ -281,7 +281,7 @@ async def bulk_order(data: dict):
         margin = data['margin']
     else:
         margin = data['plan_id']
-
+    trader_id = data['trader_id']
     exchange = data['exchange']
     side = payload['side']
     symbol = payload['symbol']
@@ -299,7 +299,7 @@ async def bulk_order(data: dict):
             binance.change_leverage(symbol, leverage, keys)
         )
 
-        order_dict = await binance.trade.send_trade(account_id, trade_id, margin, side, symbol, leverage, entry, precision, keys)
+        order_dict = await binance.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
 
         trade_info = await get_trade_info(account_id, trade_id)
 

@@ -579,6 +579,7 @@ app.post("/bulkOrder", async (req, res) => {
 
         let currentTradeData = {
           trade_id: tradeId,
+          trader_id: traderId,
           account_id: userId,
           payload: payload,
           exchange: "",

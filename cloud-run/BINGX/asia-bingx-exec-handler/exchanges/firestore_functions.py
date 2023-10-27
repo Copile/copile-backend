@@ -1,10 +1,8 @@
 from google.cloud import firestore
-from .notification import send_notification
 from .decryption import decryptData
 import time
 import asyncio
 import json
-import os
 
 db = firestore.AsyncClient()
 
@@ -16,6 +14,7 @@ COLLECTION_TRADES = config["COLLECTION_TRADES"]
 COLLECTION_PLANS = config["COLLECTION_PLANS"]
 COLLECTION_TAKE_PROFITS = config["COLLECTION_TAKE_PROFITS"]
 COLLECTION_STOP_LOSSES = config["COLLECTION_STOP_LOSSES"]
+COLLECTION_WORKERS = config["COLLECTION_WORKERS"]
 FIELD_TRADE_ID = config["FIELD_TRADE_ID"]
 FIELD_ORDER_ID = config["FIELD_ORDER_ID"]
 FIELD_EXECUTED = config["FIELD_EXECUTED"]
@@ -125,11 +124,6 @@ async def get_user_keys(account_id, exchange):
     # Get user keys from firestore with account_id and exchange
     keys = db.collection(COLLECTION_TRADERS).document(account_id)
     exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-
-    if exchange_data['api_key'] == "x" or exchange_data['api_key'] == "":
-        await send_notification(account_id, "No API Keys found", "error", "notify")
-        return "No API Keys found"
-    
     exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
 
     # Decrypt the api_passphrase if encrypted
@@ -146,8 +140,8 @@ async def get_user_margin(account_id, plan_id):
     return margin
 
 # get user plans from firestore with account_id and exchange
-async def get_user_plan(account_id, plan_id):
-    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
+async def get_user_plan(account_id, plan_id, trader_id):
+    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id).collection(COLLECTION_WORKERS).document(trader_id)
     plan_object = (await plan.get()).to_dict()
     return plan_object
 

@@ -231,7 +231,7 @@ async def bulk_order(data: dict):
         margin = data['margin']
     else:
         margin = data['plan_id']
-
+    trader_id = data['trader_id']
     exchange = data['exchange']
     side = payload['side']
     symbol = payload['symbol']
@@ -250,7 +250,7 @@ async def bulk_order(data: dict):
             bybit.settings.change_position_mode(keys)
         )
 
-        trade_quantity = await bybit.trade.send_trade(account_id, trade_id, margin, side, symbol, leverage, entry, precision, keys)
+        trade_quantity = await bybit.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
 
         trade_info = await get_trade_info(account_id, trade_id)
 

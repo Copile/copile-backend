@@ -1,15 +1,14 @@
 from .binlib.um_futures import UMFutures
 from ..firestore_functions import get_user_plan
 
-async def get_user_margin(account_id, plan_id, keys):
+async def get_user_margin(account_id, plan_id, trader_id, keys):
     try:
-        plan_object = await get_user_plan(account_id, plan_id)
-        print(plan_object)
+        plan_object = await get_user_plan(account_id, plan_id, trader_id)
+
         if plan_object["option"] == "percent":
             client = UMFutures(key=keys['api_key'], secret=keys['api_secret'])
 
             account = await client.balance()
-            print(account)
             for item in account:
                 if item['asset'] == "USDT":
                     balance = item['availableBalance']

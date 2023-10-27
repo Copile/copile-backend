@@ -284,7 +284,7 @@ async def bulk_order(data: dict):
         margin = data['margin']
     else:
         margin = data['plan_id']
-
+    trader_id = data['trader_id']
     exchange = data['exchange']
     side = payload['side']
     symbol = payload['symbol']
@@ -302,7 +302,7 @@ async def bulk_order(data: dict):
             bingx.settings.change_margin_type(symbol, keys),
             bingx.settings.change_leverage(symbol, side, leverage, keys)
         )
-        order_dict = await bingx.trade.send_trade(account_id, trade_id, margin, side, symbol, leverage, entry, precision, keys)
+        order_dict = await bingx.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
 
         # parallelize sending stop losses
         sl_tasks = [create_task(account_id, trade_id, sl_data["sl_id"], {

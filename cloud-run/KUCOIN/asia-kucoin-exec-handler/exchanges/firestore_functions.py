@@ -3,7 +3,6 @@ from .decryption import decryptData
 import time
 import asyncio
 import json
-import os
 
 db = firestore.AsyncClient()
 
@@ -15,6 +14,7 @@ COLLECTION_TRADES = config["COLLECTION_TRADES"]
 COLLECTION_PLANS = config["COLLECTION_PLANS"]
 COLLECTION_TAKE_PROFITS = config["COLLECTION_TAKE_PROFITS"]
 COLLECTION_STOP_LOSSES = config["COLLECTION_STOP_LOSSES"]
+COLLECTION_WORKERS = config["COLLECTION_WORKERS"]
 FIELD_TRADE_ID = config["FIELD_TRADE_ID"]
 FIELD_ORDER_ID = config["FIELD_ORDER_ID"]
 FIELD_EXECUTED = config["FIELD_EXECUTED"]
@@ -129,6 +129,7 @@ async def get_user_keys(account_id, exchange):
     # Decrypt the api_passphrase if encrypted
     if 'api_passphrase' in exchange_data:
         exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
+
     return exchange_data
 
 
@@ -139,8 +140,8 @@ async def get_user_margin(account_id, plan_id):
     return margin
 
 # get user plans from firestore with account_id and exchange
-async def get_user_plan(account_id, plan_id):
-    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
+async def get_user_plan(account_id, plan_id, trader_id):
+    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id).collection(COLLECTION_WORKERS).document(trader_id)
     plan_object = (await plan.get()).to_dict()
     return plan_object
 

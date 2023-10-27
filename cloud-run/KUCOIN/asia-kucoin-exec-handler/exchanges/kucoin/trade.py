@@ -3,10 +3,10 @@ from ..firestore_functions import store_trade
 from .margin import get_user_margin
 from .settings import reformat_symbol, get_market
 
-async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price, multiplier, keys):
+async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, multiplier, keys):
     try:
         if type(margin) == str:
-            margin = await get_user_margin(account_id, margin, keys)
+            margin = await get_user_margin(account_id, margin, trader_id, keys)
 
         # Connecting to Kucoin API
         client_trade = Trade(key=keys['api_key'], secret=keys['api_secret'], passphrase=keys['api_passphrase'],

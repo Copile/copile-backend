@@ -5,10 +5,10 @@ from .margin import get_user_margin
 from .settings import get_market
 from .error_handler import handle_error
 
-async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price, precisions, keys):
+async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, precisions, keys):
     try:
         if type(margin) == str:
-            margin = await get_user_margin(account_id, margin, keys)
+            margin = await get_user_margin(account_id, margin, trader_id, keys)
 
         client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
 
