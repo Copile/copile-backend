@@ -11,8 +11,6 @@ app.enable("trust proxy");
 app.use(bodyParser.text({ type: "*/*" }));
 
 async function addTaskToQueue(type, trade_data, user_type) {
-  console.log("Trade data received by addTaskToQueue: ", trade_data);
-
   let parent;
   let url;
 
@@ -76,13 +74,9 @@ async function addTaskToQueue(type, trade_data, user_type) {
     },
   };
   const request = { parent, task };
-  try {
-    const [response] = await client.createTask(request);
-    const name = response.name;
-    console.log(`Created task ${name}`);
-  } catch (error) {
-    console.error(`Error creating task: ${error.message}`);
-  }
+  const [response] = await client.createTask(request);
+  const name = response.name;
+  console.log(`Created task ${name}`);
 }
 
 async function getExchangeForTrade(traderId, tradeId) {
@@ -203,27 +197,17 @@ app.post("/bulkTP", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          take_profits: take_profits,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("bulk_tp", trade_data, "user"));
       }
     });
 
@@ -248,28 +232,13 @@ app.post("/submitTP", async (req, res) => {
       tp_id: TP_ID,
       user_type: "users",
     };
-
     const plansRef = firestore.collectionGroup("trades");
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     tradeQuery.forEach(async (doc) => {
       const userId = doc.ref.parent.parent.id;
-      const planId = doc.ref.parent.id;
-      const workersRef = firestore
-        .collection("users")
-        .doc(userId)
-        .collection("plans")
-        .doc(planId)
-        .collection("workers");
-      const workersSnapshot = await workersRef.get();
-
-      workersSnapshot.forEach(async (workerDoc) => {
-        const worker = workerDoc.data();
-        if (worker.enabled) {
-          trade_data.account_id = userId;
-          await addTaskToQueue("send_tp", trade_data, "user");
-        }
-      });
+      trade_data.account_id = userId;
+      await addTaskToQueue("send_tp", trade_data, "user");
     });
 
     res.status(200).json({ success: true, message: "take-profit executed successfully" });
@@ -299,27 +268,18 @@ app.post("/replaceTP", async (req, res) => {
     const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          document_id: orderId,
+          payload: payload,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("replace_tp", trade_data, "user"));
       }
     });
 
@@ -355,28 +315,18 @@ app.post("/submitSL", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          payload: payload,
+          sl_id: sl_id,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("send_sl", trade_data, "user"));
       }
     });
 
@@ -409,31 +359,22 @@ app.post("/replaceSL", async (req, res) => {
       await addTaskToQueue("replace_sl", traderExecData, "trader");
     }
 
-    const plansRef = firestore.collectionGroup("trades");
-    const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
+    const tradesRef = firestore.collectionGroup("trades");
+    const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          document_id: orderId,
+          payload: payload,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("replace_sl", trade_data, "user"));
       }
     });
 
@@ -470,29 +411,21 @@ app.post("/cancelOrder", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          document_id: orderId,
+          trade_type: type,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("cancel_order", trade_data, "user"));
       }
     });
+
     await Promise.allSettled(tasks);
 
     res.status(200).json({ success: true, message: "cancel executed successfully" });
@@ -524,27 +457,16 @@ app.post("/cancelAllOrders", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
       }
     });
 
@@ -579,27 +501,16 @@ app.post("/cancelAllTPs", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("cancel_all_tps", trade_data, "user"));
       }
     });
 
@@ -612,7 +523,6 @@ app.post("/cancelAllTPs", async (req, res) => {
   }
 });
 
-// gl chief. - second1
 app.post("/bulkOrder", async (req, res) => {
   try {
     console.log("Received bulk order request");
@@ -628,6 +538,7 @@ app.post("/bulkOrder", async (req, res) => {
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
     const traderExecData = {
       trade_id: tradeId,
+      trader_id: traderId,
       account_id: traderId,
       margin: margin,
       exchange: trader_exchange,
@@ -721,309 +632,6 @@ app.post("/bulkOrder", async (req, res) => {
   }
 });
 
-/*
- * -----------------------------------------------------------------------------------------------
- * This is a large, multi-line comment divider. It is used to separate different sections of code.
- * -----------------------------------------------------------------------------------------------
- */
-
-// app.post("/bulkOrder", async (req, res) => {
-//   try {
-//     console.log("Received bulk order request");
-//     const trade = JSON.parse(req.body);
-//     console.log(`Processing trade data: ${JSON.stringify(trade)}`);
-
-//     if (!trade) {
-//       console.log("Invalid trade data received");
-//       return res.status(400).json({ success: false, message: "Invalid trade data" });
-//     }
-
-//     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
-//     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
-//     const traderExecData = {
-//       trade_id: tradeId,
-//       account_id: traderId,
-//       margin: margin,
-//       exchange: trader_exchange,
-//       payload: payload,
-//       user_type: "traders",
-//     };
-
-//     console.log(`Preparing to add task for trader: ${traderId}`);
-//     const traderTask =
-//       traderId === process.env.testID
-//         ? addTaskToQueue("bulk_order", traderExecData, "test")
-//         : addTaskToQueue("bulk_order", traderExecData, "trader");
-//     console.log(`Added task for trader: ${traderId}`);
-
-//     const plansRef = firestore.collectionGroup("plans");
-//     const tasksToAdd = [traderTask];
-
-//     console.log("Fetching all matching plans from Firestore");
-//     const allMatchingPlans = await Promise.all(
-//       plans.map(async (planId) => {
-//         const plansSnapshot = await plansRef.where("product_id", "==", planId).get();
-//         const matchingPlans = [];
-//         for (const doc of plansSnapshot.docs) {
-//           const workerRef = doc.ref.collection("workers").doc(traderId);
-//           const workerDoc = await workerRef.get();
-//           if (workerDoc.exists && workerDoc.data().enabled) {
-//             matchingPlans.push(doc);
-//           }
-//         }
-//         return matchingPlans;
-//       })
-//     );
-
-//     const userIds = new Set();
-
-//     console.log("Adding user IDs of all matching plans to a set");
-//     allMatchingPlans.forEach((matchingPlans) => {
-//       matchingPlans.forEach((doc) => {
-//         userIds.add(doc.ref.parent.parent.id);
-//       });
-//     });
-
-//     console.log("Preparing to process each user");
-//     const userTasks = Array.from(userIds).map(async (userId) => {
-//       try {
-//         console.log(`Processing user: ${userId}`);
-//         const planDocRef = firestore
-//           .collection("users")
-//           .doc(userId)
-//           .collection("plans")
-//           .doc(tradeId);
-//         const planDocSnapshot = await planDocRef.get();
-//         const planData = planDocSnapshot.data();
-//         const preferredExchange = planData.preferred_exchange;
-
-//         const workerRef = planDocRef.collection("workers").doc(traderId);
-//         const workerSnapshot = await workerRef.get();
-//         const worker = workerSnapshot.data();
-
-//         const userSnapshot = await firestore.collection("users").doc(userId).get();
-//         const user = userSnapshot.data();
-
-//         if (worker && worker.enabled) {
-//           console.log(`User ${userId} has enabled worker, adding task`);
-//           let currentTradeData = {
-//             trade_id: tradeId,
-//             account_id: userId,
-//             payload: payload,
-//             exchange: "",
-//             plan_id: planId,
-//             user_type: "users",
-//           };
-
-//           if (
-//             exchanges.includes(preferredExchange) &&
-//             user.exchanges[preferredExchange]?.api_key !== "x" &&
-//             user.exchanges[preferredExchange]?.api_secret !== "x"
-//           ) {
-//             console.log(`User ${userId} has valid preferred exchange, adding task`);
-//             currentTradeData.exchange = preferredExchange;
-//             return addTaskToQueue("bulk_order", currentTradeData, "user");
-//           } else {
-//             console.log(
-//               `User ${userId} does not have valid preferred exchange, checking other exchanges`
-//             );
-//             const validExchanges = Object.entries(user.exchanges).filter(
-//               ([exchangeName, exchangeData]) =>
-//                 exchanges.includes(exchangeName) &&
-//                 exchangeData.api_key !== "x" &&
-//                 exchangeData.api_secret !== "x"
-//             );
-
-//             if (validExchanges.length > 0) {
-//               console.log(`User ${userId} has valid exchanges, adding task`);
-//               const randomIndex = Math.floor(Math.random() * validExchanges.length);
-//               currentTradeData.exchange = validExchanges[randomIndex][0];
-//               return addTaskToQueue("bulk_order", currentTradeData, "user");
-//             }
-//           }
-//         }
-//       } catch (error) {
-//         console.log(`Error processing user ${userId}: ${error.message}`);
-//       }
-//     });
-
-//     console.log("Adding user tasks to tasks to add");
-//     tasksToAdd.push(...userTasks);
-
-//     console.log("Executing all tasks");
-//     await Promise.allSettled(tasksToAdd);
-//     console.log("All tasks executed successfully");
-//     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
-//   } catch (error) {
-//     console.log(`Error executing bulk order: ${error.message}`);
-//     console.log("Whole error:", error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// });
-
-/*
- * -----------------------------------------------------------------------------------------------
- * This is a large, multi-line comment divider. It is used to separate different sections of code.
- * -----------------------------------------------------------------------------------------------
- */
-
-// // Endpoint for bulk order processing
-// app.post("/bulkOrder", async (req, res) => {
-//   try {
-//     const trade = JSON.parse(req.body);
-//     console.log(`Received trade data: ${JSON.stringify(trade)}`);
-
-//     if (!trade) {
-//       return res.status(400).json({ success: false, message: "Invalid trade data" });
-//     }
-
-//     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
-//     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
-
-// // Prepare the trader execution data
-// const traderExecData = {
-//   trade_id: tradeId,
-//   account_id: traderId,
-//   margin: margin,
-//   exchange: trader_exchange,
-//   payload: payload,
-//   user_type: "traders",
-// };
-
-// // Add the trader task to the queue
-// const traderTask =
-//   traderId === process.env.testID
-//     ? addTaskToQueue("bulk_order", traderExecData, "test")
-//     : addTaskToQueue("bulk_order", traderExecData, "trader");
-// console.log(`Added task for trader: ${traderId}`);
-
-//     // Reference to the Firestore collection group "plans"
-//     // This is a query that will fetch all documents in the "plans" collection group
-//     const plansRef = firestore.collectionGroup("plans");
-//     const tasksToAdd = [traderTask];
-
-//     // Fetch all matching plans from Firestore
-//     // This is done by mapping over the plans array and for each planId,
-//     // we perform a query where we fetch all documents in the "plans" collection group where the "product_id" field equals the planId
-//     console.log("Fetching all matching plans from Firestore");
-//     const allMatchingPlans = await Promise.all(
-//       plans.map((planId) => plansRef.where("product_id", "==", planId).get())
-//     );
-//     const userIds = new Set();
-
-//     // Add the user IDs of all matching plans to a set
-//     // This is done by iterating over all matching plans and for each plan,
-//     // we add the ID of the parent document (which is the user ID) to the set
-//     console.log("Adding user IDs of all matching plans to a set");
-//     allMatchingPlans.forEach((matchingPlans) => {
-//       matchingPlans.forEach((doc) => {
-//         userIds.add(doc.ref.parent.parent.id);
-//       });
-//     });
-//     console.log(`Found matching plans for users: ${Array.from(userIds)}`);
-
-//     // Process each user
-//     const userTasks = Array.from(userIds).map(async (userId) => {
-//       try {
-//         console.log(`Processing user: ${userId}`);
-//         const userSnapshot = await firestore.collection("users").doc(userId).get();
-//         const user = userSnapshot.data();
-//         const planId = plans[0]; // Modify this to get the correct planId if multiple plans are possible
-
-//         // Fetch the worker document from Firestore
-//         // This is done by accessing the "users" collection, fetching the document with the ID equal to the userId,
-//         // then accessing the "plans" subcollection, fetching the document with the ID equal to the planId,
-//         // then accessing the "workers" subcollection, and finally fetching the document with the ID equal to the traderId
-//         const workerRef = firestore
-//           .collection("users")
-//           .doc(userId)
-//           .collection("plans")
-//           .doc(planId)
-//           .collection("workers")
-//           .doc(traderId);
-//         const workerSnapshot = await workerRef.get();
-
-//         // Check if the worker document exists and if the worker is enabled
-//         // This is done by checking if the workerSnapshot exists and if the "enabled" field in the workerSnapshot data is true
-//         if (!workerSnapshot.exists || !workerSnapshot.data().enabled) {
-//           console.log(
-//             `Worker document not found or not enabled for user ${userId}, plan ${planId}, worker ${traderId}`
-//           );
-//           return; // Skip this user and move on to the next one
-//         }
-
-//         // Fetch the preferred exchange document from Firestore
-//         // This is done by accessing the "users" collection, fetching the document with the ID equal to the userId,
-//         // then accessing the "plans" subcollection, and finally fetching the document with the ID equal to the planId
-//         const preferredExchangeDoc = firestore
-//           .collection("users")
-//           .doc(userId)
-//           .collection("plans")
-//           .doc(planId);
-//         const ExchangeDoc = await preferredExchangeDoc.get();
-//         const preferredExchange = ExchangeDoc.get("preferred_exchange");
-
-//         // Prepare the trade data for the current user
-//         let currentTradeData = {
-//           trade_id: tradeId,
-//           account_id: userId,
-//           payload: payload,
-//           exchange: "",
-//           plan_id: planId,
-//           user_type: "users",
-//         };
-
-//         // If the user's preferred exchange is valid, add a task for the user with the preferred exchange
-//         // This is done by checking if the exchanges array includes the preferredExchange and if the API key and secret for the preferredExchange are not "x"
-//         if (
-//           exchanges.includes(preferredExchange) &&
-//           user.exchanges[preferredExchange]?.api_key !== "x" &&
-//           user.exchanges[preferredExchange]?.api_secret !== "x"
-//         ) {
-//           currentTradeData.exchange = preferredExchange;
-//           console.log(
-//             `Adding task for user: ${userId} with preferred exchange: ${preferredExchange}`
-//           );
-//           return addTaskToQueue("bulk_order", currentTradeData, "user");
-//         } else {
-//           // If the user's preferred exchange is not valid, find a valid exchange
-//           // This is done by filtering the entries of the user's exchanges object to only include entries where the exchange name is included in the exchanges array and the API key and secret are not "x"
-//           const validExchanges = Object.entries(user.exchanges).filter(
-//             ([exchangeName, exchangeData]) =>
-//               exchanges.includes(exchangeName) &&
-//               exchangeData.api_key !== "x" &&
-//               exchangeData.api_secret !== "x"
-//           );
-
-//           // If there are valid exchanges, add a task for the user with a random valid exchange
-//           // This is done by generating a random index and using it to fetch a random exchange from the validExchanges array
-//           if (validExchanges.length > 0) {
-//             const randomIndex = Math.floor(Math.random() * validExchanges.length);
-//             currentTradeData.exchange = validExchanges[randomIndex][0];
-//             console.log(
-//               `Adding task for user: ${userId} with random valid exchange: ${currentTradeData.exchange}`
-//             );
-//             return addTaskToQueue("bulk_order", currentTradeData, "user");
-//           }
-//         }
-//       } catch (error) {
-//         console.log(`Error processing user ${userId}: ${error.message}`);
-//       }
-//     });
-
-//     // Add all user tasks to the tasks to add
-//     tasksToAdd.push(...userTasks);
-
-//     // Wait for all tasks to settle
-//     await Promise.allSettled(tasksToAdd);
-//     console.log(`All tasks settled for trade: ${tradeId}`);
-//     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
-//   } catch (error) {
-//     console.log(`Error processing bulk order: ${error}`);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// });
-
 app.post("/partialClose", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
@@ -1047,27 +655,17 @@ app.post("/partialClose", async (req, res) => {
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
 
     const tasks = [];
-    tradeQuery.forEach(async (doc) => {
+    tradeQuery.forEach((doc) => {
       const userId = doc.ref.parent.parent.id;
       if (userId !== traderId) {
-        const workerRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("plans")
-          .doc(tradeId)
-          .collection("workers")
-          .doc(traderId);
-        const workerSnapshot = await workerRef.get();
-        const worker = workerSnapshot.data();
-        if (worker.enabled) {
-          const trade_data = {
-            trade_id: tradeId,
-            account_id: userId,
-            exchange: doc.get("exchange"),
-            user_type: "users",
-          };
-          tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
-        }
+        const trade_data = {
+          trade_id: tradeId,
+          account_id: userId,
+          percentage: percentage,
+          exchange: doc.get("exchange"),
+          user_type: "users",
+        };
+        tasks.push(addTaskToQueue("partial_close", trade_data, "user"));
       }
     });
 
