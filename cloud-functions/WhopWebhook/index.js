@@ -92,17 +92,9 @@ app.post("/createLicense", async (req, res) => {
     const userRef = db.collection("users").doc(user);
     const userSnapshot = await userRef.get();
 
-    if (userSnapshot.exists) {
-      // User exists, update the user's data
-      const updatedUserData = {
-        account: user,
-        group_id: group.id, // Associate the user with the group
-      };
-      await userRef.update(updatedUserData);
-    } else {
+    if (!userSnapshot.exists) {
       // User does not exist, create a new user document
       userdata.account = user;
-      userdata.group_id = group.id; // Associate the user with the group
       await userRef.set(userdata);
       await createUserKey(user);
     }
