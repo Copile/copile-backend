@@ -27,8 +27,12 @@ const userdata = {
       api_secret: "x",
     },
   },
-  telegram: "x",
-  discord: "x",
+  telegram: {
+    id: "x",
+  },
+  discord: {
+    id: "x",
+  },
 };
 
 // default plan data object
@@ -109,6 +113,7 @@ app.post("/createLicense", async (req, res) => {
       worker.percentage = "x"; // Initialize as "x"
       worker.option = "x"; // Initialize as "x"
       worker.preferred_exchange = "x"; // Initialize as "x"
+      worker.product_id = product_id;
 
       // Create a new plan document in the plans subcollection
       const planRef = await userRef.collection("plans").doc(product_id);
