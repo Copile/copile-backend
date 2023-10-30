@@ -59,65 +59,65 @@ async function deleteDocumentAndSubcollections(documentRef) {
 
 app.post("/createLicense", async (req, res) => {
   try {
+    // Extract user data from the request body
     let userbody = req.body;
 
+    // Validate the action in the request body
     if (userbody["action"] !== "membership.went_valid") {
       return res.status(400).send(JSON.stringify({ error: "Invalid action" }));
     }
 
+    // Extract data from the request body
     const user = userbody["data"]["user"]["id"];
     const account_id = userbody["data"]["id"];
     const product_id = userbody["data"]["product"]["id"];
     const product_name = userbody["data"]["product"]["name"];
     const license = userbody["data"]["license_key"];
 
-    // Fetch the group from Firestore
-    const groupsRef = db.collection("groups");
-    const groupSnapshot = await groupsRef.doc(product_id).get();
-    const group = groupSnapshot.docs[0].data();
+    // Fetch the product document from the Firestore products collection
+    const productsRef = db.collection("products");
 
-    if (groupSnapshot.empty) {
-      console.log("No group found for product_id:", product_id);
-      return res.status(404).send(JSON.stringify({ error: "Group not found" }));
-    }
+    // Find the product document with the matching product_id from the request body
+    const productSnapshot = await productsRef.doc(product_id).get();
 
-    const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
-    const productSnapshot = await productRef.get();
-
+    // Validate the product document
     if (!productSnapshot.exists) {
       console.log("No product found for product_id:", product_id);
       return res.status(404).send(JSON.stringify({ error: "Product not found" }));
     }
 
+    // Fetch the user document from the Firestore users collection
     const userRef = db.collection("users").doc(user);
     const userSnapshot = await userRef.get();
 
+    // If the user document does not exist, create a new user document
     if (!userSnapshot.exists) {
-      // User does not exist, create a new user document
       userdata.account = user;
       await userRef.set(userdata);
       await createUserKey(user);
     }
 
     // For each worker in the product, create a new document in the plans subcollection
-    const workersRef = productRef.collection("workers");
+    const workersRef = productSnapshot.ref.collection("workers");
     const workersSnapshot = await workersRef.get();
 
     for (const doc of workersSnapshot.docs) {
       const worker = doc.data();
+      // Initialize worker data
       worker.enabled = false; // Initialize as disabled
       worker.margin = "x"; // Initialize as "x"
       worker.percentage = "x"; // Initialize as "x"
       worker.option = "x"; // Initialize as "x"
       worker.preferred_exchange = "x"; // Initialize as "x"
-      worker.product_id = product_id;
 
+      // Create a new plan document in the plans subcollection
       const planRef = await userRef.collection("plans").doc(product_id);
       plandata.product_id = product_id;
       plandata.product_name = product_name;
       plandata.license = license;
       plandata.account_id = account_id;
       await planRef.set(plandata);
+      // Create a new worker document in the workers subcollection
       await planRef.collection("workers").doc(worker.id).set(worker);
     }
 
@@ -129,7 +129,6 @@ app.post("/createLicense", async (req, res) => {
   }
 });
 
-// // Route to create license
 // app.post("/createLicense", async (req, res) => {
 //   try {
 //     let userbody = req.body;
@@ -144,25 +143,29 @@ app.post("/createLicense", async (req, res) => {
 //     const product_name = userbody["data"]["product"]["name"];
 //     const license = userbody["data"]["license_key"];
 
-//     // Fetch the group and product from Firestore
+//     // Fetch the group from Firestore
 //     const groupsRef = db.collection("groups");
-//     const groupSnapshot = await groupsRef.where("product_id", "==", product_id).get();
-//     const group = groupSnapshot.docs[0].data();
+//     const groupSnapshot = await groupsRef.where("products", "array-contains", product_id).get();
+
+//     if (groupSnapshot.empty) {
+//       console.log("No group found for product_id:", product_id);
+//       return res.status(404).send(JSON.stringify({ error: "Group not found" }));
+//     }
+
 //     const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
-//     const product = (await productRef.get()).data();
+//     const productSnapshot = await productRef.get();
+
+//     if (!productSnapshot.exists) {
+//       console.log("No product found for product_id:", product_id);
+//       return res.status(404).send(JSON.stringify({ error: "Product not found" }));
+//     }
 
 //     const userRef = db.collection("users").doc(user);
 //     const userSnapshot = await userRef.get();
 
-//     if (userSnapshot.exists) {
-//       // User exists, update the user's data
-//       userdata.account = user;
-//       userdata.group_id = group.id; // Associate the user with the group
-//       await userRef.update(userdata);
-//     } else {
+//     if (!userSnapshot.exists) {
 //       // User does not exist, create a new user document
 //       userdata.account = user;
-//       userdata.group_id = group.id; // Associate the user with the group
 //       await userRef.set(userdata);
 //       await createUserKey(user);
 //     }
@@ -170,14 +173,24 @@ app.post("/createLicense", async (req, res) => {
 //     // For each worker in the product, create a new document in the plans subcollection
 //     const workersRef = productRef.collection("workers");
 //     const workersSnapshot = await workersRef.get();
-//     workersSnapshot.forEach(async (doc) => {
-//       plandata.product = product_id;
+
+//     for (const doc of workersSnapshot.docs) {
+//       const worker = doc.data();
+//       worker.enabled = false; // Initialize as disabled
+//       worker.margin = "x"; // Initialize as "x"
+//       worker.percentage = "x"; // Initialize as "x"
+//       worker.option = "x"; // Initialize as "x"
+//       worker.preferred_exchange = "x"; // Initialize as "x"
+//       worker.product_id = product_id;
+
+//       const planRef = await userRef.collection("plans").doc(product_id);
+//       plandata.product_id = product_id;
 //       plandata.product_name = product_name;
 //       plandata.license = license;
 //       plandata.account_id = account_id;
-//       plandata.enabled = false; // Initialize as disabled
-//       await userRef.collection("plans").doc(doc.id).set(plandata);
-//     });
+//       await planRef.set(plandata);
+//       await planRef.collection("workers").doc(worker.id).set(worker);
+//     }
 
 //     console.log("Created user with the id: " + user);
 //     return res.send(JSON.stringify({ status: 200 }));
