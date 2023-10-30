@@ -525,7 +525,7 @@ app.post("/cancelAllTPs", async (req, res) => {
 
 app.post("/bulkOrder", async (req, res) => {
   try {
-    console.log("Received bulk order request");
+    console.log("============ Received bulk order request ============");
     const trade = JSON.parse(req.body);
     console.log(`Processing trade data: ${JSON.stringify(trade)}`);
 
@@ -625,7 +625,7 @@ app.post("/bulkOrder", async (req, res) => {
     console.log(`Added ${userTasks.length} tasks for users`);
 
     await Promise.allSettled(tasksToAdd);
-    console.log("All tasks settled");
+    console.log("============ All tasks settled ============");
     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
   } catch (error) {
     console.log(`Error executing bulk order: ${error}`);
