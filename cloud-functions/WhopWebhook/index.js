@@ -73,14 +73,14 @@ app.post("/createLicense", async (req, res) => {
 
     // Fetch the group from Firestore
     const groupsRef = db.collection("groups");
-    const groupSnapshot = await groupsRef.where("products", "array-contains", product_id).get();
+    const groupSnapshot = await groupsRef.doc(product_id).get();
+    const group = groupSnapshot.docs[0].data();
 
     if (groupSnapshot.empty) {
       console.log("No group found for product_id:", product_id);
       return res.status(404).send(JSON.stringify({ error: "Group not found" }));
     }
 
-    const group = groupSnapshot.docs[0].data();
     const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
     const productSnapshot = await productRef.get();
 
@@ -88,8 +88,6 @@ app.post("/createLicense", async (req, res) => {
       console.log("No product found for product_id:", product_id);
       return res.status(404).send(JSON.stringify({ error: "Product not found" }));
     }
-
-    const product = productSnapshot.data();
 
     const userRef = db.collection("users").doc(user);
     const userSnapshot = await userRef.get();
@@ -113,7 +111,6 @@ app.post("/createLicense", async (req, res) => {
     const workersRef = productRef.collection("workers");
     const workersSnapshot = await workersRef.get();
 
-    // workersSnapshot.forEach(async (doc) => {
     for (const doc of workersSnapshot.docs) {
       const worker = doc.data();
       worker.enabled = false; // Initialize as disabled
@@ -131,7 +128,6 @@ app.post("/createLicense", async (req, res) => {
       await planRef.set(plandata);
       await planRef.collection("workers").doc(worker.id).set(worker);
     }
-    // });
 
     console.log("Created user with the id: " + user);
     return res.send(JSON.stringify({ status: 200 }));
