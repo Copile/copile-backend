@@ -238,6 +238,73 @@ app.post("/deleteLicense", async (req, res) => {
   }
 });
 
+app.post("/updateLicense", async (req, res) => {
+  const { userId, productId } = req.body;
+
+  try {
+    // Get the product document reference
+    const productDocRef = db.collection("products").doc(productId);
+
+    // Fetch the product document
+    const productDoc = await productDocRef.get();
+
+    if (!productDoc.exists) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Get the workers in the product
+    const productWorkersRef = productDocRef.collection("workers");
+    const productWorkersSnapshot = await productWorkersRef.get();
+    const productWorkers = productWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // Get the user's plan document reference
+    const planDocRef = db.collection(`users/${userId}/plans`).doc(productId);
+
+    // Fetch the user's plan document
+    const planDoc = await planDocRef.get();
+
+    if (!planDoc.exists) {
+      return res.status(404).json({ error: "Plan not found" });
+    }
+
+    // Get the workers in the user's plan
+    const planWorkersRef = planDocRef.collection("workers");
+    const planWorkersSnapshot = await planWorkersRef.get();
+    const planWorkers = planWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // For each worker in the product
+    for (const worker of productWorkers) {
+      // If the worker is not in the user's plan, add it
+      if (!planWorkers.some((planWorker) => planWorker.id === worker.id)) {
+        const newWorker = {
+          enabled: false,
+          id: worker.id,
+          margin: "x",
+          name: worker.name,
+          option: "x",
+          percentage: 0,
+          preferred_exchange: "x",
+          product_id: productId,
+        };
+        await planWorkersRef.doc(worker.id).set(newWorker);
+      }
+    }
+
+    // For each worker in the user's plan
+    for (const worker of planWorkers) {
+      // If the worker is not in the product, remove it
+      if (!productWorkers.some((productWorker) => productWorker.id === worker.id)) {
+        await planWorkersRef.doc(worker.id).delete();
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Something went wrong" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Hello World");
 });

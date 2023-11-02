@@ -3,10 +3,8 @@ const { WebsocketClient } = require("bybit-api");
 const tradeExecution = require("./utils/tradeExecution.js");
 const getAction = require("./utils/getAction.js");
 
-const API_KEY = "OiXmThgwzVDOmLsMKm";
-const API_SECRET = "j7t4zYkE9wUGWqMxs9QWYK1engneWR4YR1iN";
-// const API_KEY = process.env.API_KEY;
-// const API_SECRET = process.env.API_SECRET;
+const API_KEY = process.env.API_KEY;
+const API_SECRET = process.env.API_SECRET;
 
 const wsConfig = {
   key: API_KEY,
