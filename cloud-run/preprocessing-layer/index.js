@@ -523,19 +523,25 @@ app.post("/cancelAllTPs", async (req, res) => {
   }
 });
 
+// Endpoint for handling bulk order requests
 app.post("/bulkOrder", async (req, res) => {
   try {
     console.log("============ Received bulk order request ============");
+    // Parse the request body to get the trade data
     const trade = JSON.parse(req.body);
     console.log(`Processing trade data: ${JSON.stringify(trade)}`);
 
+    // If the trade data is not valid, return an error response
     if (!trade) {
       console.log("Invalid trade data received");
       return res.status(400).json({ success: false, message: "Invalid trade data" });
     }
 
+    // Extract the necessary fields from the trade data
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
+
+    // Prepare the execution data for the trader
     const traderExecData = {
       trade_id: tradeId,
       trader_id: traderId,
@@ -547,61 +553,104 @@ app.post("/bulkOrder", async (req, res) => {
     };
 
     console.log(`Preparing to add task for trader: ${traderId}`);
+    // Add the trader task to the queue, with a different queue depending on whether the trader ID is the test ID
     const traderTask =
       traderId === process.env.testID
         ? addTaskToQueue("bulk_order", traderExecData, "test")
         : addTaskToQueue("bulk_order", traderExecData, "trader");
     console.log(`Added task for trader: ${traderId}`);
 
+    // If no exchanges or plans are selected, skip user tasks
+    // This is because without a selected exchange or plan, we cannot determine where to execute the trade
+    if (!exchanges.length || !plans.length) {
+      console.log("No exchanges or plans selected. Skipping user tasks.");
+      // Wait for the trader task to complete
+      await traderTask;
+      // Log the completion of all tasks
+      console.log("============ All tasks settled ============");
+      // Return a success response
+      return res.status(200).json({ success: true, message: "Bulk order executed successfully" });
+    }
+
+    // Get a reference to the Firestore collection group for workers
     const workersRef = firestore.collectionGroup("workers");
+    // Initialize an array to hold the tasks to add to the queue
     const tasksToAdd = [traderTask];
 
     console.log("Fetching all matching workers from Firestore");
+    // Fetch all workers that match the trader ID and are enabled
     const allMatchingWorkers = await workersRef
       .where("id", "==", traderId)
       .where("enabled", "==", true)
       .get();
+    // Initialize a set to hold the user IDs of the matching workers
     const userIds = new Set();
 
+    // For each matching worker, add the user ID to the set of user IDs
     allMatchingWorkers.forEach((doc) => {
       userIds.add(doc.ref.parent.parent.parent.parent.id);
     });
 
     console.log("Preparing to process each user with matching workers");
+    // For each user ID, create a task to process the user
     const userTasks = Array.from(userIds).map(async (userId) => {
       try {
         console.log(`Processing user ${userId}`);
+        // Find the worker document for the user
         const workerDoc = allMatchingWorkers.docs.find(
           (doc) => doc.ref.parent.parent.parent.parent.id === userId
         );
+        // Get the worker data from the worker document
         const workerData = workerDoc.data();
+        // Get the preferred exchange from the worker data
         const preferredExchange = workerData.preferred_exchange;
 
+        // If no exchanges are selected, no tasks are added to the queue.
+        // If only exchanges are selected, tasks are added for users with enabled worker and with valid exchanges.
+        // If only plans are selected, no tasks are added as no valid exchange can be found.
+        // If both plans and exchanges are selected, tasks are added for users in the selected plans with valid exchanges.
+
+        // Initialize the trade data for the user
         let currentTradeData = {
           trade_id: tradeId,
           trader_id: traderId,
           account_id: userId,
           payload: payload,
           exchange: "",
-          plan_id: plans[0],
+          plan_id: plans[0], // FIXME: this is obsolete because of the new structure, we dont need to use the plan to find the preferred exchange anymore. Not sure about margin stuff tho.
+          // old code:
+          // const planId = plans[0];
+          // const preferredExchangeDoc = firestore.collection("users").doc(userId).collection("plans").doc(planId);
           user_type: "users",
         };
 
+        // Fetch the user document from Firestore
         const userSnapshot = await firestore.collection("users").doc(userId).get();
+        // Get the user data from the user document
         const user = userSnapshot.data();
 
+        // If the preferred exchange is in the list of selected exchanges and the user has valid API keys for the preferred exchange
         if (
           exchanges.includes(preferredExchange) &&
           user.exchanges[preferredExchange]?.api_key !== "x" &&
           user.exchanges[preferredExchange]?.api_secret !== "x"
         ) {
           console.log(`User ${userId} has valid exchange: ${preferredExchange}`);
+          // Set the exchange in the trade data to the preferred exchange
           currentTradeData.exchange = preferredExchange;
+
+          console.log(`Adding task to queue for user ${userId}`);
+          // Add a task to the queue to execute the trade for the user
           return addTaskToQueue("bulk_order", currentTradeData, "user");
         } else {
+          // If the preferred exchange is not in the list of selected exchanges or the user does not have valid API keys for the preferred exchange
           console.log(
             `User ${userId} does not have a valid exchange, selecting one with active api keys randomly`
           );
+
+          // For every exchange in the user's database, we find the ones that are included in the exchanges array
+          // and have both an api_key and api_secret that are not equal to "x"
+          // This is to ensure that the selected exchange is valid for the user
           const validExchanges = Object.entries(user.exchanges).filter(
             ([exchangeName, exchangeData]) =>
               exchanges.includes(exchangeName) &&
@@ -609,10 +658,18 @@ app.post("/bulkOrder", async (req, res) => {
               exchangeData.api_secret !== "x"
           );
 
+          console.log(`Valid exchanges for user ${userId}: ${JSON.stringify(validExchanges)}`);
+
+          // If there are any valid exchanges
           if (validExchanges.length > 0) {
+            // Select one randomly
             const randomIndex = Math.floor(Math.random() * validExchanges.length);
+            // Set the exchange in the trade data to the randomly selected exchange
             currentTradeData.exchange = validExchanges[randomIndex][0];
-            console.log(`Selected exchange ${currentTradeData.exchange} for user ${userId}`);
+            console.log(
+              `Selected exchange ${currentTradeData.exchange} and adding task to queue for user ${userId}`
+            );
+            // Add a task to the queue to execute the trade for the user
             return addTaskToQueue("bulk_order", currentTradeData, "user");
           }
         }
@@ -621,13 +678,19 @@ app.post("/bulkOrder", async (req, res) => {
       }
     });
 
+    // Add the user tasks to the array of tasks to add to the queue
     tasksToAdd.push(...userTasks);
+
     console.log(`Added ${userTasks.length} tasks for users`);
 
+    // Wait for all tasks to settle
     await Promise.allSettled(tasksToAdd);
+
     console.log("============ All tasks settled ============");
+    // Return a success response
     res.status(200).json({ success: true, message: "Bulk order executed successfully" });
   } catch (error) {
+    // If an error occurs while executing the bulk order, log the error and return an error response
     console.log(`Error executing bulk order: ${error}`);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
