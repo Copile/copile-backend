@@ -282,7 +282,7 @@ app.post("/updateLicense", async (req, res) => {
           margin: "x",
           name: worker.name,
           option: "x",
-          percentage: 0,
+          percentage: "x",
           preferred_exchange: "x",
           product_id: productId,
         };
