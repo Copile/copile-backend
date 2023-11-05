@@ -1,0 +1,21 @@
+{
+    "name": "bybit-monitor",
+    "version": "1.0.0",
+    "description": "GCP Compute Engine",
+    "main": "connection.js",
+    "scripts": {
+        "start": "node connection.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@google-cloud/tasks": "4.0.1",
+        "axios": "^1.5.1",
+        "bybit-api": "^3.7.3",
+        "discord.js": "^14.13.0",
+        "dotenv": "16.3.1",
+        "firebase-admin": "11.11.0",
+        "uuid": "^9.0.1"
+    }
+}
