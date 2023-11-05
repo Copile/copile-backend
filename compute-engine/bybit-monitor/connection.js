@@ -1,10 +1,10 @@
-require("dotenv").config();
+// require("dotenv").config();
 const { WebsocketClient } = require("bybit-api");
-const tradeExecution = require("./utils/tradeExecution.js");
+// const tradeExecution = require("./utils/tradeExecution.js");
 const getAction = require("./utils/getAction.js");
 
-const API_KEY = "OiXmThgwzVDOmLsMKm";
-const API_SECRET = "j7t4zYkE9wUGWqMxs9QWYK1engneWR4YR1iN";
+const API_KEY = "BJ36pEzj58sEEOZpdE";
+const API_SECRET = "DSuhLIhqmWoJ8RNj6DilmEAlB3sbAvTac6Pd";
 // const API_KEY = process.env.API_KEY;
 // const API_SECRET = process.env.API_SECRET;
 
@@ -27,6 +27,7 @@ ws.subscribeV5("order", "linear").catch((err) => {
 ws.on("update", async (orders) => {
   try {
     orders = orders.data;
+    console.log("raw orders", orders);
     // Sort the orders based on the 'getAction'
     orders.sort((a, b) => {
       const actionA = getAction(a);
@@ -66,7 +67,9 @@ ws.on("update", async (orders) => {
         : orders[i].price;
       updated_orders.push(order);
     }
-    await tradeExecution(updated_orders);
+    // await tradeExecution(updated_orders);
+
+    console.log("updated orders", updated_orders);
   } catch (error) {
     console.error("Error processing WebSocket message:", error);
   }
