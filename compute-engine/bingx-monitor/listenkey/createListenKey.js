@@ -15,7 +15,7 @@ const API = {
 async function createListenKey() {
     const timestamp = new Date().getTime()
     const sign = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA256(getParameters(API, timestamp), API_SECRET))
-    const url = API.protocol+"://"+HOST+"?"+getParameters(API, timestamp, true)+"&signature="+sign
+    const url = API.protocol+"://"+HOST+API.uri+"?"+getParameters(API, timestamp, true)+"&signature="+sign
     const config = {
         method: API.method,
         url: url,
@@ -27,7 +27,7 @@ async function createListenKey() {
         }
     };
     const resp = await axios(config);
-    listenKey = JSON.parse(resp.data)["listenKey"]
+    listenKey = JSON.parse(resp.data)["listenKey"];
     return listenKey
 }
 
