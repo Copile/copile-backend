@@ -1,8 +1,18 @@
-from .pybit.unified_trading import HTTP
-from ..firestore_functions import store_trade
-from .margin import get_user_margin
-from .settings import get_market
+import os
+import sys
+sys.path.append("cloud-run/TESTNET/asia-testnet-exec-handler/exchanges")
+sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\firestore_functions.py")
+sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\settings.py")
+sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\margin.py")
+sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\pybit\\unified_trading.py")
+from error_handler import handle_error
+from pybit.unified_trading import HTTP
+from firestore_functions import store_trade
+from margin import get_user_margin
+from settings import get_market
 import asyncio
+
+
 
 async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys):
     try:
@@ -53,4 +63,5 @@ async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price
         except Exception as error:
             print(format(error))
     except Exception as error:
+        handle_error(error)
         print(error)

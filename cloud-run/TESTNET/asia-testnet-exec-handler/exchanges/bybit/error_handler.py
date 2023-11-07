@@ -1,7 +1,10 @@
 from errorhandling import ApiError
 import asyncio
 
+# error handler for BYBIT
+
 ApiError.load_error_messages()
+RETRY_TIMES = 1
 # print("-----------------")
 # print(ApiError(10003))
 # print(ApiError.get_error_message(0))
@@ -14,11 +17,11 @@ async def handle_error_0():
     return ApiError.get_error_message(0)
 
 # TODO - Add retry_trade function
-async def handle_error_10000():
+async def handle_error_10000(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys):
     # Server Timeout
-    for i in range(5):
+    for i in range(RETRY_TIMES):
         try:
-            # your trade code here
+            send_trade(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys)
             break
         except ApiError as e:
             if e.error_code == 10000 and i < 4:
@@ -32,11 +35,13 @@ async def handle_error_10000():
     
 async def handle_error_10001():
     # Request parameter error
-    pass
+    print("Request parameter error")
+    return ApiError.get_error_message(10001)
 
 async def handle_error_10002():
     # The request time exceeds the time window range.
-    pass
+    print("The request time exceeds the time window range.")
+    return ApiError.get_error_message(10002)
 
 async def handle_error_10003():
     # API key is invalid.
@@ -86,7 +91,7 @@ async def handle_error_10014():
 async def handle_error_10016():
     # Server error.
     print("Server error.")
-    for i in range(5):
+    for i in range(RETRY_TIMES):
            try:
                # your trade code here
                break
@@ -186,7 +191,9 @@ async def handle_error_3400139():
     print("The total value of your positions and orders has exceeded the risk limit for a Perpetual or Futures contract")
     return ApiError.get_error_message(3400139)
 
+# Handles the incoming error code and calls the appropriate function
 async def handle_error(error_code):
+    print("ching chong" + error_code)
     error_map = {
         int(error_code): globals()[f"handle_error_{error_code}"]
         for error_code in ApiError.error_messages.keys()
@@ -194,17 +201,22 @@ async def handle_error(error_code):
     }
 
     if error_code in error_map:
-        return await error_map[error_code]()
+        if error_code == 10000:
+            handle_error_10000(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys)
+        else: 
+            return await error_map[error_code]()
     else:
         print(f"Unknown error code: {error_code}")
         return None
-    
+
+############################################################## TESTING ##############################################################
 async def main():
-    ApiError.load_error_messages()
     # Call the handle_error function with a specific error code
     result = await handle_error(10005)
     print(f"Result: {result}")
+    ApiError.append_to_trade_data(result)
+    print(ApiError.append_to_trade_data(result))
 
 # Run the event loop
-if __name__ == "__main__":
-    asyncio.run(main())
+#if __name__ == "__main__":
+ #   asyncio.run(main())

@@ -12,3 +12,5 @@ from .order import get_order_quantity, get_order_status, get_tps_status
 from .margin import get_user_margin
 from .pybit.unified_trading import HTTP
 from .settings import change_leverage, change_margin_type, change_position_mode, change_partial_mode, get_market
+from ..firestore_functions import store_trade
+from .test_trade import main
