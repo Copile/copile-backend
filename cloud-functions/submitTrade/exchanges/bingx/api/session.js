@@ -1,5 +1,6 @@
 const ExchangeSession = require("../exchangeSession");
 const { getBingXOrders, getBingXOrderStatuses } = require("../scripts/orders");
+const { tradeOrder } = require('../api/perpetual.js');
 const { getBingXPositions } = require("../scripts/positions");
 const { getBingXBalance } = require("../scripts/balance");
 const CustomError = require("../../../utils/error");
@@ -95,6 +96,31 @@ class BingXSession extends ExchangeSession {
       });
     }
   }
+    /**
+   * Fetches the statuses of orders.
+   * @param {string} symbol
+   * @param {string} type - order type
+   * @param {string} positionSide - either LONG or SHORT
+   * @param {string} price - order price
+   * @param {string} stopPrice - needed for take-profits and stop-losses
+   * @param {string} quantity - order quantity
+   * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
+   */
+  async tradeOrder(symbol, type, side, positionSide, price, StopPrice, quantity) {
+      try {
+        return await tradeOrder(this.apiKey, this.apiSecret, symbol, type, side, positionSide, price, StopPrice, quantity);
+      } catch (e) {
+        if (e instanceof CustomError) {
+          throw e;
+        }
+        throw new CustomError({
+          message: `Failed to send BingX trade: ${e.message}`,
+          status: 500,
+          source: "tradeOrder",
+        });
+    }
+  }
+
 }
 
 module.exports = BingXSession;
