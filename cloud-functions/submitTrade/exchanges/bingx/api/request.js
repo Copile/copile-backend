@@ -7,33 +7,7 @@ const apiConfig = {
   protocol: "https",
 };
 
-/**
- * Constructs the URL and sends the signed API request.
- * @param {string} path API endpoint path.
- * @param {Object} payload API request payload.
- * @param {string} apiKey API key.
- * @param {string} apiSecret API secret.
- * @return {Promise<Object>} API response data.
- */
-async function makeSignedRequest(path, payload, apiKey, apiSecret) {
-  const params = new URLSearchParams(payload).toString();
-  const signature = cryptoJs.HmacSHA256(params, apiSecret).toString();
-  const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
-  const headers = { "X-BX-APIKEY": apiKey };
-
-  try {
-    const response = await axios.get(url, { headers, timeout: 5000 });
-    return response.data.data;
-  } catch (error) {
-    if(error instanceof CustomError) throw error;
-
-    throw new CustomError({
-      message: `Failed to send BingX API request to ${path}: ${error.message}`,
-      source: "makeSignedRequest",
-      status: 500,
-    });
-  }
-}
+const recvWindow = 5000;
 
 /**
  * Fetches the current server time from BingX API.
@@ -48,6 +22,60 @@ async function getServerTime() {
 }
 
 /**
+ * Constructs the URL and sends the signed API request.
+ * @param {string} path API endpoint path.
+ * @param {Object} payload API request payload.
+ * @param {string} apiKey API key.
+ * @param {string} apiSecret API secret.
+ * @return {Promise<Object>} API response data.
+ */
+async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
+  // Add the timestamp to the payload before creating the signature
+  payload.timestamp = await getServerTime();
+
+  const params = new URLSearchParams(payload).toString();
+  const signature = cryptoJs.HmacSHA256(params, apiSecret).toString();
+  const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
+  const headers = { "X-BX-APIKEY": apiKey };
+
+  try {
+    let response;
+    switch (method) {
+      case 'GET':
+        response = await axios.get(url, { headers, timeout: recvWindow });
+        break;
+      case 'POST':
+        response = await axios.post(url, {}, { headers, timeout: recvWindow });
+        break;
+      case 'PATCH':
+        response = await axios.patch(url, {}, { headers, timeout: recvWindow });
+        break;
+      case 'PUT':
+        response = await axios.put(url, {}, { headers, timeout: recvWindow });
+        break;
+      case 'DELETE':
+        response = await axios.delete(url, { headers, timeout: recvWindow });
+        break;
+      default:
+        throw new CustomError({
+          message: `Invalid method type: ${method}`,
+          source: "makeSignedRequest",
+          status: 400,
+        });
+    }
+    return response.data.data;
+  } catch (error) {
+    if (error instanceof CustomError) throw error;
+
+    throw new CustomError({
+      message: `Failed to send BingX API request to ${path}: ${error.message}`,
+      source: "makeSignedRequest",
+      status: error.response?.status || 500,
+    });
+  }
+}
+
+/**
  * Fetches positions from BingX API.
  * @param {string} apiKey API key.
  * @param {string} apiSecret API secret.
@@ -55,8 +83,8 @@ async function getServerTime() {
  */
 async function getPositions(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/positions";
-  const payload = { timestamp: await getServerTime() };
-  return await makeSignedRequest(path, payload, apiKey, apiSecret);
+  const payload = {};
+  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -72,9 +100,8 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
   const payload = {
     symbol,
     orderId: BigInt(orderId),
-    timestamp: await getServerTime(),
   };
-  return await makeSignedRequest(path, payload, apiKey, apiSecret);
+  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -85,8 +112,8 @@ async function getOrder(apiKey, apiSecret, symbol, orderId) {
  */
 async function getBalance(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/user/balance";
-  const payload = { timestamp: await getServerTime() };
-  return await makeSignedRequest(path, payload, apiKey, apiSecret);
+  const payload = {};
+  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
 }
 
 /**
@@ -98,8 +125,8 @@ async function getBalance(apiKey, apiSecret) {
  */
 async function getOrders(apiKey, apiSecret) {
   const path = "/openApi/swap/v2/trade/openOrders";
-  const payload = { timestamp: await getServerTime() };
-  const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
+  const payload = {};
+  const data = await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
   try {
     if (!data || !data.orders) return;
     const orders = data.orders;
@@ -115,8 +142,8 @@ async function getOrders(apiKey, apiSecret) {
 
 async function getOrderStatuses(apiKey, apiSecret, symbol) {
   const path = "/openApi/swap/v2/trade/openOrders";
-  const payload = { timestamp: await getServerTime(), symbol: symbol };
-  const data = await makeSignedRequest(path, payload, apiKey, apiSecret);
+  const payload = { symbol: symbol };
+  const data = await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
   try {
     if (!data || !data.orders) return;
     const orders = data.orders;
