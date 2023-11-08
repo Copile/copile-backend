@@ -27,13 +27,17 @@ const userdata = {
       api_secret: "x",
     },
   },
-  telegram: "x",
-  discord: "x",
+  telegram: {
+    id: "x",
+  },
+  discord: {
+    id: "x",
+  },
 };
 
 // default plan data object
 const plandata = {
-  product: "",
+  product_id: "",
   product_name: "",
   license: "",
   account_id: "",
@@ -59,73 +63,68 @@ async function deleteDocumentAndSubcollections(documentRef) {
 
 app.post("/createLicense", async (req, res) => {
   try {
+    // Extract user data from the request body
     let userbody = req.body;
 
+    // Validate the action in the request body
     if (userbody["action"] !== "membership.went_valid") {
       return res.status(400).send(JSON.stringify({ error: "Invalid action" }));
     }
 
+    // Extract data from the request body
     const user = userbody["data"]["user"]["id"];
     const account_id = userbody["data"]["id"];
     const product_id = userbody["data"]["product"]["id"];
     const product_name = userbody["data"]["product"]["name"];
     const license = userbody["data"]["license_key"];
 
-    // Fetch the group from Firestore
-    const groupsRef = db.collection("groups");
-    const groupSnapshot = await groupsRef.where("products", "array-contains", product_id).get();
+    // Fetch the product document from the Firestore products collection
+    const productsRef = db.collection("products");
 
-    if (groupSnapshot.empty) {
-      console.log("No group found for product_id:", product_id);
-      return res.status(404).send(JSON.stringify({ error: "Group not found" }));
-    }
+    // Find the product document with the matching product_id from the request body
+    const productSnapshot = await productsRef.doc(product_id).get();
 
-    const group = groupSnapshot.docs[0].data();
-    const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
-    const productSnapshot = await productRef.get();
-
+    // Validate the product document
     if (!productSnapshot.exists) {
       console.log("No product found for product_id:", product_id);
       return res.status(404).send(JSON.stringify({ error: "Product not found" }));
     }
 
-    const product = productSnapshot.data();
-
+    // Fetch the user document from the Firestore users collection
     const userRef = db.collection("users").doc(user);
     const userSnapshot = await userRef.get();
 
-    if (userSnapshot.exists) {
-      // User exists, update the user's data
+    // If the user document does not exist, create a new user document
+    if (!userSnapshot.exists) {
       userdata.account = user;
-      userdata.group_id = group.id; // Associate the user with the group
-      await userRef.update(userdata);
-    } else {
-      // User does not exist, create a new user document
-      userdata.account = user;
-      userdata.group_id = group.id; // Associate the user with the group
       await userRef.set(userdata);
       await createUserKey(user);
     }
 
     // For each worker in the product, create a new document in the plans subcollection
-    const workersRef = productRef.collection("workers");
+    const workersRef = productSnapshot.ref.collection("workers");
     const workersSnapshot = await workersRef.get();
-    workersSnapshot.forEach(async (doc) => {
+
+    for (const doc of workersSnapshot.docs) {
       const worker = doc.data();
+      // Initialize worker data
       worker.enabled = false; // Initialize as disabled
       worker.margin = "x"; // Initialize as "x"
       worker.percentage = "x"; // Initialize as "x"
       worker.option = "x"; // Initialize as "x"
       worker.preferred_exchange = "x"; // Initialize as "x"
+      worker.product_id = product_id;
 
+      // Create a new plan document in the plans subcollection
       const planRef = await userRef.collection("plans").doc(product_id);
-      plandata.product = product_id;
+      plandata.product_id = product_id;
       plandata.product_name = product_name;
       plandata.license = license;
       plandata.account_id = account_id;
       await planRef.set(plandata);
+      // Create a new worker document in the workers subcollection
       await planRef.collection("workers").doc(worker.id).set(worker);
-    });
+    }
 
     console.log("Created user with the id: " + user);
     return res.send(JSON.stringify({ status: 200 }));
@@ -135,7 +134,6 @@ app.post("/createLicense", async (req, res) => {
   }
 });
 
-// // Route to create license
 // app.post("/createLicense", async (req, res) => {
 //   try {
 //     let userbody = req.body;
@@ -150,25 +148,29 @@ app.post("/createLicense", async (req, res) => {
 //     const product_name = userbody["data"]["product"]["name"];
 //     const license = userbody["data"]["license_key"];
 
-//     // Fetch the group and product from Firestore
+//     // Fetch the group from Firestore
 //     const groupsRef = db.collection("groups");
-//     const groupSnapshot = await groupsRef.where("product_id", "==", product_id).get();
-//     const group = groupSnapshot.docs[0].data();
+//     const groupSnapshot = await groupsRef.where("products", "array-contains", product_id).get();
+
+//     if (groupSnapshot.empty) {
+//       console.log("No group found for product_id:", product_id);
+//       return res.status(404).send(JSON.stringify({ error: "Group not found" }));
+//     }
+
 //     const productRef = groupSnapshot.docs[0].ref.collection("products").doc(product_id);
-//     const product = (await productRef.get()).data();
+//     const productSnapshot = await productRef.get();
+
+//     if (!productSnapshot.exists) {
+//       console.log("No product found for product_id:", product_id);
+//       return res.status(404).send(JSON.stringify({ error: "Product not found" }));
+//     }
 
 //     const userRef = db.collection("users").doc(user);
 //     const userSnapshot = await userRef.get();
 
-//     if (userSnapshot.exists) {
-//       // User exists, update the user's data
-//       userdata.account = user;
-//       userdata.group_id = group.id; // Associate the user with the group
-//       await userRef.update(userdata);
-//     } else {
+//     if (!userSnapshot.exists) {
 //       // User does not exist, create a new user document
 //       userdata.account = user;
-//       userdata.group_id = group.id; // Associate the user with the group
 //       await userRef.set(userdata);
 //       await createUserKey(user);
 //     }
@@ -176,14 +178,24 @@ app.post("/createLicense", async (req, res) => {
 //     // For each worker in the product, create a new document in the plans subcollection
 //     const workersRef = productRef.collection("workers");
 //     const workersSnapshot = await workersRef.get();
-//     workersSnapshot.forEach(async (doc) => {
-//       plandata.product = product_id;
+
+//     for (const doc of workersSnapshot.docs) {
+//       const worker = doc.data();
+//       worker.enabled = false; // Initialize as disabled
+//       worker.margin = "x"; // Initialize as "x"
+//       worker.percentage = "x"; // Initialize as "x"
+//       worker.option = "x"; // Initialize as "x"
+//       worker.preferred_exchange = "x"; // Initialize as "x"
+//       worker.product_id = product_id;
+
+//       const planRef = await userRef.collection("plans").doc(product_id);
+//       plandata.product_id = product_id;
 //       plandata.product_name = product_name;
 //       plandata.license = license;
 //       plandata.account_id = account_id;
-//       plandata.enabled = false; // Initialize as disabled
-//       await userRef.collection("plans").doc(doc.id).set(plandata);
-//     });
+//       await planRef.set(plandata);
+//       await planRef.collection("workers").doc(worker.id).set(worker);
+//     }
 
 //     console.log("Created user with the id: " + user);
 //     return res.send(JSON.stringify({ status: 200 }));
@@ -223,6 +235,73 @@ app.post("/deleteLicense", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).send(JSON.stringify({ error: "Internal server error" }));
+  }
+});
+
+app.post("/updateLicense", async (req, res) => {
+  const { userId, productId } = req.body;
+
+  try {
+    // Get the product document reference
+    const productDocRef = db.collection("products").doc(productId);
+
+    // Fetch the product document
+    const productDoc = await productDocRef.get();
+
+    if (!productDoc.exists) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Get the workers in the product
+    const productWorkersRef = productDocRef.collection("workers");
+    const productWorkersSnapshot = await productWorkersRef.get();
+    const productWorkers = productWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // Get the user's plan document reference
+    const planDocRef = db.collection(`users/${userId}/plans`).doc(productId);
+
+    // Fetch the user's plan document
+    const planDoc = await planDocRef.get();
+
+    if (!planDoc.exists) {
+      return res.status(404).json({ error: "Plan not found" });
+    }
+
+    // Get the workers in the user's plan
+    const planWorkersRef = planDocRef.collection("workers");
+    const planWorkersSnapshot = await planWorkersRef.get();
+    const planWorkers = planWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // For each worker in the product
+    for (const worker of productWorkers) {
+      // If the worker is not in the user's plan, add it
+      if (!planWorkers.some((planWorker) => planWorker.id === worker.id)) {
+        const newWorker = {
+          enabled: false,
+          id: worker.id,
+          margin: "x",
+          name: worker.name,
+          option: "x",
+          percentage: "x",
+          preferred_exchange: "x",
+          product_id: productId,
+        };
+        await planWorkersRef.doc(worker.id).set(newWorker);
+      }
+    }
+
+    // For each worker in the user's plan
+    for (const worker of planWorkers) {
+      // If the worker is not in the product, remove it
+      if (!productWorkers.some((productWorker) => productWorker.id === worker.id)) {
+        await planWorkersRef.doc(worker.id).delete();
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Something went wrong" });
   }
 });
 

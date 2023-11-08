@@ -31,9 +31,20 @@ async function makeSignedRequest(url, payload, apiKey, apiSecret) {
       `${url}?${queryString}&signature=${signature}`,
       { headers, timeout: TIMEOUT }
     );
-    console.log(response);
-    return response.data;
+    return response;
   } catch (error) {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      console.log("Error data:", error.response.data);
+      console.log("Error status:", error.response.status);
+      //console.log("Error headers:", error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.log("No response:", error.request);
+    } else {
+      // Something happened in setting up the request
+      console.log("Error:", error.message);
+    }
     throw new CustomError({
       message: `Request to ${url} failed: ${error}`,
       status: 400,
@@ -76,7 +87,7 @@ async function getAPIPerms(apiKey, apiSecret) {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
     return data;
   } catch (error) {
-    if(error instanceof CustomError) {
+    if (error instanceof CustomError) {
       throw error;
     }
     throw new CustomError({
@@ -88,5 +99,5 @@ async function getAPIPerms(apiKey, apiSecret) {
 }
 
 module.exports = {
-  getAPIPerms
+  getAPIPerms,
 };

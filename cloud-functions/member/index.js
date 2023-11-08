@@ -57,33 +57,43 @@ app.post("/updateExchange", async (req, res) => {
   }
 });
 
+// Endpoint to update the margin, percentage, option, preferred exchange, and enabled status of a specific worker of a specific plan of a specific user
 app.post("/updateMargin", async (req, res) => {
+  // Extract the user ID from the x-forwarded-authorization header of the incoming request
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
-  const { worker_id, margin, percentage, option, preferred_exchange } = req.body;
+  // Extract the product ID, worker ID, margin, percentage, option, preferred exchange, and enabled status from the body of the incoming request
+  const { product_id, worker_id, margin, percentage, option, preferred_exchange, enabled } =
+    req.body;
 
   try {
-    // Get user document from Firestore
+    // Fetch the user document from Firestore
     const userDoc = await db.collection("users").doc(userId).get();
 
+    // Check if the user document exists
     if (!userDoc.exists) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    // Get worker document
-    const workerDocRef = db.collection(`users/${userId}/plans`).doc(worker_id);
+    // Create a reference to the worker document in the workers subcollection of the plan document in the plans subcollection of the user document
+    const workerDocRef = db
+      .collection(`users/${userId}/plans/${product_id}/workers`)
+      .doc(worker_id);
 
+    // Fetch the worker document that the workerDocRef points to
     const workerDoc = await workerDocRef.get();
 
+    // Check if the worker document exists
     if (!workerDoc.exists) {
       return res
         .status(404)
         .json({ success: false, error: "Worker not found for this user and worker id" });
     }
 
-    // Update worker document with new margin, percentage, option, preferred_exchange values
+    // Prepare an object with the fields to update in the worker document
     const updateFields = {};
 
+    // Check if each field is not empty or null before adding it to the updateFields object
     if (margin !== "" && margin !== null) {
       updateFields.margin = margin;
     }
@@ -96,12 +106,20 @@ app.post("/updateMargin", async (req, res) => {
       updateFields.option = option;
     }
 
+    // Convert the preferred_exchange field to lowercase before adding it to the updateFields object
     if (preferred_exchange !== "" && preferred_exchange !== null) {
       updateFields.preferred_exchange = preferred_exchange.toLowerCase();
     }
 
+    // If the enabled field is a boolean, add it to the updateFields object
+    if (typeof enabled === "boolean") {
+      updateFields.enabled = enabled;
+    }
+
+    // Update the worker document with the fields in the updateFields object
     await workerDocRef.update(updateFields);
 
+    // Send a JSON response indicating that the operation was successful
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -149,21 +167,26 @@ app.get("/exchanges", async (req, res) => {
   }
 });
 
+// Endpoint to get all plans and their associated workers for a specific user
 app.get("/plans", async (req, res) => {
+  // Extract the user ID from the x-forwarded-authorization header of the incoming request
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
   try {
-    // Get the user document
+    // Create a reference to the document in the users collection that has the ID equal to userId
     const userRef = db.collection("users").doc(userId);
+    // Fetch the document that the userRef points to
     const userSnapshot = await userRef.get();
 
+    // Check if the user document exists
     if (!userSnapshot.exists) {
       res.status(404).json({ success: false, error: "User not found for plans" });
       return;
     }
 
-    // Get the plans subcollection
+    // Create a reference to the plans subcollection of the user document
     const plansRef = userRef.collection("plans");
+    // Fetch all the documents in the plans subcollection
     const plansSnapshot = await plansRef.get();
 
     // Extract the data from the plans documents
@@ -171,54 +194,36 @@ app.get("/plans", async (req, res) => {
     for (const doc of plansSnapshot.docs) {
       if (doc.exists) {
         const planData = doc.data();
+        // Create a reference to the workers subcollection of the current plan document
         const workersRef = plansRef.doc(doc.id).collection("workers");
+        // Fetch all the documents in the workers subcollection of the current plan document
         const workersSnapshot = await workersRef.get();
         const workersData = [];
         for (const workerDoc of workersSnapshot.docs) {
           if (workerDoc.exists) {
             const workerData = workerDoc.data();
-            workerData.id = workerDoc.id; // Add the worker ID to the data
+            // Add the ID of the worker document to the worker data
+            workerData.id = workerDoc.id;
             workersData.push(workerData);
           }
         }
-        planData.workers = workersData; // Add the workers data to the plan data
+        // Add the array of worker data to the plan data
+        planData.workers = workersData;
+        // Add the plan data (which now includes the worker data) to the array of all plan data
         plansData.push(planData);
       }
     }
 
-    // example response data:
-    // {
-    //   "success": true,
-    //   "plans": [
-    //     {
-    //       "product": "{product_id}",
-    //       "product_name": "{product_name}",
-    //       "license": "{license}",
-    //       "account_id": "{account_id}",
-    //       "workers": [
-    //         {
-    //           "id": "{worker_id}",
-    //           "name": "{worker_name}",
-    //           "margin": "{margin}",
-    //           "percentage": "{percentage}",
-    //           "option": "{option}",
-    //           "preferred_exchange": "{preferred_exchange}",
-    //           "enabled": {enabled}
-    //         },
-    //         // ... more workers
-    //       ]
-    //     },
-    //     // ... more plans
-    //   ]
-    // }
-
+    // Prepare the response data
     const responseData = {
       success: true,
       plans: plansData,
     };
 
+    // Send the response data as JSON
     res.json(responseData);
   } catch (error) {
+    // Log any error that occurred and send a 500 response
     console.log("Error retrieving plans:", error);
     res.status(500).json({ success: false, error: "Error retrieving plans" });
   }
