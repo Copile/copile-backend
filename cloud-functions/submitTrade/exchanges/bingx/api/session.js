@@ -1,4 +1,4 @@
-const ExchangeSession = require("../exchangeSession");
+const ExchangeSession = require("../../../trade/exchangeSession.js");
 const { getBingXOrders, getBingXOrderStatuses } = require("../scripts/orders");
 const { bulkOrder } = require('../execution.js');
 const { getBingXPositions } = require("../scripts/positions");

@@ -1,5 +1,5 @@
-const BingXSession = require("../api/session.js");
-const { makeSignedRequest } = require('../api/request.js');
+const BingXSession = require("./session.js");
+const { makeSignedRequest } = require('./request.js');
 
 /**
  * Represents a BingX exchange session.
@@ -172,7 +172,7 @@ class BingXFunctions extends BingXSession {
   ) {
     const path = "/openApi/swap/v2/quote/ticker";
     const payload = {symbol};
-    return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
+    return await makeSignedRequest("GET", path, payload, this.apiKey, this.apiSecret);
   }
 
   async getPrecisions(symbol) {

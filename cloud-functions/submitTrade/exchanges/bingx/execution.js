@@ -6,7 +6,7 @@ const { convertSymbol, roundToPrecision } = require('../bingx/scripts/settings.j
 async function bulkOrder(apiKey, apiSecret, data) {
     try {
         const session = new BingXFunctions(apiKey, apiSecret);
-        const { tradeId, traderId, margin, trader_exchange, marginType } = data;
+        const { traderId, tradeId, margin, trader_exchange, marginType } = data;
         const { leverage, entry, take_profits, stop_losses } = data.payload;
         let symbol = data.payload.symbol;
 
@@ -20,7 +20,8 @@ async function bulkOrder(apiKey, apiSecret, data) {
         if (entry !== "market") {
           quantity = roundToPrecision((parseFloat(margin) * parseInt(leverage) / parseFloat(entry)), precision.quantityPrecision);
         } else {
-          const marketPrice = await session.getMarket(symbol)["lastPrice"];
+          const fetchPrice = await session.getMarket(symbol)
+          const marketPrice = fetchPrice["lastPrice"];
           quantity = roundToPrecision((parseFloat(margin) * parseInt(leverage) / parseFloat(marketPrice)), precision.quantityPrecision);
         }
 
@@ -66,24 +67,45 @@ async function cancelAllOrders(apiKey, apiSecret, data) {
                 null,
                 quantity
             )
-                 
         } else {
             let orderId = tradeInfo.orderID
             await session.cancelOrder(
                 orderId, symbol
             )
         }
-        return 
+        return
 
     } catch(error) {
         throw new CustomError({
-            message: `Error handling the trade in execution: ${error.message}`,
+            message: `Error cancelling all orders in execution: ${error.message}`,
             status: 500,
             source: 'cancelAllOrders',
         });
     }
 }
 
+async function replaceSl(apiKey, apiSecret, data) {
+    try {
+        const session = new BingXFunctions(apiKey, apiSecret);
+        const { traderId, tradeId, document_id, payload } = data;
+
+        const tradeInfo = await getTradeInfo(traderId, tradeId);
+
+        const precision = await session.getPrecisions(symbol);
+
+        
+
+    } catch(error) {
+        throw new CustomError({
+            message: `Error replacing SL in execution: ${error.message}`,
+            status: 500,
+            source: 'replaceSl',
+        });
+    }
+}
+
 module.exports = {
     bulkOrder,
+    cancelAllOrders,
+
 };

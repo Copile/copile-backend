@@ -1,6 +1,6 @@
 const cryptoJs = require("crypto-js");
 const axios = require("axios");
-const CustomError = require("../../../utils/error");
+const CustomError = require("../../../utils/error.js");
 
 const apiConfig = {
   host: "open-api.bingx.com",
