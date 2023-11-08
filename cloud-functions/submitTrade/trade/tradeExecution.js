@@ -3,13 +3,13 @@ const decryptData = require('../utils/decryption.js');
 const CustomError = require('../utils/error.js');
 
 
-async function bulkOrder(apiKey, apiSecret, apiPassphrase, payload) {
+async function bulkOrder(apiKey, apiSecret, apiPassphrase, data) {
     
     try {
-        const exchange = payload.traderExchange;
+        const exchange = data.trader_exchange;
         
         const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
-        const tradeExecution = await session.bulkOrder(payload);
+        const tradeExecution = await session.bulkOrder(data);
 
         return tradeExecution
     } catch(error) {

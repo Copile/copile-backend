@@ -20,6 +20,7 @@
     "stripe": "^11.9.1",
     "winston": "^3.3.3",
     "compression": "^1.7.4",
-    "axios": "^0.24.0"
+    "axios": "^1.6.1",
+    "decimal.js": "10.4.3"
   }
 }

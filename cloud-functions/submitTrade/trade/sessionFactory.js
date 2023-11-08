@@ -1,4 +1,4 @@
-const BingXSession = require("./bingx/session");
+const BingXSession = require('../exchanges/bingx/api/session.js');
 const CustomError = require("../utils/error");
 
 /**

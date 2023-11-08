@@ -33,6 +33,28 @@ const {
     FIELD_SL_AMOUNT
 } = config;
 
+// Function to get the trader api keys
+async function getUserKeys(accountId, exchange) {
+    // Get user keys from Firestore with accountId and exchange
+    const documentRef = firestore.collection('traders').doc(accountId);
+    const documentSnapshot = await documentRef.get();
+    const userData = documentSnapshot.data();
+    
+    if (!userData || !userData.exchanges || !userData.exchanges[exchange]) {
+      throw new Error('User data not found');
+    }
+  
+    const exchangeData = userData.exchanges[exchange];
+    exchangeData.api_secret = await decryptData(accountId, exchangeData.api_secret);
+  
+    // Decrypt the api_passphrase if encrypted
+    if (exchangeData.api_passphrase) {
+      exchangeData.api_passphrase = await decryptData(accountId, exchangeData.api_passphrase);
+    }
+  
+    return exchangeData;
+}
+
 // Function to store trade information
 async function storeTrade(accountId, orderDict) {
     try {
@@ -312,5 +334,6 @@ module.exports = {
     getTpSlOrders,
     getTpOrders,
     updateTradeQuantity,
-    getSpecficOrder
-}
+    getSpecficOrder,
+    getUserKeys,
+};

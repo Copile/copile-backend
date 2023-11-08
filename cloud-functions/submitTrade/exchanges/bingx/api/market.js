@@ -24,7 +24,7 @@ async function getOpenPositions(
     apiSecret,
     symbol
   ) {
-    const path = "/openApi/swap/v2/quote/price";
+    const path = "/openApi/swap/v2/user/positions";
     const payload = {symbol};
     return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
 }
