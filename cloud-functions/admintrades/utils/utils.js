@@ -91,9 +91,8 @@ async function getTradeProfitLossDetails(
       exchange,
       symbol
     );
-
-    if (!activeOrders) return;
     console.log("activeOrders", activeOrders);
+    if (!activeOrders) return;
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([
       checkTakeProfitStatus(exchange, takeProfitData, activeOrders),
