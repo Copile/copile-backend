@@ -1,6 +1,6 @@
 const { Firestore } = require("@google-cloud/firestore");
-const CustomError = require("../../utils/error");
-const createSession = require("../../exchanges/sessionFactory");
+const CustomError = require("./error");
+const createSession = require("../exchanges/sessionFactory");
 
 const db = new Firestore();
 
