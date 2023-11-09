@@ -1,6 +1,6 @@
 const { Firestore } = require("@google-cloud/firestore");
-const CustomError = require("../../admintrades/utils/error");
-const createSession = require("../../admintrades/exchanges/sessionFactory");
+const CustomError = require("./error");
+const createSession = require("../exchanges/sessionFactory");
 
 const db = new Firestore();
 
@@ -91,7 +91,7 @@ async function getTradeProfitLossDetails(
       exchange,
       symbol
     );
-
+    console.log("activeOrders", activeOrders);
     if (!activeOrders) return;
 
     const [takeProfitNewData, stopLossNewData] = await Promise.all([

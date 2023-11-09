@@ -240,6 +240,32 @@ app.post("/updateExchange", async (req, res) => {
   }
 });
 
+app.post("/updateMonitorStatus", async (req, res) => {
+  const traderId = req.get("traderId");
+  const { isMonitorEnabled } = req.body;
+
+  try {
+    const traderRef = db.collection("traders").doc(traderId);
+    const traderDocumentSnapshot = await traderRef.get();
+
+    if (!traderDocumentSnapshot.exists) {
+      res.status(404).json({ success: false, error: "Trader not found" });
+      return;
+    }
+
+    await traderRef.update({ is_monitor_enabled: isMonitorEnabled });
+
+    console.log(`Monitor status updated successfully - ${traderId}!`);
+    res.status(200).json({
+      success: true,
+      message: `Monitor status updated successfully - ${traderId}!`,
+    });
+  } catch (error) {
+    console.error(`Error updating document: ${error}`);
+    res.status(500).json({ success: false, error: `Error updating document: ${traderId}` });
+  }
+});
+
 app.get("/account", async (req, res) => {
   const traderId = req.get("traderId");
 
@@ -295,6 +321,7 @@ app.get("/account", async (req, res) => {
       connected_discord: traderData.connected_discord,
       connected_telegram: traderData.connected_telegram,
       trader_name: traderData.trader_name,
+      is_monitor_enabled: traderData.is_monitor_enabled,
       plans, // adding product plans to the response data
     };
 

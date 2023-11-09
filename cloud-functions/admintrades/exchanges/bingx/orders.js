@@ -13,10 +13,12 @@ async function getBingXOrderStatuses(apiKey, apiSecret, symbol) {
   try {
     const rawOrders = await getOrderStatuses(apiKey, apiSecret, symbol);
     if (!rawOrders || !rawOrders.length) return;
-    return rawOrders.map((order) => ({
+    const debugOrders = rawOrders.map((order) => ({
       orderId: BigInt(order.orderId).toString(),
       status: order.status === "NEW" ? "Active" : order.status,
     }));
+    console.log("BingX orders:", debugOrders);
+    return debugOrders;
   } catch (e) {
     if (e instanceof CustomError) {
       throw e;
