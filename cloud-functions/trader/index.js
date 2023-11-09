@@ -321,6 +321,7 @@ app.get("/account", async (req, res) => {
       connected_discord: traderData.connected_discord,
       connected_telegram: traderData.connected_telegram,
       trader_name: traderData.trader_name,
+      is_monitor_enabled: traderData.is_monitor_enabled,
       plans, // adding product plans to the response data
     };
 
