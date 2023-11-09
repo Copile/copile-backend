@@ -13,11 +13,6 @@ async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value,
     quantityPrecision = precisions_dict.get(symbol, {}).get("quantityPrecision")
     pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
 
-    position = await client.positions(
-            symbol=symbol,
-    )
-    positionSide = position[0]["positionSide"]
-
     if str(tp_amount) != "0":
         tp_amount = tp_amount
     else:
@@ -29,9 +24,9 @@ async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value,
     try:
         tp_order = await client.trade_order(
             symbol=symbol,
-            type="TAKE_PROFIT_MARKET",
+            type="TRIGGER_MARKET",
             side="BUY" if side == "Sell" else "BUY",
-            positionSide=positionSide,
+            positionSide="SHORT" if side == "Sell" else "LONG",
             stopPrice=round(float(tp_value), pricePrecision),
             quantity=tp_amount
         )
@@ -48,4 +43,4 @@ async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value,
         await store_tp(account_id, tp_dict)
         return f"Successfully placed Take-Profit {tp_value} Order for {account_id}"
     except Exception as error:
-        print(error)
+        raise Exception(f"Error submitting take-profit for {account_id}: {error}")

@@ -1,6 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from .clear import clear_orders
-from asyncio import gather
 
 async def send_emergency(account_id, trade_id, trade_info, keys):
     try:
@@ -34,5 +33,4 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
             await clear_orders(account_id, trade_id, trade_info, keys)
             return f"Cancelled order ID: {str(order_id)} for {account_id}"
     except Exception as error:
-        print(error)
-
+        raise Exception(f"Error submitting emergency order for {account_id}: {error}")

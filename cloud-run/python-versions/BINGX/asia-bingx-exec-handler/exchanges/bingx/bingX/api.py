@@ -9,7 +9,7 @@ api = {
     'protocol': 'https',
 }
 
-recvWindow = 10000
+recvWindow = 5000
 
 async def generate_timestamp():
     servertimeuri = '/openApi/swap/v2/server/time'

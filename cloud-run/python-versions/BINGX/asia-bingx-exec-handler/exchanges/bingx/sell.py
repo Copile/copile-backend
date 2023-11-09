@@ -21,4 +21,4 @@ async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
         )
         return f"Executed partial close for {symbol} for {account_id}"
     except Exception as error:
-        print(error)
+        raise Exception(f"Error selling specific quantity for {account_id}: {error}")

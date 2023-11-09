@@ -1,9 +1,7 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
-from .bingX.error import ServerError, ClientError
 from ..firestore_functions import store_trade
 from .margin import get_user_margin
 from .settings import get_market
-from .error_handler import handle_error
 
 async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, precisions, keys):
     try:
@@ -46,20 +44,5 @@ async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leve
         }
         await store_trade(account_id, order_dict)
         return order_dict
-    except ClientError as client_error:
-        payload = {"account_id": account_id, "trade_id": trade_id, "margin": margin, "side": side, "symbol": symbol,
-            "leverage": leverage,
-            "price": round(float(price), pricePrecision) if price != "market" else None,
-            "quantity": quantity,
-            "type": order_type,
-            "endpoint": "trade"
-        }
-        error_code = client_error.error_code
-        order_dict = await handle_error(account_id, error_code, payload, keys)
-        return order_dict
-
-    except ServerError as server_error:
-        await handle_error(server_error.status_code, server_error.error_msg)
-
-    except Exception as generic_error:
-        print(f"An unknown error occurred: {generic_error}")    
+    except Exception as error:
+        raise Exception(f"Error submitting trade for {account_id}: {error}")

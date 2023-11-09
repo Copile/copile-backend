@@ -26,7 +26,7 @@ async def change_leverage(symbol, side, leverage, keys):
         await client.switch_leverage(symbol=symbol, side=side, leverage=int(leverage))
         return
     except Exception as error:
-        print(error)
+        raise Exception(f"Error changing leverage: {error}")
 
 async def get_market(symbol, keys):
     try:
@@ -35,4 +35,4 @@ async def get_market(symbol, keys):
         market_price = fetch_price["lastPrice"]
         return market_price     
     except Exception as error:
-        print(error)
+        raise Exception(f"Error getting market price: {error}")

@@ -1,8 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import get_user_plan
-from ..notification import send_notification
-from .error_handler import handle_error
-import asyncio
 
 async def get_user_margin(account_id, plan_id, trader_id, keys):
     try:
@@ -17,7 +14,6 @@ async def get_user_margin(account_id, plan_id, trader_id, keys):
             print(float(plan_object["margin"]))
             return float(plan_object["margin"])
         else:
-            await handle_error(account_id, 50001, None, keys)
             return "No margin found!"
     except Exception as error:
         print(error)

@@ -43,7 +43,7 @@ async function addTaskToQueue(type, trade_data, user_type) {
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url =
         type === "send_tp" || type === "send_sl"
-          ? `https://asia-bingx-track-handler-zvakwy7kgq-as.a.run.app/${type}`
+          ? `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
           : `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
     case "testnet":

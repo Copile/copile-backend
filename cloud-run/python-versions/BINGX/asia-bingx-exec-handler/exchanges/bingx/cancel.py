@@ -26,4 +26,4 @@ async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info,
             await delete_order(account_id, trade_id)
             return f"Cancelled order ID: {str(order_id)} for {account_id}"
     except Exception as error:
-        print(error)
+        raise Exception(f"Error cancelling order of type {trade_type} for {account_id}: {error}")

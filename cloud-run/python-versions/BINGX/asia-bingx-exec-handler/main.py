@@ -1,5 +1,3 @@
-import base64
-import json
 import os
 import asyncio
 from fastapi import FastAPI, HTTPException
@@ -7,32 +5,126 @@ from fastapi.responses import JSONResponse
 from exchanges import bingx
 from exchanges.firestore_functions import get_trade_info, get_tp_sl_orders, get_user_keys, change_executed_status_tp_sl, change_collection, get_tp_sl_info
 from exchanges.notification import send_notification
-from exchanges.create_cloud_task import create_task
 from exchanges.partial import distribute_percentages
 
 app = FastAPI()
 
-@app.post('/replace_tp')
-async def replace_sl(data: dict):
+@app.post('/send_sl')
+async def send_sl(data: dict):
+    try:
+        user_type = data['user_type']
+        change_collection(user_type)
+        trade_id = str(data['trade_id'])
+        account_id = data['account_id']
+        payload = data['payload']
+        exchange = data['exchange']
+        sl_document_id = str(data['sl_id'])
+        sl_number = str(payload['sl_number'])
+        sl_value = str(payload['sl_value'])
+        sl_percentage = str(payload['sl_percentage'])
+
+        trade_info, keys = await asyncio.gather(
+            get_trade_info(account_id, trade_id),
+            get_user_keys(account_id, exchange)
+        )
+
+        precision = await bingx.precision.get_precision(account_id, trade_info["symbol"], keys)
+
+        await bingx.stoploss.send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, None, trade_info, precision, keys)
+
+    except ConnectionError as error:
+        print(error)
+        raise HTTPException(status_code=503, detail="Connection error. Please try again later.")
+
+    except Exception as error:
+        print(error)
+        raise HTTPException(status_code=500, detail=str(error))
+
+@app.post('/bulk_order')
+async def bulk_order(data: dict):
     user_type = data['user_type']
     change_collection(user_type)
     trade_id = data['trade_id']
     account_id = data['account_id']
-    order_id = data['document_id']
     payload = data['payload']
-    exchange = data['exchange']
 
-    # Validate the inputs
-    trade_info, keys = await asyncio.gather(
-        get_trade_info(account_id, trade_id),
-        get_user_keys(account_id, exchange)
-    )
-    
+    if user_type == "traders":
+        margin = data['margin']
+    else:
+        margin = data['plan_id']
+    trader_id = data['trader_id']
+    exchange = data['exchange']
+    side = payload['side']
+    symbol = payload['symbol']
+    leverage = payload['leverage']
+    entry = payload['entry']
+    take_profits = payload['take_profits']
+    stop_losses = payload['stop_losses']
     try:
-        fetch_quantity, precision, position_quantity = await asyncio.gather(
+        keys = await get_user_keys(account_id, exchange)
+
+        symbol = await bingx.settings.convert_symbol(symbol)
+
+        precision, margin_type, leverage_change = await asyncio.gather(
+            bingx.precision.get_precision(account_id, symbol, keys),
+            bingx.settings.change_margin_type(symbol, keys),
+            bingx.settings.change_leverage(symbol, side, leverage, keys)
+        )
+        trade_info = await bingx.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
+
+        for sl_data in stop_losses:
+            print(sl_data)
+            await bingx.stoploss.send_stoploss(account_id, trade_id, sl_data['sl_id'], sl_data['sl_number'], sl_data['sl_value'], sl_data['sl_percentage'], float(trade_info["quantity"]), trade_info, precision, keys)
+
+        # Calculate new take profit amounts
+        if take_profits != []:
+
+            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, float(trade_info["quantity"]), precision, keys)
+
+            tasks = [bingx.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]
+            await asyncio.gather(*tasks)
+
+        payload = {
+            "data": {
+                "order": trade_info,
+                "take_profits": take_profits,
+                "stop_losses": stop_losses
+            },
+            "trade_id": trade_id,
+            "user_id": account_id
+        }
+
+        await send_notification(payload, "/trade")
+
+        return {"message": "All orders placed successfully"}, 200
+
+    except ConnectionError as error:
+        print(error)
+        raise HTTPException(status_code=503, detail="Connection error. Please try again later.")
+
+    except Exception as error:
+        print(error)
+        raise HTTPException(status_code=500, detail=str(error))
+
+@app.post('/replace_tp')
+async def replace_sl(data: dict):
+    try:
+        user_type = data['user_type']
+        change_collection(user_type)
+        trade_id = data['trade_id']
+        account_id = data['account_id']
+        order_id = data['document_id']
+        payload = data['payload']
+        exchange = data['exchange']
+
+        trade_info, keys = await asyncio.gather(
+            get_trade_info(account_id, trade_id),
+            get_user_keys(account_id, exchange)
+        )
+    
+        fetch_quantity, precision = await asyncio.gather(
             get_tp_sl_info(account_id, trade_id, order_id, "tp"),
-            bingx.precision.get_precision(account_id, trade_info["symbol"], keys),
-            bingx.position.get_position(account_id, trade_id, trade_info, keys)
+            bingx.precision.get_precision(account_id, trade_info["symbol"], keys)
         )
 
         # Get current quantity of tp
@@ -42,11 +134,7 @@ async def replace_sl(data: dict):
         await bingx.cancel.send_cancel(account_id, trade_id, order_id, "tp", trade_info, keys)
 
         # Resend the tp with the updated payload
-        if position_quantity != 0:
-            await bingx.stoploss.send_stoploss(account_id, trade_id, payload['tp_id'], payload['tp_number'], payload['tp_value'], payload['tp_percentage'], float(tp_quantity), trade_info, precision, keys)
-        else:
-            payload["tp_amount"] = tp_quantity
-            await create_task(account_id, trade_id, payload["tp_id"], payload, '/send_tp', user_type)
+        await bingx.profit.send_profit(account_id, trade_id, payload['tp_id'], payload['tp_number'], payload['tp_value'], payload['tp_percentage'], float(tp_quantity), trade_info, precision, keys)
 
         payload = {
             "data": {
@@ -94,11 +182,13 @@ async def replace_sl(data: dict):
         # Cancel the order
         await bingx.cancel.send_cancel(account_id, trade_id, order_id, "sl", trade_info, keys)
 
-        # Resend the sl with the updated payload
         if position_quantity != 0:
+            # Resend the sl with the updated payload
             await bingx.stoploss.send_stoploss(account_id, trade_id, payload['sl_id'], payload['sl_number'], payload['sl_value'], payload['sl_percentage'], float(position_quantity), trade_info, precision, keys)
         else:
-            await create_task(account_id, trade_id, payload["sl_id"], payload, '/send_sl', user_type)
+            position_quantity = trade_info["quantity"]
+            # Resend the sl with the updated payload
+            await bingx.stoploss.send_stoploss(account_id, trade_id, payload['sl_id'], payload['sl_number'], payload['sl_value'], payload['sl_percentage'], float(position_quantity), trade_info, precision, keys)
 
         payload = {
             "data": {
@@ -238,13 +328,16 @@ async def bulk_tp(data: dict):
             bingx.precision.get_precision(account_id, trade_info["symbol"], keys)
         )
 
-        new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
-        
+        new_take_profits = []
+
         if position_quantity != 0:
-            tasks = [bingx.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]
-            await asyncio.gather(*tasks)
+            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
         else:
-            await create_task(account_id, trade_id, None, new_take_profits, "/bulk_tp", user_type)
+            position_quantity = trade_info["quantity"]     
+            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
+
+        tasks = [bingx.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]
+        await asyncio.gather(*tasks)
 
         response_data = {
             "message": f"Take profit orders processed: {trade_id}",
@@ -262,82 +355,6 @@ async def bulk_tp(data: dict):
         await send_notification(payload, "/action?type=bulktp")
 
         return response_data
-
-    except ConnectionError as error:
-        print(error)
-        raise HTTPException(status_code=503, detail="Connection error. Please try again later.")
-
-    except Exception as error:
-        print(error)
-        raise HTTPException(status_code=500, detail=str(error))
-
-
-@app.post('/bulk_order')
-async def bulk_order(data: dict):
-    user_type = data['user_type']
-    change_collection(user_type)
-    trade_id = data['trade_id']
-    account_id = data['account_id']
-    payload = data['payload']
-
-    if user_type == "traders":
-        margin = data['margin']
-    else:
-        margin = data['plan_id']
-    trader_id = data['trader_id']
-    exchange = data['exchange']
-    side = payload['side']
-    symbol = payload['symbol']
-    leverage = payload['leverage']
-    entry = payload['entry']
-    take_profits = payload['take_profits']
-    stop_losses = payload['stop_losses']
-    try:
-        keys = await get_user_keys(account_id, exchange)
-
-        symbol = await bingx.settings.convert_symbol(symbol)
-
-        precision, margin_type, leverage_change = await asyncio.gather(
-            bingx.precision.get_precision(account_id, symbol, keys),
-            bingx.settings.change_margin_type(symbol, keys),
-            bingx.settings.change_leverage(symbol, side, leverage, keys)
-        )
-        order_dict = await bingx.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
-
-        # parallelize sending stop losses
-        sl_tasks = [create_task(account_id, trade_id, sl_data["sl_id"], {
-            'sl_id': sl_data["sl_id"],
-            'sl_number': sl_data['sl_number'],
-            'sl_value': sl_data['sl_value'],
-            'sl_percentage': sl_data['sl_percentage'],
-            'sl_amount': None
-        }, '/send_sl', user_type) for sl_data in stop_losses]
-        
-        await asyncio.gather(*sl_tasks)
-        
-        # Calculate new take profit amounts
-        if take_profits != []:
-
-            trade_info = await get_trade_info(account_id, trade_id)
-
-            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, float(trade_info["quantity"]), precision, keys)
-
-            # Parallelize sending take profits
-            await create_task(account_id, trade_id, None, new_take_profits, "/bulk_tp", user_type)
-
-        payload = {
-            "data": {
-                "order": order_dict,
-                "take_profits": take_profits,
-                "stop_losses": stop_losses
-            },
-            "trade_id": trade_id,
-            "user_id": account_id
-        }
-
-        await send_notification(payload, "/trade")
-
-        return {"message": "All orders placed successfully"}, 200
 
     except ConnectionError as error:
         print(error)
@@ -388,7 +405,7 @@ async def partial_close(data: dict):
                 bingx.sell.sell_quantity(account_id, trade_id, quantity_to_sell, trade_info, keys),
                 bingx.order.get_tps_status(tp_sl_orders, trade_info, keys)
             )
-            #await bingx.clear.clear_orders(account_id, trade_id, trade_info, keys)
+            await bingx.clear.clear_orders(account_id, trade_id, trade_info, keys)
         else:
             tps_data = [order for order in tp_sl_orders if order["executed"] == "0" in order]
             await asyncio.gather(
@@ -402,9 +419,12 @@ async def partial_close(data: dict):
             new_tps_data = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, distributed_tps, trade_info, new_quantity, precision, keys)
 
         if new_order is False:
-
-
+            await asyncio.gather(
+                *[bingx.stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, precision, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
+                *[bingx.profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, precision, keys) for order in new_tps_data]
+            )
             return {"message": "Partial close successful"}, 200
+        
         else:
             unrounded_quantity = float(new_quantity) + 0.5 * 10 ** (-int(quantity_precision))
 
@@ -413,13 +433,8 @@ async def partial_close(data: dict):
             await bingx.trade.send_trade(account_id, trade_id, margin, trade_info["side"], trade_info["symbol"], trade_info["leverage"], trade_info["entry"], precision, keys)
 
             await asyncio.gather(
-                *[create_task(account_id, trade_id, order["document_id"], {
-                    'sl_id': order["document_id"],
-                    'sl_number': order['sl_number'],
-                    'sl_value': order['sl_value'],
-                    'sl_percentage': order['sl_percentage'],
-                }, '/send_sl', user_type) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order],
-                create_task(account_id, trade_id, None, new_tps_data, "/bulk_tp", user_type)
+                *[bingx.stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, precision, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
+                *[bingx.profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, precision, keys) for order in new_tps_data]
             )
 
         payload = {

@@ -15,23 +15,20 @@ async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_valu
         pricePrecision = precisions_dict.get(symbol, {}).get("pricePrecision")
 
         if sl_amount is None:
-            quantity = await get_position(account_id, trade_id, trade_info, keys)
+            position_quantity = await get_position(account_id, trade_id, trade_info, keys)
+            quantity = trade_info["quantity"] if await get_position(account_id, trade_id, trade_info, keys) == 0 else position_quantity 
             sl_amount = round(float(quantity) * float(sl_percentage), quantityPrecision)
-
-        position = await client.positions(
-            symbol=symbol,
-        )
-        positionSide = position[0]["positionSide"]
 
         # Placing Stop-loss Limit Order
         sl_order = await client.trade_order(
             symbol=symbol,
-            type="STOP_MARKET",
+            type="TRIGGER_MARKET",
             side="SELL" if side == "Buy" else "BUY",
-            positionSide=positionSide,
+            positionSide="SHORT" if side == "Sell" else "LONG",
             stopPrice=round(float(sl_value), pricePrecision),
             quantity=sl_amount
         )
+        print(sl_order)
         order_id = sl_order["order"]['orderId']
         sl_dict = {
             "order_id": order_id,
@@ -45,4 +42,4 @@ async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_valu
         await store_sl(account_id, sl_dict)
         return f"Successfully placed Stoploss {sl_value} Order for {account_id}"
     except Exception as error:
-        print(error)
+       raise Exception(f"Error submitting stoploss for {account_id}: {error}")
