@@ -18,7 +18,8 @@ async def calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, q
         if quantity != 0:
             quantity = float(quantity)
         else:
-            quantity = float(client.order(symbol=symbol, orderId=int(order_id))["order"]["origQty"])
+            fetch = await client.order(symbol=symbol, orderId=int(order_id))["order"]["origQty"]
+            quantity = float(fetch["order"]["origQty"])
         
         tps_amount = [float(quantity) * float(tp) for tp in tps_percentage]
         tp_amounts = await rearrange_tps(quantity, quantityPrecision, tps_amount, min_qty)

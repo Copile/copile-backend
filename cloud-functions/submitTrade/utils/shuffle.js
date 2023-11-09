@@ -45,4 +45,4 @@ async function rearrangeTps(quantity, precision, tpsAmount, minQty) {
   return tpsRounded.map(val => Number(val.toString()));
 }
 
-module.exports = { rearrangeTps };
+module.exports = rearrangeTps;

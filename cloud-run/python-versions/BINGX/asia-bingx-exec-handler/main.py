@@ -73,12 +73,11 @@ async def bulk_order(data: dict):
         trade_info = await bingx.trade.send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, entry, precision, keys)
 
         for sl_data in stop_losses:
-            print(sl_data)
             await bingx.stoploss.send_stoploss(account_id, trade_id, sl_data['sl_id'], sl_data['sl_number'], sl_data['sl_value'], sl_data['sl_percentage'], float(trade_info["quantity"]), trade_info, precision, keys)
 
         # Calculate new take profit amounts
         if take_profits != []:
-
+            trade_info['orderID'] = trade_info['order_id']
             new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, float(trade_info["quantity"]), precision, keys)
 
             tasks = [bingx.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]

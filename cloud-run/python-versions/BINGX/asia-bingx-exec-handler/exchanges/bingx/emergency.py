@@ -15,7 +15,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
         if position != []:
             quantity = position[0]["positionAmt"]
             positionSide = position[0]["positionSide"]
-            emergency = await client.trade_order(
+            await client.trade_order(
                 symbol=symbol,
                 type="MARKET",
                 side="SELL" if positionSide == "LONG" else "BUY",
@@ -26,7 +26,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
             return f"Stopped trade {symbol} for {account_id}"
                 
         else:
-            cancel = await client.cancel_order(
+            await client.cancel_order(
                 orderId=int(order_id),
                 symbol=symbol
             )

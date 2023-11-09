@@ -1,8 +1,8 @@
-import time
 import aiohttp
 import hmac
 import urllib
 import base64
+import asyncio
 
 api = {
     'host': 'open-api.bingx.com',
@@ -52,23 +52,38 @@ class API(object):
         return f'&sign={urllib.parse.quote(base64.b64encode(sign.digest()))}'
 
     async def _request(self, method, path, params=None, headers=None):
-        url = f'{self.base_url}{path}?{await self._handle_params(params, path, method)}'  # await the async function here
-        url = url.replace(" ", "")
-        async with aiohttp.ClientSession() as session:
-            if method == 'GET':
-                async with session.get(url, headers=headers or self.headers) as response:
-                    return await response.json()
-            elif method == 'POST':
-                async with session.post(url, headers=headers or self.headers) as response:
-                    return await response.json()
-            elif method == 'PUT':
-                async with session.put(url, headers=headers or self.headers) as response:
-                    return await response.json()
-            elif method == 'DELETE':
-                async with session.delete(url, headers=headers or self.headers) as response:
-                    return await response.json()
-            else:
-                raise Exception('Invalid method: %s' % method)
+        max_retries = 3
+        response = None
+        for attempt in range(max_retries):
+            url = f'{self.base_url}{path}?{await self._handle_params(params, path, method)}'
+            url = url.replace(" ", "")
+            async with aiohttp.ClientSession() as session:
+                try:
+                    if method == 'GET':
+                        response = await session.get(url, headers=headers or self.headers)
+                    elif method == 'POST':
+                        response = await session.post(url, headers=headers or self.headers)
+                    elif method == 'PUT':
+                        response = await session.put(url, headers=headers or self.headers)
+                    elif method == 'DELETE':
+                        response = await session.delete(url, headers=headers or self.headers)
+                    else:
+                        raise Exception('Invalid method: %s' % method)
+                    
+                    response_data = await response.json()
+                    if response_data.get('code') in [100001, 100421, 100503, 100500, 80014]:
+                        await asyncio.sleep(5)
+                        continue
+
+                    return response_data
+
+                except aiohttp.ClientError as e:
+                    raise e
+                
+                break
+            
+        if response:
+            return await response.json()
 
     async def get(self, path, params=None):
         return await self._request('GET', path, params=params)

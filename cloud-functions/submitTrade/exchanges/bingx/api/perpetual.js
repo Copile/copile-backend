@@ -15,26 +15,9 @@ class BingXFunctions extends BingXSession {
     super(apiKey, apiSecret);
   }
 
-  async tradeOrder(
-    symbol, 
-    type,
-    side,
-    price = null,
-    quantity = null,
-    positionSide = null,
-    stopPrice = null,
-  ) {
+  async tradeOrder(order) {
     const path = "/openApi/swap/v2/trade/order";
-    const payload = {
-        symbol,
-        type,
-        side,
-        positionSide,
-        price,
-        quantity,
-        stopPrice
-    };
-    return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);
+    return await makeSignedRequest("POST", path, order, this.apiKey, this.apiSecret);
   }
 
   async bulkOrder(batchOrders) {

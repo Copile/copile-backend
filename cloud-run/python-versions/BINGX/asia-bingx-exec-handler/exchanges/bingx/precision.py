@@ -1,5 +1,4 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
-import asyncio
 
 async def get_precision(account_id, symbol, keys):
     try:

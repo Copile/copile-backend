@@ -1,7 +1,6 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import store_tp
 from .position import get_position
-import asyncio
 
 async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, trade_info, precisions, keys):
     symbol = trade_info["symbol"]

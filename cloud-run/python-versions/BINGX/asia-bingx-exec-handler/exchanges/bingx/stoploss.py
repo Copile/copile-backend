@@ -1,7 +1,6 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
 from ..firestore_functions import store_sl
 from .position import get_position
-import asyncio
 
 async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, sl_amount, trade_info, precisions, keys):
     try:
@@ -28,7 +27,7 @@ async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_valu
             stopPrice=round(float(sl_value), pricePrecision),
             quantity=sl_amount
         )
-        print(sl_order)
+        
         order_id = sl_order["order"]['orderId']
         sl_dict = {
             "order_id": order_id,
