@@ -35,6 +35,18 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
   }
 }
 
+/**
+ * Fetches the current server time from BingX API.
+ * @return {Promise<number>} Server time.
+ */
+async function getServerTime() {
+  const path = "/openApi/swap/v2/server/time";
+  const url = `${apiConfig.protocol}://${apiConfig.host}${path}`;
+  const response = await axios.get(url, { timeout: 5000 });
+  const serverTime = response.data.data.serverTime;
+  return serverTime;
+}
+
 async function getAPIPerms(apiKey, apiSecret) {
   const timestamp = await getServerTime();
   const url = `${API_PROTOCOL}://${API_HOST}/openApi/v1/account/apiRestrictions`;

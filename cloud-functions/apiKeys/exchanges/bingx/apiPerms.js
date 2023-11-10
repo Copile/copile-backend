@@ -22,9 +22,9 @@ async function getBingXAPIPerms(apiKey, apiSecret) {
       throw error;
     }
     throw new CustomError({
-      message: `Failed to get Binance API Key permissions: ${error.message}`,
+      message: `Failed to get BingX API Key permissions: ${error.message}`,
       status: 400,
-      source: "getBinanceAPIPerms",
+      source: "getBingXAPIPerms",
     });
   }
 }
