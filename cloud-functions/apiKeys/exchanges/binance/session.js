@@ -1,6 +1,6 @@
 const ExchangeSession = require("../exchangeSession");
 const CustomError = require("../../utils/error");
-const { getBinanceAPIPerms } = require("./apiConfig");
+const { getBinanceAPIPerms } = require("./apiPerms");
 
 /**
  * Class representing a Binance exchange session.
