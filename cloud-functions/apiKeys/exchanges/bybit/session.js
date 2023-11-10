@@ -1,6 +1,6 @@
 const ExchangeSession = require("../exchangeSession");
 const CustomError = require("../../utils/error");
-const { getTestnetBalance: getBybitAPIPerms } = require("./apiPerms");
+const { getBybitAPIPerms } = require("./apiPerms");
 
 /**
  * Represents an exchange session for the testnet.
@@ -15,13 +15,14 @@ class BybitSession extends ExchangeSession {
   constructor(apiKey, apiSecret) {
     super(apiKey, apiSecret);
   }
+
   /**
    * Fetch the balance for a given trader ID.
    * @async
    * @returns {Promise<number>} The trader's balance.
    * @throws {CustomError} Throws a custom error if operation fails.
    */
-  async getBalance() {
+  async getAPIPerms() {
     try {
       return await getBybitAPIPerms(this.apiKey, this.apiSecret);
     } catch (e) {
@@ -29,9 +30,9 @@ class BybitSession extends ExchangeSession {
         throw e;
       }
       throw new CustomError({
-        message: `Failed to fetch testnet balance: ${e.message}`,
+        message: `Failed to fetch Bybit API Perms: ${e.message}`,
         status: 500,
-        source: "getBalance",
+        source: "getAPIPerms",
       });
     }
   }
