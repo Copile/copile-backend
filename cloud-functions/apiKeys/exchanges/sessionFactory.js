@@ -1,4 +1,6 @@
 const BinanceSession = require("./binance/session");
+const BingXSession = require("./bingx/session");
+const KuCoinSession = require("./kucoin/session");
 const CustomError = require("../utils/error");
 
 /**

@@ -16,14 +16,6 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
   var apiSecret = req.body.api_secret;
   var apiPassphrase = req.body.api_passphrase || null;
 
-  if (exchange === "bybit") {
-    throw new CustomError({
-      message: "Bybit is not supported by this endpoint.",
-      status: 400,
-      source: "validateAPIKeys",
-    });
-  }
-
   try {
     apiSecret = (await decryptData(apiSecret, entityId));
 
