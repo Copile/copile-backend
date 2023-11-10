@@ -48,7 +48,7 @@ async function getServerTime() {
 }
 
 async function getAPIPerms(apiKey, apiSecret) {
-  const path = "openApi/v1/account/apiRestrictions";
+  const path = "/openApi/v1/account/apiRestrictions";
   const payload = { timestamp: await getServerTime(), recvWindow: 5000 };
 
   try {
