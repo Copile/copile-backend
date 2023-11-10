@@ -1,10 +1,13 @@
 const CustomError = require('../../utils/error.js');
 const BingXFunctions = require('./api/perpetual.js');
-const { storeTrade, getUserkeys, getTradeInfo } = require('../../utils/firestore.js');
+const { storeTrade, storeTP, storeSL, getTradeInfo, getTpOrders, updateTradeQuantity } = require('../../utils/firestore.js');
 const { convertSymbol, roundToPrecision } = require('./scripts/settings.js');
+const sendCancel = require('./scripts/cancel.js');
 const Order = require('./scripts/orderFactory.js');
 const calculateTpAmounts = require('./scripts/distribution.js');
-
+const distributionPercentages = require('../../utils/partial.js');
+const { getTpsStatus } = require('./scripts/order.js');
+const { v4: uuidv4 } = require('uuid');
 
 async function bulkOrder(apiKey, apiSecret, data) {
     try {
@@ -19,10 +22,16 @@ async function bulkOrder(apiKey, apiSecret, data) {
 
         let orderType = entry != "market" ? "LIMIT" : "MARKET";
 
+        // Convert the symbol to the format needed for bingx
         symbol = await convertSymbol(symbol);
-        
-        const precision = await session.getPrecisions(symbol)
 
+        const getPrecisionPromise = session.getPrecisions(symbol);
+        const switchMarginModePromise = session.switchMarginMode(symbol, marginType);
+        const setLeveragePromise = session.setLeverage(symbol, leverage);
+    
+        const [precision] = await Promise.all([getPrecisionPromise, switchMarginModePromise, setLeveragePromise]);
+
+        // Calculate the quantity for the main order depends on if market or limit order
         let quantity;
         if (entry !== "market") {
           quantity = roundToPrecision((parseFloat(margin) * parseInt(leverage) / parseFloat(entry)), precision.quantityPrecision);
@@ -32,32 +41,32 @@ async function bulkOrder(apiKey, apiSecret, data) {
           quantity = roundToPrecision((parseFloat(margin) * parseInt(leverage) / parseFloat(marketPrice)), precision.quantityPrecision);
         }
 
-        await session.switchMarginMode(symbol, marginType);
-        await session.switchLeverage(symbol, side, leverage);
+        let preparedOrders = [];
 
-        let preparedOrders = []
-
-        preparedOrders.push(new Order(symbol, orderType, side.toUpperCase(), entry, quantity, null, null))
+        let orderId = String(uuidv4())
+        preparedOrders.push(new Order(symbol, orderType, side.toUpperCase(), entry, quantity, side === "Buy" ? "LONG" : "SHORT", null, orderId))
 
         let newTakeProfits = await calculateTpAmounts(takeProfits, quantity, precision);
 
         let tpSlPositionSide = side === "Buy" ? "LONG" : "SHORT"
 
-        newTakeProfits.array.forEach(tp => {
-            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", tp.tp_value, tp.tp_amount, tpSlPositionSide, tp.tp_value))
+        newTakeProfits.forEach(tp => {
+            tp.orderId = String(uuidv4());
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", tp.tp_value, tp.tp_amount, tpSlPositionSide, tp.tp_value, tp.orderId));
         });
-
-        stopLosses.array.forEach(sl => {
-            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", sl.sl_value, sl.sl_amount, tpSlPositionSide, tp.tp_value))
-        });
-
-        let bulkOrder = await session.bulkOrder(preparedOrders);
-
-        /**
-         * createOrder = await session.tradeOrder(symbol, orderType, side, entry, quantity, null, null)
-        **/
-        let orderId = createOrder.order.orderId
         
+        stopLosses.forEach(sl => {
+            sl.orderId = String(uuidv4());
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", sl.sl_value, sl.sl_amount, tpSlPositionSide, sl.sl_value, sl.orderId));
+        });
+        
+        const MAX_ORDERS_PER_CALL = 5;
+        for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
+            const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
+            await session.bulkOrder(chunk);
+        }
+
+        // Store trade info
         const tradeInfo = {
             tradeId,
             orderId,
@@ -72,6 +81,12 @@ async function bulkOrder(apiKey, apiSecret, data) {
         }
         await storeTrade(traderId, tradeInfo);
 
+        // Storing takeprofits/stoplosses concurrently 
+        const tpPromises = newTakeProfits.map(tp => storeTP(traderId, tp));
+        const slPromises = stopLosses.map(sl => storeSL(traderId, sl));
+        await Promise.all([...tpPromises, ...slPromises]);
+
+        return
 
     } catch(error) {
         throw new CustomError({
@@ -98,18 +113,16 @@ async function cancelAllOrders(apiKey, apiSecret, data) {
             quantity = position[0]["positionAmt"]
             positionSide = position[0]["positionSide"]
 
-            emergency = await session.tradeOrder(
-                symbol,
-                "Market",
-                positionSide == "LONG" ? "SELL": "BUY",
-                null,
-                quantity
-            )
+            let emergencySide = positionSide == "LONG" ? "SELL": "BUY"
+            let orderId = String(uuidv4())
+
+            let emergencyOrder = new Order(symbol, "Market", emergencySide, null, quantity, null, null, orderId);
+
+            emergency = await session.tradeOrder(emergencyOrder);
+
         } else {
             let orderId = tradeInfo.orderID
-            await session.cancelOrder(
-                orderId, symbol
-            )
+            await session.cancelOrder(symbol, null, orderId)
         }
         return
 
@@ -129,9 +142,32 @@ async function replaceSl(apiKey, apiSecret, data) {
 
         const tradeInfo = await getTradeInfo(traderId, tradeId);
 
-        const precision = await session.getPrecisions(symbol);
+        let side = tradeInfo.side;
+        let slPositionSide = side.toUpperCase() === "BUY" ? "LONG" : "SHORT"
 
-        
+        // Cancel the current stoploss
+        await sendCancel(session, traderId, tradeId, document_id, "sl")      
+
+        let position = await session.getPosition(symbol);
+
+        let positionQuantity;
+        if (position.length !== 0) {
+            positionQuantity = Math.abs(parseFloat(position[0].positionAmt))
+        } else {
+            positionQuantity = tradeInfo.quantity;
+        }
+
+        let orderId = String(uuidv4());
+
+        let order = new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", payload.sl_value, positionQuantity, slPositionSide, payload.sl_value, orderId)
+
+        let newStopLoss = await session.tradeOrder(order);
+
+        payload.orderId = orderId;
+        payload.sl_amount = positionQuantity;
+        await storeSL(traderId, payload)
+
+        return
 
     } catch(error) {
         throw new CustomError({
@@ -142,8 +178,141 @@ async function replaceSl(apiKey, apiSecret, data) {
     }
 }
 
+async function cancelAllTps(apiKey, apiSecret, data) {
+    try {
+        const session = new BingXFunctions(apiKey, apiSecret);
+        const { traderId, tradeId } = data;
+
+        const tradeInfo = await getTradeInfo(traderId, tradeId);
+        let symbol = tradeInfo.symbol;
+
+        let tpOrders = await getTpOrders(traderId, tradeId);
+
+        let orderIds = tpOrders.map(order => order.orderId);
+
+        await session.cancelOrders(symbol, null, orderIds);
+
+        return
+
+    } catch(error) {
+        throw new CustomError({
+            message: `Error cancelling all tps in execution: ${error.message}`,
+            status: 500,
+            source: 'cancelAllTps',
+        });
+    }
+}
+
+async function bulkTp(apiKey, apiSecret, data) {
+    try {
+        const session = new BingXFunctions(apiKey, apiSecret);
+        const { traderId, tradeId, take_profits } = data;
+
+        const tradeInfo = await getTradeInfo(traderId, tradeId);
+        const symbol = tradeInfo.symbol;
+
+        let takeProfits = take_profits;
+
+        const precision = await session.getPrecisions(symbol);
+
+        let newTakeProfits = await calculateTpAmounts(takeProfits, quantity, precision);
+
+        let preparedOrders = [];
+
+        let side = tradeInfo.side;
+        let tpPositionSide = side === "BUY" ? "LONG" : "SHORT"
+
+        newTakeProfits.forEach(tp => {
+            tp.orderId = String(uuidv4());
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", tp.tp_value, tp.tp_amount, tpPositionSide, tp.tp_value, tp.orderId));
+        });
+
+        const MAX_ORDERS_PER_CALL = 5;
+        for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
+            const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
+            await session.bulkOrder(chunk);
+        }
+
+        const tpPromises = newTakeProfits.map(tp => storeTP(traderId, tp));
+
+        await Promise.all([...tpPromises]);
+
+        return
+
+    } catch(error) {
+        throw new CustomError({
+            message: `Error handling takeprofits in execution: ${error.message}`,
+            status: 500,
+            source: 'bulkTp',
+        });
+    }
+}
+
+async function partialClose(apiKey, apiSecret, data) {
+    try {
+        const session = new BingXFunctions(apiKey, apiSecret);
+        const { traderId, tradeId, percentage } = data;
+
+        const tradeInfo = await getTradeInfo(traderId, tradeId);
+        let tpOrders = await getTpOrders(traderId, tradeId);
+
+        let side = tradeInfo.side;
+        let tpSlPositionSide = side.toUpperCase() === "BUY" ? "LONG" : "SHORT"
+
+        let symbol = tradeInfo.symbol;
+
+        const precision = await session.getPrecisions(symbol);
+        const position = await session.getPosition(symbol);
+
+        let positionQuantity;
+        let executed;
+        if (position.length !== 0) {
+            executed = true
+            positionQuantity = Math.abs(parseFloat(position[0].positionAmt))
+        } else {
+            executed = false
+            positionQuantity = tradeInfo.quantity;
+        }
+
+        const quantityToSell = parseFloat((parseFloat(positionQuantity) * percentage).toFixed(precision.quantityPrecision));
+
+        let tpsData = distributionPercentages(tpOrders);
+
+        if (executed) {
+            let sellOrder = new Order(symbol, "MARKET", side == "SELL" ? "BUY" : "SELL", null, positionQuantity, tpSlPositionSide, null, null);
+            await session.tradeOrder(sellOrder);
+
+        } else {
+            const newQuantity = parseFloat((parseFloat(positionQuantity) - quantityToSell).toFixed(precision.quantityPrecision));
+            
+            await session.cancelOrder(symbol, null, tradeInfo["orderID"]);
+
+            let orderId = String(uuidv4()); 
+            let order = new Order(symbol, "LIMIT", side.toUpperCase(), tradeInfo["entry"], newQuantity, null, null, orderId)
+            
+            await session.tradeOrder(order);
+            await updateTradeQuantity(traderId, tradeId, newQuantity);
+        }
+
+
+
+        return
+
+    } catch(error) {
+        throw new CustomError({
+            message: `Error partially closing trade in execution: ${error.message}`,
+            status: 500,
+            source: 'partialClose',
+        });
+    }
+}
+
+
 module.exports = {
     bulkOrder,
     cancelAllOrders,
-
+    replaceSl,
+    cancelAllTps,
+    bulkTp,
+    partialClose
 };

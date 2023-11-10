@@ -22,7 +22,9 @@ class BingXFunctions extends BingXSession {
 
   async bulkOrder(batchOrders) {
     const path = "/openApi/swap/v2/trade/batchOrders";
-    const payload = {};
+    const payload = {
+      batchOrders,
+    };
     return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);
   }
 
@@ -32,21 +34,35 @@ class BingXFunctions extends BingXSession {
     return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);
   }
 
-  async cancelOrder(orderId, symbol) {
+  async cancelOrder(symbol, orderId, clientOrderID) {
     const path = "/openApi/swap/v2/trade/order";
-    const payload = {
-        orderId,
-        symbol,
-    };
+    
+    let payload = {
+      symbol,
+    }
+    
+    if (orderId !== null) {
+      payload.orderId = orderId
+    } else {
+      payload.clientOrderID = clientOrderID
+    }
+
     return await makeSignedRequest("DELETE", path, payload, this.apiKey, this.apiSecret);
   }
 
-  async cancelOrders(symbol, orderIdList) {
+  async cancelOrders(symbol, orderIdList, ClientOrderIDList) {
     const path = "/openApi/swap/v2/trade/batchOrders";
-    const payload = {
-        symbol,
-        orderIdList,
-    };
+    
+    let payload = {
+      symbol,
+    }
+    
+    if (orderIdList !== null) {
+      payload.orderIdList = orderIdList
+    } else {
+      payload.ClientOrderIDList = ClientOrderIDList
+    }
+
     return await makeSignedRequest("DELETE", path, payload, this.apiKey, this.apiSecret);
   }
 
@@ -105,7 +121,7 @@ class BingXFunctions extends BingXSession {
     return await makeSignedRequest("GET", path, payload, this.apiKey, this.apiSecret);
   }
 
-  async switchLeverage(symbol, side, leverage) {
+  async setLeverage(symbol, side, leverage) {
     const path = "/openApi/swap/v2/trade/leverage";
     
     let leverageSide = side == "Buy" ? "LONG" : "SHORT"

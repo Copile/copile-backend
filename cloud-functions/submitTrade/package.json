@@ -21,6 +21,7 @@
     "winston": "^3.3.3",
     "compression": "^1.7.4",
     "axios": "^1.6.1",
-    "decimal.js": "10.4.3"
+    "decimal.js": "10.4.3",
+    "uuid": "^9.0.1"
   }
 }

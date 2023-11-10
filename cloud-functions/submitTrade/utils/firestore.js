@@ -73,7 +73,7 @@ async function storeTrade(accountId, orderDict) {
             [FIELD_QUANTITY]: orderDict.quantity,
             [FIELD_ENTRY]: orderDict.entry,
             [FIELD_LEVERAGE]: orderDict.leverage,
-            [FIELD_EXCHANGE]: "bybit",
+            [FIELD_EXCHANGE]: orderDict.exchange,
             [FIELD_CREATED_AT]: Math.floor(Date.now() / 1000),
         });
     } catch (error) {
@@ -93,15 +93,15 @@ async function storeTP(accountId, tpDict) {
             .collection(COLLECTION_TRADES)
             .doc(tpDict.tradeId)
             .collection(COLLECTION_TAKE_PROFITS)
-            .doc(tpDict.tpDocumentId);
+            .doc(tpDict.tp_id);
 
         await tp_doc_ref.set({
             [FIELD_ORDER_ID]: String(tpDict.orderId),
             [FIELD_EXECUTED]: "1",
-            [FIELD_TP_NUMBER]: tpDict.tpNumber,
-            [FIELD_TP_VALUE]: tpDict.tpValue,
-            [FIELD_TP_PERCENTAGE]: tpDict.tpPercentage,
-            [FIELD_TP_AMOUNT]: tpDict.tpAmount,
+            [FIELD_TP_NUMBER]: tpDict.tp_number,
+            [FIELD_TP_VALUE]: tpDict.tp_value,
+            [FIELD_TP_PERCENTAGE]: tpDict.tp_percentage,
+            [FIELD_TP_AMOUNT]: tpDict.tp_amount,
         });
     } catch (error) {
         throw new CustomError({
@@ -120,15 +120,15 @@ async function storeSL(accountId, slDict) {
             .collection(COLLECTION_TRADES)
             .doc(slDict.tradeId)
             .collection(COLLECTION_STOP_LOSSES)
-            .doc(slDict.slDocumentId);
+            .doc(slDict.sl_id);
 
         await sl_doc_ref.set({
             [FIELD_ORDER_ID]: String(slDict.orderId),
             [FIELD_EXECUTED]: "1",
-            [FIELD_SL_PERCENTAGE]: slDict.slPercentage,
-            [FIELD_SL_NUMBER]: slDict.slNumber,
-            [FIELD_SL_VALUE]: slDict.slValue,
-            [FIELD_SL_AMOUNT]: slDict.slAmount,
+            [FIELD_SL_PERCENTAGE]: slDict.sl_percentage,
+            [FIELD_SL_NUMBER]: slDict.sl_number,
+            [FIELD_SL_VALUE]: slDict.sl_value,
+            [FIELD_SL_AMOUNT]: slDict.sl_amount,
         });
     } catch (error) {
         throw new CustomError({
@@ -198,8 +198,8 @@ const getTradeInfo = async (accountId, tradeId) => {
     }
 };
 
-// New function to get a TP or SL order by orderID
-const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
+// New function to get a TP or SL order by documentId
+const getSpecificOrder = async (accountId, tradeId, documentId, isTpOrSl) => {
     try {
         const tradeRef = db.collection(COLLECTION_TRADERS)
             .doc(accountId)
@@ -208,31 +208,25 @@ const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
 
         let collectionName = isTpOrSl === 'tp' ? COLLECTION_TAKE_PROFITS : COLLECTION_STOP_LOSSES;
 
-        const orderCollection = await tradeRef.collection(collectionName)
-            .where("orderID", "==", orderID)
+        const orderDoc = await tradeRef.collection(collectionName)
+            .doc(documentId)
             .get();
 
         let orderData = null;
 
-        orderCollection.forEach(doc => {
-            if (doc.exists) {
-                orderData = doc.data();
-                orderData.documentId = doc.id;
-                orderData.tradeType = isTpOrSl;
-            }
-        });
-
-        if (orderData) {
-            return orderData;
-        } else {
-            return null;
+        if (orderDoc.exists) {
+            orderData = orderDoc.data();
+            orderData.documentId = orderDoc.id;
+            orderData.tradeType = isTpOrSl;
         }
+
+        return orderData ? orderData : null;
 
     } catch (error) {
         throw new CustomError({
-            message: `Error getting tp/sl order by orderID: ${error.message}`,
+            message: `Error getting tp/sl order by documentId: ${error.message}`,
             status: 500,
-            source: "getTpOrSlOrderByOrderId",
+            source: "getTpOrSlOrderByDocumentId",
         });
     }
 };
@@ -334,6 +328,6 @@ module.exports = {
     getTpSlOrders,
     getTpOrders,
     updateTradeQuantity,
-    getSpecficOrder,
+    getSpecificOrder,
     getUserKeys,
 };
