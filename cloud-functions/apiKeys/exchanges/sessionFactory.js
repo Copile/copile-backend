@@ -14,6 +14,14 @@ function createSession(exchange, apiKey, apiSecret, apiPassphrase) {
   switch (exchange) {
     case "binance":
       return new BinanceSession(apiKey, apiSecret);
+    case "bingx":
+      return new BingXSession(apiKey, apiSecret);
+    case "bybit":
+      return new BybitSession(apiKey, apiSecret);
+    case "kucoin":
+      return new KuCoinSession(apiKey, apiSecret, apiPassphrase);
+    case "testnet":
+      return new TestnetSession(apiKey, apiSecret);
 
     default:
       throw new CustomError({
