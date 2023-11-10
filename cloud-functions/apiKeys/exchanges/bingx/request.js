@@ -48,12 +48,11 @@ async function getServerTime() {
 }
 
 async function getAPIPerms(apiKey, apiSecret) {
-  const timestamp = await getServerTime();
-  const url = `${API_PROTOCOL}://${API_HOST}/openApi/v1/account/apiRestrictions`;
-  const payload = { timestamp, recvWindow: 5000 };
+  const path = "openApi/v1/account/apiRestrictions";
+  const payload = { timestamp: await getServerTime(), recvWindow: 5000 };
 
   try {
-    const response = await makeSignedRequest(url, payload, apiKey, apiSecret);
+    const response = await makeSignedRequest(path, payload, apiKey, apiSecret);
     if (response.status === 200 && response.data) {
       return response.data;
     }
