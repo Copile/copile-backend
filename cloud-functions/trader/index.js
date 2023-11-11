@@ -12,7 +12,9 @@ const request = require("request");
 
 const getMonthYear = (timestamp) => {
   const date = new Date(timestamp * 1000);
-  return `${date.toLocaleString("en-us", { month: "long" })} ${date.getFullYear()}`;
+  return `${date.toLocaleString("en-us", {
+    month: "long",
+  })} ${date.getFullYear()}`;
 };
 
 const deleteWhopmember = (mem_id) => {
@@ -30,7 +32,9 @@ const deleteWhopmember = (mem_id) => {
         if (err) {
           reject(err);
         } else if (resp.statusCode !== 200) {
-          reject(new Error(`HTTP error ${resp.statusCode}: ${JSON.stringify(body)}`));
+          reject(
+            new Error(`HTTP error ${resp.statusCode}: ${JSON.stringify(body)}`)
+          );
         } else {
           resolve(body);
         }
@@ -68,7 +72,14 @@ app.post("/create-plan", async (req, res) => {
 
   try {
     const whopPlan = await createWhopPlan(planData);
-    const { id, product, renewal_price, initial_price, base_currency, direct_link } = whopPlan;
+    const {
+      id,
+      product,
+      renewal_price,
+      initial_price,
+      base_currency,
+      direct_link,
+    } = whopPlan;
 
     const traderId = req.body.trader_id;
     const traderRef = db.collection("traders").doc(traderId);
@@ -132,7 +143,9 @@ app.get("/:traderID/members", async (req, res) => {
       return members;
     };
 
-    const getAllPlanMembersPromises = membersSnapshot.docs.map((doc) => getPlanMembers(doc.id));
+    const getAllPlanMembersPromises = membersSnapshot.docs.map((doc) =>
+      getPlanMembers(doc.id)
+    );
 
     const allPlanMembers = await Promise.all(getAllPlanMembersPromises);
 
@@ -177,7 +190,9 @@ app.get("/:traderID/sales", async (req, res) => {
       return sales;
     };
 
-    const getAllPlanSalesPromises = productsSnapshot.docs.map((doc) => getPlanSales(doc.id));
+    const getAllPlanSalesPromises = productsSnapshot.docs.map((doc) =>
+      getPlanSales(doc.id)
+    );
 
     const allPlanSales = await Promise.all(getAllPlanSalesPromises);
 
@@ -202,14 +217,17 @@ app.post("/updateExchange", async (req, res) => {
 
   // check if api_passphrase is required
   if (exchange === "kucoin" && !api_passphrase) {
-    res
-      .status(400)
-      .json({ success: false, error: `api_passphrase is required for ${exchange} exchange` });
+    res.status(400).json({
+      success: false,
+      error: `api_passphrase is required for ${exchange} exchange`,
+    });
   } else {
     try {
       const keyField = read_only ? "read_only_api_key" : "api_key"; // determine the key field based on read_only
       const secretField = read_only ? "read_only_api_secret" : "api_secret"; // determine the secret field based on read_only
-      const passphraseField = read_only ? "read_only_api_passphrase" : "api_passphrase"; // determine the passphrase field based on read_only
+      const passphraseField = read_only
+        ? "read_only_api_passphrase"
+        : "api_passphrase"; // determine the passphrase field based on read_only
 
       const updateFields = {
         [`exchanges.${exchange}.${keyField}`]: api_key,
@@ -217,13 +235,34 @@ app.post("/updateExchange", async (req, res) => {
       };
 
       if (exchange === "kucoin") {
-        updateFields[`exchanges.${exchange}.${passphraseField}`] = api_passphrase;
+        updateFields[`exchanges.${exchange}.${passphraseField}`] =
+          api_passphrase;
+      }
+
+      // call the apiKey validation endpoint
+      const apiKeyValidationResponse = await axios.post(
+        "https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}",
+        { api_key, api_secret, api_passphrase },
+        {
+          headers: {
+            traderId,
+          },
+        }
+      );
+
+      if(apiKeyValidationResponse.status !== 200) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid API credentials.`,
+        });
       }
 
       userRef
         .update(updateFields)
         .then(() => {
-          console.log(`Exchange information updated successfully - ${traderId}!`);
+          console.log(
+            `Exchange information updated successfully - ${traderId}!`
+          );
           res.status(200).json({
             success: true,
             message: `Exchange information updated successfully - ${traderId}!`,
@@ -231,11 +270,17 @@ app.post("/updateExchange", async (req, res) => {
         })
         .catch((error) => {
           console.error(`Error updating document: ${error}`);
-          res.status(500).json({ success: false, error: `Error updating document: ${traderId}` });
+          res.status(500).json({
+            success: false,
+            error: `Error updating document: ${traderId}`,
+          });
         });
     } catch (error) {
       console.error("Error encrypting data:", error);
-      res.status(500).json({ success: false, error: "An error occurred during the process" });
+      res.status(500).json({
+        success: false,
+        error: "An error occurred during the process",
+      });
     }
   }
 });
@@ -262,7 +307,9 @@ app.post("/updateMonitorStatus", async (req, res) => {
     });
   } catch (error) {
     console.error(`Error updating document: ${error}`);
-    res.status(500).json({ success: false, error: `Error updating document: ${traderId}` });
+    res
+      .status(500)
+      .json({ success: false, error: `Error updating document: ${traderId}` });
   }
 });
 
@@ -272,7 +319,10 @@ app.get("/account", async (req, res) => {
   console.log(traderId);
 
   try {
-    const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+    const traderDocumentSnapshot = await db
+      .collection("traders")
+      .doc(traderId)
+      .get();
 
     if (!traderDocumentSnapshot.exists) {
       res.status(404).json({ success: false, error: "Trader not found" });
@@ -328,7 +378,9 @@ app.get("/account", async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error retrieving trader data:", error);
-    res.status(500).json({ success: false, error: "Error retrieving trader data" });
+    res
+      .status(500)
+      .json({ success: false, error: "Error retrieving trader data" });
   }
 });
 
@@ -337,10 +389,15 @@ app.get("/pubKey", async (req, res) => {
 
   try {
     if (!traderId) {
-      return res.status(400).json({ success: false, error: "Trader name is missing" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Trader name is missing" });
     }
 
-    const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+    const traderDocumentSnapshot = await db
+      .collection("traders")
+      .doc(traderId)
+      .get();
 
     if (!traderDocumentSnapshot.exists) {
       res.status(404).json({ success: false, error: "Trader not found" });
@@ -357,7 +414,9 @@ app.get("/pubKey", async (req, res) => {
   } catch (error) {
     // Catch any error that occurred while getting the public key
     console.error(error);
-    res.status(500).json({ error: "An error occurred while getting the public key." });
+    res
+      .status(500)
+      .json({ error: "An error occurred while getting the public key." });
   }
 });
 
@@ -377,7 +436,10 @@ app.put("/alwaysExchanges", async (req, res) => {
     // Use set() instead of update() to create the document if it doesn't exist
     await documentRef.set({ always_exchanges }, { merge: true });
 
-    res.json({ success: true, message: "always_exchanges updated successfully" });
+    res.json({
+      success: true,
+      message: "always_exchanges updated successfully",
+    });
   } catch (error) {
     console.error("Error updating always_exchanges:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
@@ -410,7 +472,9 @@ app.delete("/deleteExchange", async (req, res) => {
     // Determine the key and secret fields based on read_only
     const keyField = read_only ? "read_only_api_key" : "api_key";
     const secretField = read_only ? "read_only_api_secret" : "api_secret";
-    const passphraseField = read_only ? "read_only_api_passphrase" : "api_passphrase"; // determine the passphrase field based on read_only
+    const passphraseField = read_only
+      ? "read_only_api_passphrase"
+      : "api_passphrase"; // determine the passphrase field based on read_only
 
     // Delete API credentials by setting them to 'x'
     exchanges[exchangeName][keyField] = "x";
@@ -421,7 +485,10 @@ app.delete("/deleteExchange", async (req, res) => {
 
     await documentRef.update({ exchanges });
 
-    res.json({ success: true, message: "Exchange credentials deleted successfully" });
+    res.json({
+      success: true,
+      message: "Exchange credentials deleted successfully",
+    });
   } catch (error) {
     console.error("Error deleting exchange credentials:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
