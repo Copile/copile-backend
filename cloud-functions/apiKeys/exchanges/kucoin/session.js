@@ -20,13 +20,13 @@ class KuCoinSession extends ExchangeSession {
 
   async getAPIPerms() {
     try {
-      return await getKucoinAPIPerms(this.apiKey, this.apiSecret);
+      return await getKucoinAPIPerms(this.apiKey, this.apiSecret, this.apiPassphrase);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
       throw new CustomError({
-        message: `Failed to fetch BingX API Perms: ${error.message}`,
+        message: `Failed to fetch KuCoin API Perms: ${error.message}`,
         status: 500,
         source: "getAPIPerms",
       });

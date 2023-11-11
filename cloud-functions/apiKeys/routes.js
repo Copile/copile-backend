@@ -20,7 +20,7 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
     apiSecret = (await decryptData(apiSecret, entityId));
 
     if (apiPassphrase) {
-      apiPassphrase = await decryptData(keys.api_passphrase, entityId);
+      apiPassphrase = await decryptData(apiPassphrase, entityId);
     }
 
     if (exchange === "kucoin" && apiPassphrase === null) {
