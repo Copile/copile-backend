@@ -20,7 +20,7 @@ class KuCoinSession extends ExchangeSession {
 
   async getAPIPerms() {
     try {
-      return await getKucoinAPIPerms(this.apiKey, this.apiSecret);
+      return await getKucoinAPIPerms(this.apiKey, this.apiSecret, this.apiPassphrase);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
