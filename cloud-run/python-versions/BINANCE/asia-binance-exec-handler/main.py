@@ -88,13 +88,9 @@ async def replace_sl(data: dict):
         # Cancel the order
         await binance.cancel.send_cancel(account_id, trade_id, order_id, "sl", trade_info, keys)
 
-        if position_quantity != 0:
-            # Resend the sl with the updated payload
-            await binance.stoploss.send_stoploss(account_id, trade_id, payload['sl_id'], payload['sl_number'], payload['sl_value'], payload['sl_percentage'], float(position_quantity), trade_info, precision, keys)
-        else:
-            position_quantity = trade_info["quantity"]
-            # Resend the sl with the updated payload
-            await binance.stoploss.send_stoploss(account_id, trade_id, payload['sl_id'], payload['sl_number'], payload['sl_value'], payload['sl_percentage'], float(position_quantity), trade_info, precision, keys)
+        position_quantity = position_quantity if position_quantity != 0 else trade_info["quantity"]
+
+        await binance.stoploss.send_stoploss(account_id, trade_id, payload['sl_id'], payload['sl_number'], payload['sl_value'], payload['sl_percentage'], float(position_quantity), trade_info, precision, keys)
 
         payload = {
             "data": {
@@ -234,11 +230,9 @@ async def bulk_tp(data: dict):
             binance.precision.get_precision(account_id, trade_info["symbol"], keys)
         )
 
-        if position_quantity != 0:
-            new_take_profits = await binance.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
-        else:
-            position_quantity = trade_info["quantity"]     
-            new_take_profits = await binance.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
+        position_quantity = position_quantity if position_quantity != 0 else trade_info["quantity"]
+
+        new_take_profits = await binance.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
 
         tasks = [binance.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]
         await asyncio.gather(*tasks)
@@ -362,7 +356,7 @@ async def partial_close(data: dict):
         ) 
 
         precision_dict = {item['symbol']: (item['pricePrecision'], item['quantityPrecision']) for item in precision if item['symbol'] == symbol}
-        quantity_precision = precision_dict[symbol]
+        quantity_precision = int(precision_dict[symbol][1])
 
         if position_quantity == 0:
             position_quantity = float(trade_info["quantity"])

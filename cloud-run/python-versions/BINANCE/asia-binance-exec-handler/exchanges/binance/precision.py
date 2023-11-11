@@ -20,6 +20,6 @@ async def get_quantity_precision(account_id, symbol, keys):
         for i in range(len(symbols)):
             if symbols[i]['symbol'] == symbol:
                 quantityPrecision = symbols[i]['quantityPrecision']
-                return quantityPrecision
+                return int(quantityPrecision)
     except Exception as error:
         print(error)
