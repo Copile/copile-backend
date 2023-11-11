@@ -26,7 +26,7 @@ class KuCoinSession extends ExchangeSession {
         throw error;
       }
       throw new CustomError({
-        message: `Failed to fetch BingX API Perms: ${error.message}`,
+        message: `Failed to fetch KuCoin API Perms: ${error.message}`,
         status: 500,
         source: "getAPIPerms",
       });

@@ -15,7 +15,7 @@ async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leve
 
         order_type = "LIMIT" if price != "market" else "MARKET"
 
-        quantity = round((float(margin) * int(leverage) / float(price)), quantity_precision) if price != "market" else round((float(margin) * int(leverage) / float(await get_market(symbol, keys))), quantity_precision)
+        quantity = round((float(margin) * int(leverage) / float(price)), int(quantity_precision)) if price != "market" else round((float(margin) * int(leverage) / float(await get_market(symbol, keys))), int(quantity_precision))
 
         create_order = await client.new_order(
             symbol=symbol,
