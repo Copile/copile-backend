@@ -32,9 +32,9 @@ ws.on("message", async (data) => {
     //   return;
     // }
 
-    console.log("============================= NEW ORDER =============================");
-    console.log("--- RAW DATA ---");
-    console.log(data);
+    // console.log("============================= NEW ORDER =============================");
+    // console.log("--- RAW DATA ---");
+    // console.log(data);
     
     if (data.e == "ORDER_TRADE_UPDATE") {
       // Transform the order update into the desired format
@@ -54,6 +54,9 @@ ws.on("message", async (data) => {
             : data.o.ap,
       };
 
+      if (order.entry == "0" && order.detection == "new_order" || order.detection == "partial_close") {
+        return;
+      }
       console.log("--- TRANSFORMED DATA ---");
       let orders = [];
       orders.push(order);

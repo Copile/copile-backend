@@ -14,7 +14,6 @@ const tradeScan = require('../utils/tradeScan.js')
  * @param {Object} order - The order object containing all the trade information.
  * @returns {Object} - Returns the modified order object.
  */
-
 async function tradeExecution(orders) {
   try {
     // Checking if any order is a partial_close order
@@ -30,14 +29,13 @@ async function tradeExecution(orders) {
     if (hasPartialClose) {
       orders = await tradeScan(orders);
     }
-    let orders_length = orders.length;
+    let ordersLength = orders.length;
 
-    for (let i = 0; i < orders_length; i++) {
+    for (let i = 0; i < ordersLength; i++) {
       let order;
       switch (orders[i].detection) {
         case 'new_order':
           // Handle new order
-          console.log("Yes");
           order = await handleNewOrder(orders[i]);
           break;
 
@@ -63,6 +61,7 @@ async function tradeExecution(orders) {
           order = await handleCancelledOrder(orders[i]);
           break;
       }
+      console.log(order);
       await submitTrade(order);
       processedOrders.push(order);  
     }

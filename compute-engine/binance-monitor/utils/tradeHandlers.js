@@ -18,8 +18,10 @@ const exchange = process.env.TRADER_EXCHANGE
 
 async function handleNewOrder(order) {
   try {
+    console.log(order.orderId);
     let orderCheck = await orderExists(accountId, order.orderId);
-    
+    console.log('----------------- ORDER CHECK -------------------')
+    console.log(orderCheck);
     if (orderCheck) {
       order.detection = "no_action_needed";
       return order;
@@ -39,7 +41,8 @@ async function handleNewOrder(order) {
 
 async function handleNewStopLoss(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'BUY' ? 'SELL' : 'BUY');
+    console.log(order.tradeId)
     let SlExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'sl');
     if (SlExists !== null) {
       order.existed = true;
@@ -70,7 +73,7 @@ async function handleNewStopLoss(order) {
 
 async function handleNewTakeProfit(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'BUY' ? 'SELL' : 'BUY');
     
     const tradeInfo = await getTradeInfo(accountId, order.tradeId);
     
@@ -110,7 +113,7 @@ async function handleNewTakeProfit(order) {
 
 async function handlePartialClose(order) {
   try {
-    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
+    order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'BUY' ? 'SELL' : 'BUY');
     const tradeInfo = await getTradeInfo(accountId, order.tradeId);
 
     order.partialPercentage = parseFloat((order.quantity / tradeInfo.quantity).toFixed(2));
@@ -134,7 +137,7 @@ async function handleCancelledOrder(order) {
   try {
     let tradeSide = order.side;
     if (order.detection !== 'cancelled_order') {
-      tradeSide = order.side === 'Buy' ? 'Sell' : 'Buy';
+      tradeSide = order.side === 'BUY' ? 'SELL' : 'BUY';
     }
 
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, tradeSide);
