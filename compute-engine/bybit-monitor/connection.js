@@ -1,12 +1,10 @@
-// require("dotenv").config();
+require("dotenv").config();
 const { WebsocketClient } = require("bybit-api");
-// const tradeExecution = require("./utils/tradeExecution.js");
+const tradeExecution = require("./utils/tradeExecution.js");
 const getAction = require("./utils/getAction.js");
 
-const API_KEY = "BJ36pEzj58sEEOZpdE";
-const API_SECRET = "DSuhLIhqmWoJ8RNj6DilmEAlB3sbAvTac6Pd";
-// const API_KEY = process.env.API_KEY;
-// const API_SECRET = process.env.API_SECRET;
+const API_KEY = process.env.API_KEY;
+const API_SECRET = process.env.API_SECRET;
 
 const wsConfig = {
   key: API_KEY,
@@ -67,7 +65,7 @@ ws.on("update", async (orders) => {
         : orders[i].price;
       updated_orders.push(order);
     }
-    // await tradeExecution(updated_orders);
+    await tradeExecution(updated_orders);
 
     console.log("updated orders", updated_orders);
   } catch (error) {

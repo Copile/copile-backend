@@ -19,6 +19,7 @@ const exchange = process.env.TRADER_EXCHANGE
 async function handleNewOrder(order) {
   try {
     let orderCheck = await orderExists(accountId, order.orderId);
+    
     if (orderCheck) {
       order.detection = "no_action_needed";
       return order;
@@ -70,6 +71,13 @@ async function handleNewStopLoss(order) {
 async function handleNewTakeProfit(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'Buy' ? 'Sell' : 'Buy');
+    
+    const tradeInfo = await getTradeInfo(accountId, order.tradeId);
+    
+    if (order.quantity == '0') {
+      order.quantity = tradeInfo['quantity']
+    }
+
     const TpExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'tp');
 
     if (TpExists !== null) {
@@ -83,7 +91,6 @@ async function handleNewTakeProfit(order) {
       order.existed = false;
     }
 
-    const tradeInfo = await getTradeInfo(accountId, order.tradeId);
     order.tpValue = order.entry;
     order.tpAmount = order.quantity;
     order.tpNumber = 1;

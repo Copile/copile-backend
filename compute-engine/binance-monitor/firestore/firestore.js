@@ -93,7 +93,7 @@ async function storeTrade(accountId, orderDict) {
             [FIELD_QUANTITY]: orderDict.quantity,
             [FIELD_ENTRY]: orderDict.entry,
             [FIELD_LEVERAGE]: orderDict.leverage,
-            [FIELD_EXCHANGE]: "bybit",
+            [FIELD_EXCHANGE]: "binance",
             [FIELD_CREATED_AT]: Math.floor(Date.now() / 1000),
         });
     } catch (error) {

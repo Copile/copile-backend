@@ -18,8 +18,12 @@ const tradeScan = require('../utils/tradeScan.js')
 async function tradeExecution(orders) {
   try {
     // Checking if any order is a partial_close order
-    const hasPartialClose = orders.some(order => order.detection === 'partial_close');
+    let hasPartialClose = false;
 
+    if (orders.length > 1) {
+      const hasPartialClose = orders.some(order => order.detection === 'partial_close');
+    }
+    
     let processedOrders = []; 
 
     // If any order has "partial_close", send all orders to tradeScan to see if they belong together
@@ -33,6 +37,7 @@ async function tradeExecution(orders) {
       switch (orders[i].detection) {
         case 'new_order':
           // Handle new order
+          console.log("Yes");
           order = await handleNewOrder(orders[i]);
           break;
 

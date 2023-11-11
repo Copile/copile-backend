@@ -1,11 +1,10 @@
 require("dotenv").config();
 const { WebsocketClient } = require("binance");
-// const tradeExecution = require("./utils/tradeExecution.js");
+const tradeExecution = require("./utils/tradeExecution.js");
 const getAction = require("./utils/getAction.js");
 
-// Jans binance
-const API_KEY = "9uEl3DDT5S0Ij5koFvkfQdSy5jJH2KQ2cjoUNZEHXdfNQ4qVak13CLuxSWCNCZ8z";
-const API_SECRET = "6AevR0uy1RZeMNfrh12IPFC1IoTkfntvpGVwDHWD6wIdkT4H8ZYEtJQyCQqu5BRZ";
+const API_KEY = process.env.API_KEY;
+const API_SECRET = process.env.API_SECRET;
 
 const ws = new WebsocketClient({
   api_key: API_KEY,
@@ -56,7 +55,10 @@ ws.on("message", async (data) => {
       };
 
       console.log("--- TRANSFORMED DATA ---");
-      console.log(order);
+      let orders = [];
+      orders.push(order);
+      console.log(orders);
+      await tradeExecution(orders);
     } else {
       console.log(data.e);
       console.log("No action needed for this websocket data");
