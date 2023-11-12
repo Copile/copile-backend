@@ -1,76 +1,42 @@
 // require("dotenv").config();
-const { WebsocketClient } = require("bybit-api");
-// const tradeExecution = require("./utils/tradeExecution.js");
+const KuCoinFutures = require("kucoin-futures-node-sdk").default;
 const getAction = require("./utils/getAction.js");
 
-const API_KEY = "BJ36pEzj58sEEOZpdE";
-const API_SECRET = "DSuhLIhqmWoJ8RNj6DilmEAlB3sbAvTac6Pd";
+const API_KEY = "637967ef0adca800011fd0a6";
+const API_SECRET = "11b7ceaf-7a2a-4134-8503-247642a01fe3";
+const API_PASSPHRASE = "mira12345678";
 // const API_KEY = process.env.API_KEY;
 // const API_SECRET = process.env.API_SECRET;
 
-const wsConfig = {
+const futuresSDK = new KuCoinFutures({
   key: API_KEY,
   secret: API_SECRET,
-  testnet: true,
-  market: "v5",
-  pongTimeout: 1000,
-  pingInterval: 10000,
-  reconnectTimeout: 500,
-};
-
-const ws = new WebsocketClient(wsConfig);
-
-ws.subscribeV5("order", "linear").catch((err) => {
-  console.error("Failed to subscribe:", err);
+  passphrase: API_PASSPHRASE,
 });
 
-ws.on("update", async (orders) => {
-  try {
-    orders = orders.data;
-    console.log("raw orders", orders);
-    // Sort the orders based on the 'getAction'
-    orders.sort((a, b) => {
-      const actionA = getAction(a);
-      const actionB = getAction(b);
+const handleTradeOrders = (data) => {
+  // Process the data received from trade orders
+  console.log("Received trade order data:", data);
+  const orderId = data.data.orderId;
 
-      if (actionA === "new_order" || actionA === "cancelled_order") {
-        return -1;
-      }
-      if (actionB === "new_order" || actionB === "cancelled_order") {
-        return 1;
-      }
+  // futuresSDK.futuresOrderDetail(orderId).then((res) => {
+  //   console.log("Order details:", res);
+  // });
 
-      return 0;
-    });
+  // Additional processing logic goes here
+};
 
-    let updated_orders = new Array();
+const handleStopOrders = (data) => {
+  // Process the data received from stop orders
+  console.log("Received stop order data:", data);
 
-    let orders_length = orders.length;
-    for (let i = 0; i < orders_length; i++) {
-      let order = {
-        symbol: orders[i].symbol,
-        type: orders[i].orderType,
-        quantity: orders[i].qty,
-        orderId: orders[i].orderId,
-        side: orders[i].side,
-        leverage: "20",
-        detection: getAction(orders[i]),
-      };
-      let trigger_price_detection = [
-        "new_take_profit",
-        "new_stop_loss",
-        "cancelled_take_profit",
-        "cancelled_stop_loss",
-      ];
-      order.entry = trigger_price_detection.includes(order.detection)
-        ? orders[i].triggerPrice
-        : orders[i].price;
-      updated_orders.push(order);
-    }
-    // await tradeExecution(updated_orders);
+  // Additional processing logic goes here
+};
 
-    console.log("updated orders", updated_orders);
-  } catch (error) {
-    console.error("Error processing WebSocket message:", error);
-  }
+futuresSDK.websocket.tradeOrders("", handleTradeOrders).catch((err) => {
+  console.error("Failed to subscribe to trade orders:", err);
+});
+
+futuresSDK.websocket.advancedOrders(handleStopOrders).catch((err) => {
+  console.error("Failed to subscribe to stop orders:", err);
 });
