@@ -86,7 +86,7 @@ async function storeTrade(accountId, orderDict) {
 
         await trade_doc_ref.set({
             [FIELD_TRADE_ID]: orderDict.tradeId,
-            [FIELD_ORDER_ID]: orderDict.orderId,
+            [FIELD_ORDER_ID]: String(orderDict.orderId),
             [FIELD_SYMBOL]: orderDict.symbol,
             [FIELD_ORDER_TYPE]: orderDict.type,
             [FIELD_SIDE]: orderDict.side.charAt(0).toUpperCase() + orderDict.side.slice(1),
@@ -226,7 +226,7 @@ async function orderExists(accountId, orderId) {
             .collection(COLLECTION_TRADES);
 
         const querySnapshot = await tradesCollection
-            .where(FIELD_ORDER_ID, "==", orderId)
+            .where(FIELD_ORDER_ID, "==", String(orderId))
             .get();
 
         return !querySnapshot.empty;
@@ -294,7 +294,7 @@ const getSpecficOrder = async (accountId, tradeId, orderID, isTpOrSl) => {
         let collectionName = isTpOrSl === 'tp' ? COLLECTION_TAKE_PROFITS : COLLECTION_STOP_LOSSES;
 
         const orderCollection = await tradeRef.collection(collectionName)
-            .where("orderID", "==", orderID)
+            .where("orderID", "==", String(orderID))
             .get();
 
         let orderData = null;

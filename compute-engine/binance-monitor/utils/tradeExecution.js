@@ -61,7 +61,6 @@ async function tradeExecution(orders) {
           order = await handleCancelledOrder(orders[i]);
           break;
       }
-      console.log(order);
       await submitTrade(order);
       processedOrders.push(order);  
     }

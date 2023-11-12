@@ -16,6 +16,7 @@ const ws = new WebsocketClient({
 });
 
 const tpSlOrders = ["TAKE_PROFIT_MARKET", "TAKE_PROFIT", "STOP_MARKET", "STOP_LIMIT"]
+const filledOrders = ["new_take_profit", "new_stop_loss", "partial_close"]
 
 ws.on("message", async (data) => {
   try {
@@ -32,9 +33,14 @@ ws.on("message", async (data) => {
     //   return;
     // }
 
-    // console.log("============================= NEW ORDER =============================");
-    // console.log("--- RAW DATA ---");
-    // console.log(data);
+    // Filtering market orders that aren't filled yet
+    if (data.X == "NEW" && data.o == "MARKET") {
+      return;
+    }
+
+    console.log("============================= NEW ORDER =============================");
+    console.log("--- RAW DATA ---");
+    console.log(data);
     
     if (data.e == "ORDER_TRADE_UPDATE") {
       // Transform the order update into the desired format
@@ -42,7 +48,7 @@ ws.on("message", async (data) => {
         symbol: data.o.s,
         type: data.o.o,
         quantity: data.o.q,
-        orderId: data.o.i,
+        orderId: String(data.o.i),
         side: data.o.S,
         leverage: "20",
         detection: getAction(data.o),
@@ -56,11 +62,13 @@ ws.on("message", async (data) => {
 
       if (order.entry == "0" && order.detection == "new_order" || order.detection == "partial_close") {
         return;
+      } else if (order.X == "FILLED" && filledOrders.includes(order.detection)) {
+        return;
       }
       console.log("--- TRANSFORMED DATA ---");
       let orders = [];
       orders.push(order);
-      console.log(orders);
+      console.log(order);
       await tradeExecution(orders);
     } else {
       console.log(data.e);

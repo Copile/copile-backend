@@ -8,6 +8,12 @@ function getAction(order) {
         "TAKE_PROFIT": "cancelled_take_profit",
         "TAKE_PROFIT_MARKET": "cancelled_take_profit"
       },
+      "EXPIRED": {
+        "STOP_MARKET": "cancelled_stop_loss",
+        "STOP_LIMIT": "cancelled_stop_loss",
+        "TAKE_PROFIT": "cancelled_take_profit",
+        "TAKE_PROFIT_MARKET": "cancelled_take_profit"
+      },
       "NEW": {
         "MARKET": "partial_close",
         "LIMIT": "partial_close",

@@ -18,10 +18,8 @@ const exchange = process.env.TRADER_EXCHANGE
 
 async function handleNewOrder(order) {
   try {
-    console.log(order.orderId);
     let orderCheck = await orderExists(accountId, order.orderId);
-    console.log('----------------- ORDER CHECK -------------------')
-    console.log(orderCheck);
+
     if (orderCheck) {
       order.detection = "no_action_needed";
       return order;
@@ -42,7 +40,6 @@ async function handleNewOrder(order) {
 async function handleNewStopLoss(order) {
   try {
     order.tradeId = await fetchLatestTradeDoc(accountId, order.symbol, exchange, order.side === 'BUY' ? 'SELL' : 'BUY');
-    console.log(order.tradeId)
     let SlExists = await getSpecficOrder(accountId, order.tradeId, order.orderId, 'sl');
     if (SlExists !== null) {
       order.existed = true;
