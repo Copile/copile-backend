@@ -9,6 +9,7 @@ applyMiddleware(app);
 
 const WHOP_TOKEN = process.env.whopToken;
 const request = require("request");
+const axios = require("axios");
 
 const getMonthYear = (timestamp) => {
   const date = new Date(timestamp * 1000);
@@ -241,7 +242,7 @@ app.post("/updateExchange", async (req, res) => {
 
       // call the apiKey validation endpoint
       const apiKeyValidationResponse = await axios.post(
-        "https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}",
+        `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
         { api_key, api_secret, api_passphrase },
         {
           headers: {
