@@ -5,6 +5,7 @@ const getAction = require("./utils/getAction.js");
 
 const API_KEY = process.env.API_KEY;
 const API_SECRET = process.env.API_SECRET;
+const tpSlOrders = ["TAKE_PROFIT_MARKET", "TAKE_PROFIT", "STOP_MARKET", "STOP_LIMIT"]
 
 const ws = new WebsocketClient({
   api_key: API_KEY,
@@ -15,71 +16,54 @@ const ws = new WebsocketClient({
   reconnectTimeout: 500,
 });
 
-const tpSlOrders = ["TAKE_PROFIT_MARKET", "TAKE_PROFIT", "STOP_MARKET", "STOP_LIMIT"]
-const filledOrders = ["new_take_profit", "new_stop_loss", "partial_close"]
-
 ws.on("message", async (data) => {
   try {
     console.log(data);
-    // if (data.e !== "ORDER_TRADE_UPDATE") {
-    //   return;
-    // }
-
-    // process 'NEW' limit and stop orders as well as 'FILLED' orders, but ignore 'NEW' market orders that
-    // have not been filled yet otherwise we wont know the entry price
-    // if (
-    //   data.e !== "ORDER_TRADE_UPDATE" ||
-    //   (data.o.X !== "FILLED" && !(data.o.X === "NEW" && data.o.o !== "MARKET"))
-    // ) {
-    //   return;
-    // }
-
-    // Filtering market orders that aren't filled yet
-    if (data.o.X !== "FILLED") {
-      if (data.o.X == "NEW" && data.o.o == "MARKET") {
-        return;
-      }
+    if (!isValidOrderUpdate(data)) {
+      return;
     }
 
     console.log("============================= NEW ORDER =============================");
     console.log("--- RAW DATA ---");
     console.log(data);
     
-    if (data.e == "ORDER_TRADE_UPDATE") {
-      // Transform the order update into the desired format
-      const order = {
-        symbol: data.o.s,
-        type: data.o.o,
-        quantity: data.o.q,
-        orderId: String(data.o.i),
-        side: data.o.S,
-        leverage: "20",
-        detection: getAction(data.o),
-        entry:
-        tpSlOrders.includes(data.o.o)
-            ? data.o.sp
-            : data.o.o === "LIMIT" || data.o.o === "TAKE_PROFIT"
-            ? data.o.p
-            : data.o.ap,
-      };
+    // Transform the order update into the desired format
+    const order = {
+      symbol: data.o.s,
+      type: data.o.o,
+      quantity: data.o.q,
+      orderId: String(data.o.i),
+      side: data.o.S,
+      leverage: "20",
+      detection: getAction(data.o),
+      entry: data.o.p === '0' ? (data.o.ap !== '0' ? data.o.ap : data.o.sp) : data.o.p
+    };
 
-      if (order.entry == "0" && order.detection == "new_order") {
-        return;
-      }
-
-      console.log("--- TRANSFORMED DATA ---");
-      let orders = [];
-      orders.push(order);
-      console.log(order);
-      await tradeExecution(orders);
-    } else {
-      console.log(data.e);
-      console.log("No action needed for this websocket data");
+    if (order.entry == "0" && order.detection == "new_order") {
+      return;
+    } else if (data.o.X == "FILLED" && tpSlOrders.includes(data.o.o)) {
       return;
     }
+
+    console.log("--- TRANSFORMED DATA ---");
+    let orders = [];
+    orders.push(order);
+    console.log(order);
+    await tradeExecution(orders);
   } catch (error) {
     console.error("Error processing WebSocket message:", error);
   }
 });
 
 ws.subscribeUsdFuturesUserDataStream();
+
+function isValidOrderUpdate(data) {
+  return data.e === "ORDER_TRADE_UPDATE" && isOrderFilledOrNewMarket(data.o);
+}
+
+function isOrderFilledOrNewMarket(order) {
+  const isFilled = order.X === "FILLED";
+  const isNewMarket = order.X === "NEW" && order.o === "MARKET";
+  const isPartiallyFilled = order.X === "PARTIALLY_FILLED";
+  return isFilled || isNewMarket || isPartiallyFilled;
+}
