@@ -20,6 +20,7 @@ const filledOrders = ["new_take_profit", "new_stop_loss", "partial_close"]
 
 ws.on("message", async (data) => {
   try {
+    console.log(data);
     // if (data.e !== "ORDER_TRADE_UPDATE") {
     //   return;
     // }
@@ -34,8 +35,10 @@ ws.on("message", async (data) => {
     // }
 
     // Filtering market orders that aren't filled yet
-    if (data.X == "NEW" && data.o == "MARKET") {
-      return;
+    if (data.o.X !== "FILLED") {
+      if (data.o.X == "NEW" && data.o.o == "MARKET") {
+        return;
+      }
     }
 
     console.log("============================= NEW ORDER =============================");
@@ -60,11 +63,10 @@ ws.on("message", async (data) => {
             : data.o.ap,
       };
 
-      if (order.entry == "0" && order.detection == "new_order" || order.detection == "partial_close") {
-        return;
-      } else if (order.X == "FILLED" && filledOrders.includes(order.detection)) {
+      if (order.entry == "0" && order.detection == "new_order") {
         return;
       }
+
       console.log("--- TRANSFORMED DATA ---");
       let orders = [];
       orders.push(order);
