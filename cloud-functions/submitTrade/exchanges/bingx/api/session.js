@@ -1,8 +1,12 @@
 const ExchangeSession = require("../../../trade/exchangeSession.js");
-const { getBingXOrders, getBingXOrderStatuses } = require("../scripts/orders");
-const { bulkOrder } = require('../execution.js');
-const { getBingXPositions } = require("../scripts/positions");
-const { getBingXBalance } = require("../scripts/balance");
+const { bulkOrder,
+  cancelAllOrders,
+  replaceSl,
+  cancelAllTps,
+  bulkTp,
+  partialClose,
+  sendSl,
+  cancelOrder } = require('../execution.js');
 const CustomError = require("../../../utils/error");
 
 /**
@@ -19,102 +23,54 @@ class BingXSession extends ExchangeSession {
     super(apiKey, apiSecret);
   }
 
-  /**
-   * Fetches orders for a given trader.
-   * @param {string} traderId - The ID of the trader.
-   * @return {Promise<Array>} - A promise that resolves to an array of orders.
-   */
-  async getOrders(traderId) {
-    try {
-      return await getBingXOrders(this.apiKey, this.apiSecret, traderId);
-    } catch (e) {
-      if (e instanceof CustomError) {
-        throw e;
-      }
-      throw new CustomError({
-        message: `Failed to fetch BingX orders: ${e.message}`,
-        status: 500,
-        source: "getOrders",
-      });
-    }
-  }
-
-  /**
-   * Fetches positions for a given user.
-   * @param {string} traderId - The ID of the trader.
-   * @return {Promise<Array>} - A promise that resolves to an array of positions.
-   */
-  async getPositions(traderId) {
-    try {
-      return await getBingXPositions(this.apiKey, this.apiSecret, traderId);
-    } catch (e) {
-      if (e instanceof CustomError) {
-        throw e;
-      }
-      throw new CustomError({
-        message: `Failed to fetch BingX positions: ${e.message}`,
-        status: 500,
-        source: "getPositions",
-      });
-    }
-  }
-
-  /**
-   * Fetches the account balance.
-   * @return {Promise<Object>} - A promise that resolves to an object containing the balance.
-   */
-  async getBalance() {
-    try {
-      return await getBingXBalance(this.apiKey, this.apiSecret);
-    } catch (e) {
-      if (e instanceof CustomError) {
-        throw e;
-      }
-      throw new CustomError({
-        message: `Failed to fetch BingX balance: ${e.message}`,
-        status: 500,
-        source: "getBalance",
-      });
-    }
-  }
-
-  /**
-   * Fetches the statuses of orders.
-   * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
-   */
-  async getOrderStatuses(symbol) {
-    try {
-      return await getBingXOrderStatuses(this.apiKey, this.apiSecret, symbol);
-    } catch (e) {
-      if (e instanceof CustomError) {
-        throw e;
-      }
-      throw new CustomError({
-        message: `Failed to fetch BingX order statuses: ${e.message}`,
-        status: 500,
-        source: "getOrderStatuses",
-      });
-    }
-  }
-    /**
-   * Fetches the statuses of orders.
-   * @param {object} payload
-   * @return {Promise<Array>} - A promise that resolves to an array of order statuses.
-   */
   async bulkOrder(data) {
+    try {
+      return await bulkOrder(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send bulkOrder : ${e.message}`,
+        status: 500,
+        source: "bulkOrder",
+      });
+    }
+  }
+
+  async cancelAllOrders(data) {
       try {
-        return await bulkOrder(this.apiKey, this.apiSecret, data);
+        return await cancelAllOrders(this.apiKey, this.apiSecret, data);
       } catch (e) {
         if (e instanceof CustomError) {
           throw e;
         }
         throw new CustomError({
-          message: `Failed to send BingX trade: ${e.message}`,
+          message: `Failed to send cancelAllOrders : ${e.message}`,
           status: 500,
-          source: "tradeOrder",
+          source: "cancelAllOrders",
         });
     }
   }
+
+  async replaceSl(data) {
+    try {
+      return await replaceSl(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send replaceSl : ${e.message}`,
+        status: 500,
+        source: "replaceSl",
+      });
+  }
+
+
+
+
+}
 
 }
 

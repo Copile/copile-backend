@@ -1,6 +1,6 @@
 const CustomError = require('../../../utils/error.js');
 
-async function getTpsStatus(session, tpSlOrders, symbol) {
+async function getTpsStatus(session, symbol, tpSlOrders) {
     try {
         const fetchOrders = await session.currentOrders(symbol);
         const openOrders = fetchOrders["orders"];
