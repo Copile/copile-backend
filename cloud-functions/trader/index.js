@@ -255,12 +255,12 @@ app.post("/updateExchange", async (req, res) => {
       // TODO: more specific error codes to distinguish between invalid credentials and other errors
       // TODO: give user info about excess permissions and expiration date
       if(apiKeyValidationResponse.status !== 200) {
-        res.status(400).json({
+        res.status(200).json({
           success: false,
           error: `Invalid API credentials.`,
         });
       }
-
+      
       userRef
         .update(updateFields)
         .then(() => {
