@@ -16,7 +16,13 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
       passphrase: apiPassphrase, // KC-API-PASSPHRASE
     });
     const accountInfo = await futuresSDK.futuresAccount();
-    if (!accountInfo || !accountInfo.data) return;
+    if (!accountInfo || !accountInfo.data || !accountInfo.status === 200) {
+      throw new CustomError({
+        message: "Failed to fetch KuCoin API Permissions",
+        status: 500,
+        source: "getKucoinAPIPerms",
+      });
+    }
     return accountInfo.data;
   } catch (e) {
     // If it's already a custom error, throw it as-is

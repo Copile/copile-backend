@@ -53,9 +53,14 @@ async function getAPIPerms(apiKey, apiSecret) {
 
   try {
     const response = await makeSignedRequest(path, payload, apiKey, apiSecret);
-    if (response.status === 200 && response.data) {
+    if (response.status === 200 && response.data || response.data.code === 0) {
       return response.data;
     }
+    throw new CustomError({
+      message: `Failed to get BingX API Key Permissions: ${response.data}`,
+      status: 400,
+      source: "getAPIPerms",
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
