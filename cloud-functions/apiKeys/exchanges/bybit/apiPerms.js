@@ -10,7 +10,13 @@ async function getBybitAPIPerms(apiKey, apiSecret, isTestnet = false) {
       testnet: isTestnet,
     });
     const response = await client.getQueryApiKey();
-    console.log(response);
+    if (response.ret_code !== 0) {
+      throw new CustomError({
+        message: `Failed to fetch bybit API Perms: ${response.ret_msg}`,
+        status: 500,
+        source: "getBybitAPIPerms",
+      });
+    }
     return response;
   } catch (e) {
     throw new CustomError({
