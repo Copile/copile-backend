@@ -10,6 +10,7 @@ async function getBybitAPIPerms(apiKey, apiSecret, isTestnet = false) {
       testnet: isTestnet,
     });
     const response = await client.getQueryApiKey();
+    console.log(response);
     return response;
   } catch (e) {
     throw new CustomError({
