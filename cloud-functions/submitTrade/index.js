@@ -316,8 +316,6 @@ app.post('/partialClose', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Trader does not exist.' });
     }
 
-    
-
     // Add the traderId to the request body
     tradeData.traderId = traderId;
 

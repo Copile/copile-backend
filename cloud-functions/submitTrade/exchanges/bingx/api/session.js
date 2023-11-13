@@ -65,12 +65,83 @@ class BingXSession extends ExchangeSession {
         status: 500,
         source: "replaceSl",
       });
+    }
   }
 
+  async cancelAllTps(data) {
+    try {
+      return await cancelAllTps(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send cancelAllTps : ${e.message}`,
+        status: 500,
+        source: "cancelAllTps",
+      });
+    }
+  }
 
+  async bulkTp(data) {
+    try {
+      return await bulkTp(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send bulkTp : ${e.message}`,
+        status: 500,
+        source: "bulkTp",
+      });
+    }
+  }
 
+  async partialClose(data) {
+    try {
+      return await partialClose(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send partialClose : ${e.message}`,
+        status: 500,
+        source: "partialClose",
+      });
+    }
+  }
 
-}
+  async sendSl(data) {
+    try {
+      return await sendSl(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send sendSl : ${e.message}`,
+        status: 500,
+        source: "sendSl",
+      });
+    }
+  }
+
+  async cancelOrder(data) {
+    try {
+      return await cancelOrder(this.apiKey, this.apiSecret, data);
+    } catch (e) {
+      if (e instanceof CustomError) {
+        throw e;
+      }
+      throw new CustomError({
+        message: `Failed to send cancelOrder : ${e.message}`,
+        status: 500,
+        source: "cancelOrder",
+      });
+    }
+  }
 
 }
 

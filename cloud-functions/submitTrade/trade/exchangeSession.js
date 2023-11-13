@@ -13,19 +13,6 @@ class ExchangeSession {
     this.apiKey = apiKey;
     this.apiSecret = apiSecret;
   }
-
-  /** 
-   * Execute a bulkOrder for the session
-   * @async
-   * @throws {CustomError} Thorws a custom error if method not implemented by subclass.
-   */
-  async bulkOrder(payload) {
-    throw new CustomError({
-      message: "Method bulkOrder must be implemented by subclass",
-      status: 501,
-      source: "bulkOrder",
-    });
-  }
 }
 
 module.exports = ExchangeSession;
