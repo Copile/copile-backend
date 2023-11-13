@@ -1,6 +1,5 @@
 from .kuclib.client import Trade
 from ..firestore_functions import store_sl
-import asyncio
 
 async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, sl_amount, trade_info, multiplier, keys):
     symbol = trade_info["symbol"]

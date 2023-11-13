@@ -2,7 +2,6 @@ from .pybit.unified_trading import HTTP
 from ..firestore_functions import store_trade
 from .margin import get_user_margin
 from .settings import get_market
-import asyncio
 
 async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, precision, keys):
     try:

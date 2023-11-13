@@ -1,7 +1,5 @@
 from .pybit.unified_trading import HTTP
-import time
 from ..firestore_functions import store_sl
-import asyncio
 
 async def send_stoploss(account_id, trade_id, sl_document_id, sl_number, sl_value, sl_percentage, sl_amount, trade_info, precision, keys):
     try:

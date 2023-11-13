@@ -1,7 +1,6 @@
 from google.cloud import kms_v1
 from google.protobuf.json_format import MessageToDict
 import base64
-import asyncio
 
 async def decryptData(account_id, ciphertext):
     # Create the client.

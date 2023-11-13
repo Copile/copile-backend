@@ -1,9 +1,7 @@
 from .pybit.unified_trading import HTTP
-import asyncio
 
 async def get_position(account_id, trade_id, trade_info, keys):
     symbol = trade_info["symbol"]
-    side = trade_info["side"]
 
     # Connecting to Bybit API
     session = HTTP(

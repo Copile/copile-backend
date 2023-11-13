@@ -329,11 +329,10 @@ async def bulk_tp(data: dict):
 
         new_take_profits = []
 
-        if position_quantity != 0:
-            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
-        else:
-            position_quantity = trade_info["quantity"]     
-            new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
+        if position_quantity == 0:
+            position_quantity = trade_info["quantity"]   
+
+        new_take_profits = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, take_profits, trade_info, position_quantity, precision, keys)
 
         tasks = [bingx.profit.send_profit(account_id, trade_id, tp_data["tp_id"], tp_data["tp_number"], tp_data["tp_value"], tp_data["tp_percentage"], tp_data["tp_amount"], trade_info, precision, keys) for tp_data in new_take_profits]
         await asyncio.gather(*tasks)
@@ -396,8 +395,6 @@ async def partial_close(data: dict):
         quantity_to_sell = round(float(position_quantity) * percentage, quantity_precision)
 
         new_quantity = round(float(position_quantity) - quantity_to_sell, quantity_precision)
-
-        new_tps_data = []
         
         if new_order is False:
             sell_order, tps_data = await asyncio.gather(
@@ -417,24 +414,17 @@ async def partial_close(data: dict):
 
             new_tps_data = await bingx.distribution.calculate_tp_amounts(account_id, trade_id, distributed_tps, trade_info, new_quantity, precision, keys)
 
-        if new_order is False:
-            await asyncio.gather(
-                *[bingx.stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, precision, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
-                *[bingx.profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, precision, keys) for order in new_tps_data]
-            )
-            return {"message": "Partial close successful"}, 200
-        
-        else:
+        if new_order is True:
             unrounded_quantity = float(new_quantity) + 0.5 * 10 ** (-int(quantity_precision))
 
             margin = round((unrounded_quantity * float(trade_info["entry"])) / int(trade_info["leverage"]), 0)
 
             await bingx.trade.send_trade(account_id, trade_id, margin, trade_info["side"], trade_info["symbol"], trade_info["leverage"], trade_info["entry"], precision, keys)
 
-            await asyncio.gather(
-                *[bingx.stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, precision, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
-                *[bingx.profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, precision, keys) for order in new_tps_data]
-            )
+        await asyncio.gather(
+            *[bingx.stoploss.send_stoploss(account_id, trade_id, order["document_id"], order['sl_number'], order["sl_value"], order["sl_percentage"], None, trade_info, precision, keys) for order in tp_sl_orders if order['executed'] == '1' and 'sl_number' in order], 
+            *[bingx.profit.send_profit(account_id, trade_id, order["tp_id"], order["tp_number"], order["tp_value"], order["tp_percentage"], order["tp_amount"], trade_info, precision, keys) for order in new_tps_data]
+        )
 
         payload = {
             "data": {
