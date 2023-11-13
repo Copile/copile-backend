@@ -1,18 +1,18 @@
-const BingXSession = require("./session.js");
 const { makeSignedRequest } = require('./request.js');
 
 /**
  * Represents a BingX exchange session.
  * @extends BingXSession
  */
-class BingXFunctions extends BingXSession {
+class BingXFunctions {
   /**
    * Creates a BingXSession instance.
    * @param {string} apiKey - API key for the BingX session.
    * @param {string} apiSecret - API secret for the BingX session.
    */
   constructor(apiKey, apiSecret) {
-    super(apiKey, apiSecret);
+    this.apiKey = apiKey;
+    this.apiSecret = apiSecret;
   }
 
   async tradeOrder(order) {
@@ -22,9 +22,22 @@ class BingXFunctions extends BingXSession {
 
   async bulkOrder(batchOrders) {
     const path = "/openApi/swap/v2/trade/batchOrders";
+    
+    const cleanedBatchOrders = batchOrders.map(order => {
+        Object.keys(order).forEach(key => {
+            if (order[key] === null) {
+                delete order[key];
+            }
+        });
+        return order;
+    });
+
+    let orders = JSON.stringify(cleanedBatchOrders);
+
     const payload = {
-      batchOrders,
+        "batchOrders": orders,
     };
+    
     return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);
   }
 
@@ -128,7 +141,7 @@ class BingXFunctions extends BingXSession {
     
     const payload = {
         symbol,
-        leverageSide,
+        "side": leverageSide,
         leverage
     };
     return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);

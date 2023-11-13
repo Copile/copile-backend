@@ -13,8 +13,8 @@ async function bulkOrder(apiKey, apiSecret, data) {
     try {
         const session = new BingXFunctions(apiKey, apiSecret);
         const { traderId, tradeId, margin, trader_exchange, marginType } = data;
-        const { leverage, entry, take_profits, stop_losses } = data.payload;
-        
+        const { side, leverage, entry, take_profits, stop_losses } = data.payload;
+        console.log(data);
         let takeProfits = take_profits;
         let stopLosses = stop_losses;
 
@@ -27,7 +27,7 @@ async function bulkOrder(apiKey, apiSecret, data) {
 
         const getPrecisionPromise = session.getPrecisions(symbol);
         const switchMarginModePromise = session.switchMarginMode(symbol, marginType);
-        const setLeveragePromise = session.setLeverage(symbol, leverage);
+        const setLeveragePromise = session.setLeverage(symbol, side, leverage);
     
         const [precision] = await Promise.all([getPrecisionPromise, switchMarginModePromise, setLeveragePromise]);
 
@@ -44,7 +44,7 @@ async function bulkOrder(apiKey, apiSecret, data) {
         let preparedOrders = [];
 
         let orderId = String(uuidv4())
-        preparedOrders.push(new Order(symbol, orderType, side.toUpperCase(), entry, quantity, side === "Buy" ? "LONG" : "SHORT", null, orderId))
+        preparedOrders.push(new Order(symbol, orderType, side.toUpperCase(), entry === "market" ? null : entry, quantity, side === "Buy" ? "LONG" : "SHORT", null, orderId))
 
         let newTakeProfits = await calculateTpAmounts(takeProfits, quantity, precision);
 
@@ -54,14 +54,16 @@ async function bulkOrder(apiKey, apiSecret, data) {
         newTakeProfits.forEach(tp => {
             tp.orderId = String(uuidv4());
             tpPrice = roundToPrecision(parseFloat(tp.tp_value), precision.pricePrecision);
-            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", tpPrice, tp.tp_amount, tpSlPositionSide, tpPrice, tp.orderId));
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, tp.tp_amount, tpSlPositionSide, tpPrice, tp.orderId));
         });
         
         let slPrice;
+        let slAmount;
         stopLosses.forEach(sl => {
             sl.orderId = String(uuidv4());
             slPrice = roundToPrecision(parseFloat(sl.sl_value), precision.pricePrecision);
-            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", slPrice, sl.sl_amount, tpSlPositionSide, slPrice, sl.orderId));
+            slAmount = roundToPrecision(parseFloat(quantity) * parseFloat(sl.sl_percentage), precision.quantityPrecision)
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, slAmount, tpSlPositionSide, slPrice, sl.orderId));
         });
         
         const MAX_ORDERS_PER_CALL = 5;
@@ -75,7 +77,7 @@ async function bulkOrder(apiKey, apiSecret, data) {
             tradeId,
             orderId,
             symbol,
-            orderType,
+            "type": orderType,
             side,
             quantity,
             entry,

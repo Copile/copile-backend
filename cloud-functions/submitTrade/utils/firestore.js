@@ -1,7 +1,16 @@
-const { Firestore } = require("@google-cloud/firestore");
+//const { Firestore } = require("@google-cloud/firestore");
 const CustomError = require("./error");
 
-const db = new Firestore();
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./serviceAccount.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+// Initialize Firestore
+const db = admin.firestore();
 
 // Load configuration from config.json file
 const config = require("./config.json");

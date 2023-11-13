@@ -1,13 +1,13 @@
 const { Decimal } = require('decimal.js');
 
-async function rearrangeTps(quantity, precision, tpsAmount, minQty) {
+async function rearrangeTps(quantity, precision, tpAmounts, minQty) {
   
   Decimal.set({ precision: precision + 5 }); // Set precision to avoid rounding errors
 
   const roundedQuantity = new Decimal(quantity);
-  const minQuantity = new Decimal(min_qty);
+  const minQuantity = new Decimal(minQty);
 
-  let tpsAmount = tps_amount.map(tp => new Decimal(tp));
+  let tpsAmount = tpAmounts.map(tp => new Decimal(tp));
   const tpsSum = tpsAmount.reduce((sum, current) => sum.plus(current), new Decimal(0));
 
   let tpsRatio = tpsAmount.map(tp => tp.div(tpsSum));

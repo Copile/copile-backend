@@ -36,25 +36,32 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
   const params = new URLSearchParams(payload).toString();
   const signature = cryptoJs.HmacSHA256(params, apiSecret).toString();
   const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
+  console.log(url);
   const headers = { "X-BX-APIKEY": apiKey };
+  
+  const config = {
+    method: method,
+    url: url,
+    headers: headers,
+  }
 
   try {
     let response;
     switch (method) {
       case 'GET':
-        response = await axios.get(url, { headers, timeout: recvWindow });
+        response = await axios.get(url, headers);
         break;
       case 'POST':
-        response = await axios.post(url, {}, { headers, timeout: recvWindow });
+        response = await axios(config);
         break;
       case 'PATCH':
-        response = await axios.patch(url, {}, { headers, timeout: recvWindow });
+        response = await axios.patch(url, headers);
         break;
       case 'PUT':
-        response = await axios.put(url, {}, { headers, timeout: recvWindow });
+        response = await axios.put(url, headers);
         break;
       case 'DELETE':
-        response = await axios.delete(url, { headers, timeout: recvWindow });
+        response = await axios.delete(url, headers);
         break;
       default:
         throw new CustomError({
@@ -62,6 +69,10 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
           source: "makeSignedRequest",
           status: 400,
         });
+    }
+    if (method !== "GET") {
+      console.log(payload);
+      console.log(response.data);
     }
     return response.data.data;
   } catch (error) {
@@ -75,94 +86,7 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
   }
 }
 
-/**
- * Fetches positions from BingX API.
- * @param {string} apiKey API key.
- * @param {string} apiSecret API secret.
- * @return {Promise<Array>} Positions.
- */
-async function getPositions(apiKey, apiSecret) {
-  const path = "/openApi/swap/v2/user/positions";
-  const payload = {};
-  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
-}
-
-/**
- * Fetches an order by its symbol and order ID.
- * @param {string} apiKey API key.
- * @param {string} apiSecret API secret.
- * @param {string} symbol The symbol for which the order should be retrieved.
- * @param {string} orderId The order ID.
- * @return {Promise<Object>} The order.
- */
-async function getOrder(apiKey, apiSecret, symbol, orderId) {
-  const path = "/openApi/swap/v2/trade/order";
-  const payload = {
-    symbol,
-    orderId: BigInt(orderId),
-  };
-  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
-}
-
-/**
- * Fetches the balance for an account.
- * @param {string} apiKey API key.
- * @param {string} apiSecret API secret.
- * @return {Promise<Object>} The balance.
- */
-async function getBalance(apiKey, apiSecret) {
-  const path = "/openApi/swap/v2/user/balance";
-  const payload = {};
-  return await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
-}
-
-/**
- * Fetches open orders.
- * @param {string} apiKey API key.
- * @param {string} apiSecret API secret.
- * @param {boolean} checkStatus Flag to check the status of the orders.
- * @return {Promise<Array>} The orders.
- */
-async function getOrders(apiKey, apiSecret) {
-  const path = "/openApi/swap/v2/trade/openOrders";
-  const payload = {};
-  const data = await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
-  try {
-    if (!data || !data.orders) return;
-    const orders = data.orders;
-    return orders.filter((order) => order.type === "LIMIT");
-  } catch (error) {
-    throw new CustomError({
-      message: `Failed to get BingX open orders: ${error.message}`,
-      status: 400,
-      source: "getOrders",
-    });
-  }
-}
-
-async function getOrderStatuses(apiKey, apiSecret, symbol) {
-  const path = "/openApi/swap/v2/trade/openOrders";
-  const payload = { symbol: symbol };
-  const data = await makeSignedRequest("GET", path, payload, apiKey, apiSecret);
-  try {
-    if (!data || !data.orders) return;
-    const orders = data.orders;
-    return orders;
-  } catch (error) {
-    throw new CustomError({
-      message: `Failed to get BingX open orders: ${error.message}`,
-      status: 400,
-      source: "getOrderStatuses",
-    });
-  }
-}
-
 module.exports = {
   makeSignedRequest,
   getServerTime,
-  getPositions,
-  getOrder,
-  getOrders,
-  getBalance,
-  getOrderStatuses,
 };
