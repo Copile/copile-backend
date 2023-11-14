@@ -1,5 +1,4 @@
 from .pybit.unified_trading import HTTP
-import asyncio
 
 async def get_precision(account_id, symbol, keys):
 

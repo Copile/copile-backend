@@ -1,24 +1,10 @@
-import os
-import sys
-sys.path.append("cloud-run/TESTNET/asia-testnet-exec-handler/exchanges")
-sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\firestore_functions.py")
-sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\settings.py")
-sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\margin.py")
-sys.path.append("cloud-run\TESTNET\\asia-testnet-exec-handler\exchanges\\bybit\\pybit\\unified_trading.py")
 from error_handler import handle_error
 from pybit.unified_trading import HTTP
 from firestore_functions import store_trade
 from margin import get_user_margin
 from settings import get_market
-import asyncio
-
-<<<<<<< HEAD
-
 
 async def send_trade(account_id, trade_id, margin, side, symbol, leverage, price, precision, keys):
-=======
-async def send_trade(account_id, trade_id, margin, trader_id, side, symbol, leverage, price, precision, keys):
->>>>>>> 80497d4ea2597189eeca80df88d4b5d69272ffaf
     try:
         if type(margin) == str:
             margin = await get_user_margin(account_id, margin, trader_id, keys)

@@ -132,7 +132,7 @@ async function sendSl(apiKey, apiSecret, data) {
 
         let order = new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", price, positionQuantity, slPositionSide, price, orderId)
 
-        let stoploss = await session.tradeOrder(order);
+        await session.tradeOrder(order);
 
         payload.orderId = orderId;
         payload.sl_amount = positionQuantity;
@@ -176,7 +176,7 @@ async function replaceSl(apiKey, apiSecret, data) {
 
         let order = new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", price, positionQuantity, slPositionSide, price, orderId)
 
-        let newStopLoss = await session.tradeOrder(order);
+        await session.tradeOrder(order);
 
         payload.orderId = orderId;
         payload.sl_amount = positionQuantity;
@@ -259,10 +259,12 @@ async function cancelAllTps(apiKey, apiSecret, data) {
         const session = new BingXFunctions(apiKey, apiSecret);
         const { traderId, tradeId } = data;
 
-        const tradeInfo = await getTradeInfo(traderId, tradeId);
-        let symbol = tradeInfo.symbol;
+        const tradeInfoPromise = getTradeInfo(traderId, tradeId);
+        const tpOrdersPromise = getTpOrders(traderId, tradeId);
 
-        let tpOrders = await getTpOrders(traderId, tradeId);
+        const [tradeInfo, tpOrders] = await Promise.all([tradeInfoPromise, tpOrdersPromise]);
+        
+        let symbol = tradeInfo.symbol;
 
         await Promise.all(tpOrders.map(order => session.cancelOrder(symbol, null, order.orderID)));
 

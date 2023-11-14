@@ -1,5 +1,4 @@
 from .pybit.unified_trading import HTTP
-import asyncio
 
 async def change_leverage(symbol, leverage, keys):
     try:

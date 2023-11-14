@@ -1,5 +1,4 @@
 #from trade import send_trade
-import os
 import sys
 import asyncio
 sys.path.append("cloud-run/TESTNET/asia-testnet-exec-handler/exchanges/bybit")

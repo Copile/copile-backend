@@ -1,7 +1,5 @@
 from .pybit.unified_trading import HTTP
 from ..firestore_functions import store_tp
-import time
-import asyncio
 
 async def send_profit(account_id, trade_id, tp_document_id, tp_number, tp_value, tp_percentage, tp_amount, trade_info, precision, keys):
     symbol = trade_info["symbol"]

@@ -1,6 +1,5 @@
 from .pybit.unified_trading import HTTP
 from ..firestore_functions import get_tp_sl_info
-import asyncio
 
 async def get_order_quantity(account_id, trade_id, document_id, trade_info, keys):
     symbol = trade_info["symbol"]
