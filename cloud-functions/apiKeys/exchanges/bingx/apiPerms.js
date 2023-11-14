@@ -11,7 +11,7 @@ const { getAPIPerms } = require("./request");
  */
 async function getBingXAPIPerms(apiKey, apiSecret) {
   const response = await getAPIPerms(apiKey, apiSecret);
-  if (!response || !response.data || !response.code === 0) {
+  if (!response || !response.data || !response.data.code === 0) {
     return {
       success: false,
       code: response.code,
