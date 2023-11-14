@@ -9,16 +9,17 @@ async function getBybitAPIPerms(apiKey, apiSecret, isTestnet = false) {
     testnet: isTestnet,
   });
   const queryApiKeyResponse = await client.getQueryApiKey();
-  if (queryApiKeyResponse.ret_code !== 0) {
-    console.log(queryApiKeyResponse);
+  if (queryApiKeyResponse.retCode !== 0) {
     return {
       success: false,
-      data: queryApiKeyResponse,
+      code: 401,
+      message: "An Error occured.",
     };
   }
   return {
     success: true,
-    data: queryApiKeyResponse,
+    code: 200,
+    data: queryApiKeyResponse.result,
   };
 }
 
