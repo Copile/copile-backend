@@ -15,7 +15,7 @@ async function getBingXAPIPerms(apiKey, apiSecret) {
     return {
       success: false,
       code: response.data.code,
-      data: response.msg,
+      data: response.data.msg,
     };
   }
   return {
