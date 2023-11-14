@@ -254,11 +254,11 @@ app.post("/updateExchange", async (req, res) => {
       // rn only this endpoint returns 200 if the api credentials are valid
       // TODO: more specific error codes to distinguish between invalid credentials and other errors
       // TODO: give user info about excess permissions and expiration date
-      if(apiKeyValidationResponse.status !== 200) {
-        console.log(`Invalid API credentials for ${exchange}!`);
+      if(apiKeyValidationResponse.data.success === false) {
         res.status(200).json({
           success: false,
-          error: `Invalid API credentials.`,
+          code: apiKeyValidationResponse.data.code,
+          message: apiKeyValidationResponse.data.message,
         });
       }
 
