@@ -17,7 +17,7 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
 
   try {
     const accountInfoResponse = await futuresSDK.futuresAccount();
-
+    console.log(accountInfoResponse);
     if (!accountInfoResponse || accountInfoResponse.status !== 200) {
       return {
         success: false,
