@@ -11,17 +11,17 @@ const { getAPIPerms } = require("./request");
  */
 async function getBingXAPIPerms(apiKey, apiSecret) {
   const response = await getAPIPerms(apiKey, apiSecret);
-  if (!response || !response.data || !response.data.code === 0) {
-    console.log(response);
+  if (!response || !response.data || !response.code === 0) {
     return {
       success: false,
-      data: response,
+      code: response.code,
+      data: response.msg,
     };
   }
-  console.log(response.data);
   return {
     success: true,
-    data: response.data.data,
+    code: 200,
+    data: response.data,
   };
 }
 
