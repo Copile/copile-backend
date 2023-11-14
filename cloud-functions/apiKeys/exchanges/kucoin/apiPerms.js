@@ -14,22 +14,30 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
     secret: apiSecret, // API-Secret
     passphrase: apiPassphrase, // KC-API-PASSPHRASE
   });
-  const accountInfoResponse = await futuresSDK.futuresAccount();
-  if (
-    !accountInfoResponse ||
-    !accountInfoResponse.data ||
-    !accountInfoResponse.status === 200
-  ) {
-    console.log(accountInfoResponse);
+  try {
+    const accountInfoResponse = await futuresSDK.futuresAccount();
+    if (
+      !accountInfoResponse ||
+      !accountInfoResponse.data ||
+      !accountInfoResponse.status === 200
+    ) {
+      console.log(accountInfoResponse);
+      return {
+        success: false,
+        data: accountInfoResponse,
+      };
+    }
+    return {
+      success: true,
+      data: accountInfoResponse.data,
+    };
+  } catch (err) {
+    console.log(err);
     return {
       success: false,
-      data: accountInfoResponse,
+      data: err,
     };
   }
-  return {
-    success: true,
-    data: accountInfoResponse.data,
-  };
 }
 
 module.exports = {
