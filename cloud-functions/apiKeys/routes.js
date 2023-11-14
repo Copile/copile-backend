@@ -2,7 +2,7 @@ const express = require("express");
 const { Firestore } = require("@google-cloud/firestore");
 const decryptData = require("./utils/decryption");
 const createSession = require("./exchanges/sessionFactory");
-const validateEntity  = require("./middleware/validation");
+const validateEntity = require("./middleware/validation");
 const CustomError = require("./utils/error");
 
 const router = express.Router();
@@ -17,7 +17,14 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
   var apiPassphrase = req.body.api_passphrase || null;
 
   try {
-    apiSecret = (await decryptData(apiSecret, entityId));
+    if (!apiKey || !apiSecret) {
+      throw new CustomError({
+        message: "API credentials are required.",
+        status: 400,
+        source: "validateAPIKeys",
+      });
+    }
+    apiSecret = await decryptData(apiSecret, entityId);
 
     if (apiPassphrase) {
       apiPassphrase = await decryptData(apiPassphrase, entityId);
@@ -31,9 +38,9 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
       });
     }
     const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
-    const apiPerms = await session.getAPIPerms();
+    const apiPermsResponse = await session.getAPIPerms();
 
-    return res.status(200).json({apiPerms: apiPerms });
+    return res.status(200).json(apiPermsResponse);
   } catch (e) {
     if (e instanceof CustomError) {
       next(e);
