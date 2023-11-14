@@ -32,7 +32,8 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
       data: accountInfoResponse.data,
     };
   } catch (err) {
-    console.log(err);
+    console.log("my data error print: ", err.data);
+    console.log("my error print: ", err);
     return {
       success: false,
       data: err,
