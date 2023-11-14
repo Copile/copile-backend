@@ -17,11 +17,16 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
 
   try {
     const accountInfoResponse = await futuresSDK.futuresAccount();
+    console.log(accountInfoResponse.status);
     if (!accountInfoResponse || accountInfoResponse.code !== "200000") {
+      const statusCode = accountInfoResponse?.status || 500;
+      const message =
+        statusCode === 401 ? "Invalid API-Key." : "An error occurred.";
+
       return {
         success: false,
-        code: accountInfoResponse?.status || 500,
-        message: accountInfoResponse,
+        code: statusCode,
+        message: message,
       };
     }
 
