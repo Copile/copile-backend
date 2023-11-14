@@ -89,12 +89,11 @@ async function bulkOrder(apiKey, apiSecret, data) {
             "exchange": trader_exchange
         }
 
-        await storeTrade(traderId, tradeInfo);
-
-        // Storing takeprofits/stoplosses concurrently 
+        // Storing trade/takeprofits/stoplosses concurrently
+        const tradePromise = storeTrade(traderId, tradeInfo)
         const tpPromises = newTakeProfits.map(tp => storeTP(traderId, tp));
         const slPromises = stopLosses.map(sl => storeSL(traderId, sl));
-        await Promise.all([...tpPromises, ...slPromises]);
+        await Promise.all([tradePromise, ...tpPromises, ...slPromises]);
 
         return
 
@@ -326,8 +325,10 @@ async function partialClose(apiKey, apiSecret, data) {
         const session = new BingXFunctions(apiKey, apiSecret);
         const { traderId, tradeId, percentage } = data;
 
-        const tradeInfo = await getTradeInfo(traderId, tradeId);
-        const TpSlOrders = await getTpSlOrders(traderId, tradeId);
+        const tradeInfoPromise = getTradeInfo(traderId, tradeId);
+        const TpSlOrdersPromise = getTpSlOrders(traderId, tradeId);
+
+        const [tradeInfo, TpSlOrders] = await Promise.all([tradeInfoPromise, TpSlOrdersPromise]);
 
         let tpOrders = TpSlOrders.filter(order => order.tradeType === 'tp');
         let slOrders = TpSlOrders.filter(order => order.tradeType === 'sl');
@@ -337,8 +338,10 @@ async function partialClose(apiKey, apiSecret, data) {
 
         let symbol = tradeInfo.symbol;
 
-        const precision = await session.getPrecisions(symbol);
-        const position = await session.getPosition(symbol);
+        const precisionPromise = session.getPrecisions(symbol);
+        const positionPromise = session.getPosition(symbol);
+
+        const [precision, position] = await Promise.all([precisionPromise, positionPromise]);
 
         let positionQuantity;
         let executed;
@@ -357,21 +360,17 @@ async function partialClose(apiKey, apiSecret, data) {
 
         let newTakeProfits = await calculateTpAmounts(takeProfits, newQuantity, precision)
 
-        const orderIds = TpSlOrders.map(order => order.orderId);
-
-        await session.cancelOrders(symbol, null, orderIds);
+        await session.cancelAllOrders(symbol);
 
         let preparedOrders = [];
 
         if (executed) {
             let sellOrder = new Order(symbol, "MARKET", side == "SELL" ? "BUY" : "SELL", null, positionQuantity, tpSlPositionSide, null, null);
             await session.tradeOrder(sellOrder);
-
+            await updateTradeQuantity(traderId, tradeId, newQuantity);
 
         } else {
             const newQuantity = parseFloat((parseFloat(positionQuantity) - quantityToSell).toFixed(precision.quantityPrecision));
-            
-            await session.cancelOrder(symbol, null, tradeInfo["orderID"]);
 
             let orderId = String(uuidv4()); 
             let order = new Order(symbol, "LIMIT", side.toUpperCase(), tradeInfo["entry"], newQuantity, null, null, orderId)
