@@ -42,7 +42,7 @@ async function tradeExecution(apiKey, apiSecret, apiPassphrase, method, data) {
             case 'cancelAllTPs':
                 exchange = data.trader_exchange;
                 session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
-                tradeExecution = await session.cancelAllTPs(data);
+                tradeExecution = await session.cancelAllTps(data);
                 break;
             case 'cancelAllOrders':
                 exchange = data.trader_exchange;

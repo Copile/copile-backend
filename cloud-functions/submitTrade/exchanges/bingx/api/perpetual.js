@@ -17,6 +17,13 @@ class BingXFunctions {
 
   async tradeOrder(order) {
     const path = "/openApi/swap/v2/trade/order";
+
+    Object.keys(order).forEach(key => {
+        if (order[key] === null) {
+            delete order[key];
+        }
+    });
+
     return await makeSignedRequest("POST", path, order, this.apiKey, this.apiSecret);
   }
 
@@ -53,7 +60,7 @@ class BingXFunctions {
     let payload = {
       symbol,
     }
-    
+
     if (orderId !== null) {
       payload.orderId = orderId
     } else {
@@ -84,7 +91,7 @@ class BingXFunctions {
     const payload = {
         symbol
     };
-    return await makeSignedRequest("POST", path, payload, this.apiKey, this.apiSecret);
+    return await makeSignedRequest("DELETE", path, payload, this.apiKey, this.apiSecret);
   }
 
   async currentOrders(symbol) {

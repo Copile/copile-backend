@@ -67,7 +67,7 @@ async function getUserKeys(accountId, exchange) {
 // Function to store trade information
 async function storeTrade(accountId, orderDict) {
     try {
-
+        
         const trade_doc_ref = db.collection(COLLECTION_TRADERS)
             .doc(accountId)
             .collection(COLLECTION_TRADES)

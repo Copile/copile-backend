@@ -53,24 +53,27 @@ async function bulkOrder(apiKey, apiSecret, data) {
         let tpPrice;
         newTakeProfits.forEach(tp => {
             tp.orderId = String(uuidv4());
+            tp.tradeId = tradeId;
             tpPrice = roundToPrecision(parseFloat(tp.tp_value), precision.pricePrecision);
             preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, tp.tp_amount, tpSlPositionSide, tpPrice, tp.orderId));
         });
         
         let slPrice;
-        let slAmount;
         stopLosses.forEach(sl => {
             sl.orderId = String(uuidv4());
+            sl.tradeId = tradeId;
             slPrice = roundToPrecision(parseFloat(sl.sl_value), precision.pricePrecision);
-            slAmount = roundToPrecision(parseFloat(quantity) * parseFloat(sl.sl_percentage), precision.quantityPrecision)
-            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, slAmount, tpSlPositionSide, slPrice, sl.orderId));
+            sl.sl_amount = roundToPrecision(parseFloat(quantity) * parseFloat(sl.sl_percentage), precision.quantityPrecision)
+            preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, sl.sl_amount, tpSlPositionSide, slPrice, sl.orderId));
         });
         
-        const MAX_ORDERS_PER_CALL = 5;
-        for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
-            const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
-            await session.bulkOrder(chunk);
-        }
+        // const MAX_ORDERS_PER_CALL = 5;
+        // for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
+        //     const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
+        //     await session.bulkOrder(chunk);
+        // }
+
+        await Promise.all(preparedOrders.map(order => session.tradeOrder(order)));
 
         // Store trade info
         const tradeInfo = {
@@ -85,6 +88,7 @@ async function bulkOrder(apiKey, apiSecret, data) {
             margin,
             "exchange": trader_exchange
         }
+
         await storeTrade(traderId, tradeInfo);
 
         // Storing takeprofits/stoplosses concurrently 
@@ -229,7 +233,7 @@ async function cancelAllOrders(apiKey, apiSecret, data) {
             let emergencySide = positionSide == "LONG" ? "SELL": "BUY"
             let orderId = String(uuidv4())
 
-            let emergencyOrder = new Order(symbol, "Market", emergencySide, null, quantity, null, null, orderId);
+            let emergencyOrder = new Order(symbol, "MARKET", emergencySide, null, quantity, positionSide, null, orderId);
 
             emergency = await session.tradeOrder(emergencyOrder);
 
@@ -237,6 +241,9 @@ async function cancelAllOrders(apiKey, apiSecret, data) {
             let orderId = tradeInfo.orderID
             await session.cancelOrder(symbol, null, orderId)
         }
+
+        await session.cancelAllOrders(symbol);
+
         return
 
     } catch(error) {
@@ -258,9 +265,7 @@ async function cancelAllTps(apiKey, apiSecret, data) {
 
         let tpOrders = await getTpOrders(traderId, tradeId);
 
-        let orderIds = tpOrders.map(order => order.orderId);
-
-        await session.cancelOrders(symbol, null, orderIds);
+        await Promise.all(tpOrders.map(order => session.cancelOrder(symbol, null, order.orderID)));
 
         return
 
@@ -299,11 +304,7 @@ async function bulkTp(apiKey, apiSecret, data) {
             preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", tpPrice, tp.tp_amount, tpPositionSide, tpPrice, tp.orderId));
         });
 
-        const MAX_ORDERS_PER_CALL = 5;
-        for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
-            const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
-            await session.bulkOrder(chunk);
-        }
+        await Promise.all(preparedOrders.map(order => session.tradeOrder(order)));
 
         const tpPromises = newTakeProfits.map(tp => storeTP(traderId, tp));
 
@@ -393,11 +394,7 @@ async function partialClose(apiKey, apiSecret, data) {
             preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", slPrice, sl.sl_amount, tpSlPositionSide, slPrice, sl.orderId));
         });
 
-        const MAX_ORDERS_PER_CALL = 5;
-        for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
-            const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
-            await session.bulkOrder(chunk);
-        }
+        await Promise.all(preparedOrders.map(order => session.tradeOrder(order)));
 
         const tpPromises = newTakeProfits.map(tp => storeTP(traderId, tp));
         const slPromises = slOrders.map(sl => storeSL(traderId, sl));

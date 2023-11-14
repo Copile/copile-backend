@@ -32,11 +32,11 @@ async function getServerTime() {
 async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
   // Add the timestamp to the payload before creating the signature
   payload.timestamp = await getServerTime();
-
+  
   const params = new URLSearchParams(payload).toString();
   const signature = cryptoJs.HmacSHA256(params, apiSecret).toString();
   const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
-  console.log(url);
+
   const headers = { "X-BX-APIKEY": apiKey };
   
   const config = {
@@ -44,24 +44,24 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
     url: url,
     headers: headers,
   }
-
+  console.log(config);
   try {
     let response;
     switch (method) {
       case 'GET':
-        response = await axios.get(url, headers);
+        response = await axios(config);
         break;
       case 'POST':
         response = await axios(config);
         break;
       case 'PATCH':
-        response = await axios.patch(url, headers);
+        response = await axios(config);
         break;
       case 'PUT':
-        response = await axios.put(url, headers);
+        response = await axios(config);
         break;
       case 'DELETE':
-        response = await axios.delete(url, headers);
+        response = await axios(config);
         break;
       default:
         throw new CustomError({
@@ -70,10 +70,9 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
           status: 400,
         });
     }
-    if (method !== "GET") {
-      console.log(payload);
-      console.log(response.data);
-    }
+
+    console.log(payload);
+    console.log(response.data);
     return response.data.data;
   } catch (error) {
     if (error instanceof CustomError) throw error;
