@@ -17,18 +17,17 @@ async function getKucoinAPIPerms(apiKey, apiSecret, apiPassphrase) {
 
   try {
     const accountInfoResponse = await futuresSDK.futuresAccount();
-    console.log(accountInfoResponse);
     if (!accountInfoResponse || accountInfoResponse.code !== "200000") {
       return {
         success: false,
         code: accountInfoResponse?.status || 500,
-        message: "Failed to fetch account info.",
+        message: accountInfoResponse,
       };
     }
 
     return {
       success: true,
-      code: accountInfoResponse.status,
+      code: 200,
       data: accountInfoResponse.data,
     };
   } catch (err) {
