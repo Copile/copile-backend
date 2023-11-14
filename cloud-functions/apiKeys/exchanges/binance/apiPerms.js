@@ -10,19 +10,35 @@ const { getAPIPerms } = require("./request");
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
 async function getBinanceAPIPerms(apiKey, apiSecret) {
-  const apiPermsResponse = await getAPIPerms(apiKey, apiSecret);
-  if(!apiPermsResponse || !apiPermsResponse.data || !apiPermsResponse.status === 200) {
-    console.log(apiPermsResponse);
+  try {
+    const apiPermsResponse = await getAPIPerms(apiKey, apiSecret);
+    if (
+      !apiPermsResponse ||
+      !apiPermsResponse.data ||
+      !apiPermsResponse.status === 200
+    ) {
+      console.log(apiPermsResponse);
+      return {
+        success: false,
+        data: apiPermsResponse,
+      };
+    }
+    console.log(apiPermsResponse.data);
+    return {
+      success: true,
+      data: apiPermsResponse.data,
+    };
+  } catch (err) {
+    const statusCode = err.status || 500;
+    const message =
+      statusCode === 401 ? "Invalid API-Key." : "An error occurred.";
+
     return {
       success: false,
-      data: apiPermsResponse,
+      code: statusCode,
+      message: message,
     };
   }
-  console.log(apiPermsResponse.data);
-  return {
-    success: true,
-    data: apiPermsResponse.data,
-  };
 }
 
 module.exports = { getBinanceAPIPerms };
