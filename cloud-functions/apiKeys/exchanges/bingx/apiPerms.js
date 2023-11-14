@@ -10,23 +10,19 @@ const { getAPIPerms } = require("./request");
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
 async function getBingXAPIPerms(apiKey, apiSecret) {
-  try {
-    const response = await getAPIPerms(apiKey, apiSecret);
-    const status = response.status;
-    if(response.data){
-      return response.data;
-    }
-    return response;
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    throw new CustomError({
-      message: `Failed to get BingX API Key permissions: ${error.message}`,
-      status: 400,
-      source: "getBingXAPIPerms",
-    });
+  const response = await getAPIPerms(apiKey, apiSecret);
+  if (!response || !response.data || !response.data.code === 0) {
+    console.log(response);
+    return {
+      success: false,
+      data: response,
+    };
   }
+  console.log(response.data);
+  return {
+    success: true,
+    data: response.data.data,
+  };
 }
 
 module.exports = { getBingXAPIPerms };

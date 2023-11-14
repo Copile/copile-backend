@@ -10,23 +10,19 @@ const { getAPIPerms } = require("./request");
  * @throws {CustomError} Throws a custom error if the operation fails.
  */
 async function getBinanceAPIPerms(apiKey, apiSecret) {
-  try {
-    const response = await getAPIPerms(apiKey, apiSecret);
-    const status = response.status;
-    if(response.data){
-      return response.data;
-    }
-    return response;
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    throw new CustomError({
-      message: `Failed to get Binance API Key permissions: ${error.message}`,
-      status: 400,
-      source: "getBinanceAPIPerms",
-    });
+  const apiPermsResponse = await getAPIPerms(apiKey, apiSecret);
+  if(!apiPermsResponse || !apiPermsResponse.data || !apiPermsResponse.status === 200) {
+    console.log(apiPermsResponse);
+    return {
+      success: false,
+      data: apiPermsResponse,
+    };
   }
+  console.log(apiPermsResponse.data);
+  return {
+    success: true,
+    data: apiPermsResponse.data,
+  };
 }
 
 module.exports = { getBinanceAPIPerms };

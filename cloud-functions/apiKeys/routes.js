@@ -30,15 +30,8 @@ router.post("/validate/:exchange", validateEntity, async (req, res, next) => {
         source: "validateAPIKeys",
       });
     }
-
-    console.log(`API Key: ${apiKey}`);
-    console.log(`API Secret: ${apiSecret}`);
-    console.log(`API Passphrase: ${apiPassphrase}`);
-    console.log(`Exchange: ${exchange}`);
-
     const session = createSession(exchange, apiKey, apiSecret, apiPassphrase);
     const apiPerms = await session.getAPIPerms();
-    console.log(apiPerms);
 
     return res.status(200).json({apiPerms: apiPerms });
   } catch (e) {

@@ -21,9 +21,6 @@ class BingXSession extends ExchangeSession {
     try {
       return await getBingXAPIPerms(this.apiKey, this.apiSecret);
     } catch (error) {
-      if (error instanceof CustomError) {
-        throw error;
-      }
       throw new CustomError({
         message: `Failed to fetch BingX API Perms: ${error.message}`,
         status: 500,

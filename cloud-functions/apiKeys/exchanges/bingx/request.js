@@ -21,18 +21,7 @@ async function makeSignedRequest(path, payload, apiKey, apiSecret) {
   const url = `${apiConfig.protocol}://${apiConfig.host}${path}?${params}&signature=${signature}`;
   const headers = { "X-BX-APIKEY": apiKey };
 
-  try {
-    const response = await axios.get(url, { headers, timeout: 5000 });
-    return response;
-  } catch (error) {
-    if(error instanceof CustomError) throw error;
-
-    throw new CustomError({
-      message: `Failed to send BingX API request to ${path}: ${error.message}`,
-      source: "makeSignedRequest",
-      status: 500,
-    });
-  }
+  return await axios.get(url, { headers, timeout: 5000 });
 }
 
 /**
@@ -43,36 +32,14 @@ async function getServerTime() {
   const path = "/openApi/swap/v2/server/time";
   const url = `${apiConfig.protocol}://${apiConfig.host}${path}`;
   const response = await axios.get(url, { timeout: 5000 });
-  const serverTime = response.data.data.serverTime;
-  return serverTime;
+  return response.data.data.serverTime;
 }
 
 async function getAPIPerms(apiKey, apiSecret) {
   const path = "/openApi/v1/account/apiRestrictions";
   const payload = { timestamp: await getServerTime(), recvWindow: 5000 };
 
-  try {
-    const response = await makeSignedRequest(path, payload, apiKey, apiSecret);
-    if (response.status === 200 && response.data || response.data.code === 0) {
-      return response.data;
-    }
-    throw new CustomError({
-      message: `Failed to get BingX API Key Permissions: ${response.data}`,
-      status: 400,
-      source: "getAPIPerms",
-    });
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    throw new CustomError({
-      message: `Failed to get BingX API Key Permissions: ${
-        error.message || error
-      }`,
-      status: 400,
-      source: "getAPIPerms",
-    });
-  }
+  return await makeSignedRequest(path, payload, apiKey, apiSecret);
 }
 
 module.exports = {

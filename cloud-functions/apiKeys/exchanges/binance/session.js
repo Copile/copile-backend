@@ -24,9 +24,6 @@ class BinanceSession extends ExchangeSession {
     try {
       return await getBinanceAPIPerms(this.apiKey, this.apiSecret);
     } catch (error) {
-      if (error instanceof CustomError) {
-        throw error;
-      }
       throw new CustomError({
         message: `Failed to fetch Binance API Perms: ${error.message}`,
         status: 500,
