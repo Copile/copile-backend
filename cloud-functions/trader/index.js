@@ -224,26 +224,28 @@ app.post("/updateExchange", async (req, res) => {
         updateFields[`exchanges.${exchange}.${passphraseField}`] = api_passphrase;
       }
 
-      // call the apiKey validation endpoint
-      const apiKeyValidationResponse = await axios.post(
-        `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
-        { api_key, api_secret, api_passphrase },
-        {
-          headers: {
-            traderId,
-          },
-        }
-      );
+      if (!read_only) {
+        // call the apiKey validation endpoint
+        const apiKeyValidationResponse = await axios.post(
+          `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
+          { api_key, api_secret, api_passphrase },
+          {
+            headers: {
+              traderId,
+            },
+          }
+        );
 
-      // rn only this endpoint returns 200 if the api credentials are valid
-      // TODO: more specific error codes to distinguish between invalid credentials and other errors
-      // TODO: give user info about excess permissions and expiration date
-      if (apiKeyValidationResponse.data.success === false) {
-        return res.status(200).json({
-          success: false,
-          code: apiKeyValidationResponse.data.code,
-          message: apiKeyValidationResponse.data.message,
-        });
+        // rn only this endpoint returns 200 if the api credentials are valid
+        // TODO: more specific error codes to distinguish between invalid credentials and other errors
+        // TODO: give user info about excess permissions and expiration date
+        if (apiKeyValidationResponse.data.success === false) {
+          return res.status(200).json({
+            success: false,
+            code: apiKeyValidationResponse.data.code,
+            message: apiKeyValidationResponse.data.message,
+          });
+        }
       }
 
       userRef
