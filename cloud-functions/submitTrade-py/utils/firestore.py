@@ -151,6 +151,21 @@ async def get_trade_info(account_id, trade_id):
         trade_id).get()).to_dict()
     return trade_info
 
+async def get_specific_order(account_id, trade_id, document_id, trade_type):
+    trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
+
+    collection_name = COLLECTION_TAKE_PROFITS if trade_type == 'tp' else COLLECTION_STOP_LOSSES
+
+    order_doc_ref = trade_ref.collection(collection_name).document(document_id)
+    order_doc = await order_doc_ref.get()
+
+    if order_doc.exists:
+        order_data = order_doc.to_dict()
+        order_data['document_id'] = order_doc.id
+        order_data['trade_type'] = trade_type
+        return order_data
+    else:
+        return None
 
 async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
     # Get take profit or stop loss info from firestore with account_id, trade_id, document_id, and is_tp_or_sl
@@ -176,6 +191,12 @@ async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
         executed_info = None
     return executed_info
 
+
+async def update_trade_quantity(account_id, trade_id, new_quantity):
+    trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
+    
+    await trade_ref.update({'quantity': new_quantity})
+    return f"Trade quantity successfully updated to {new_quantity}"
 
 async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_or_sl, status):
     # Change executed status of take profit or stop loss in firestore with account_id, trade_id, document_id, and is_tp_or_sl
