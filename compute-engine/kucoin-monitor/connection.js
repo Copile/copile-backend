@@ -19,7 +19,7 @@ const handleTradeOrders = async (data) => {
   console.log("Received trade order data:", data);
 
   const orderId = data.data.orderId;
-  const orderData = data.data;
+  let orderData = data.data;
 
   if (orderData.type !== "canceled") {
     const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
@@ -37,23 +37,27 @@ const handleTradeOrders = async (data) => {
     entry: orderData.price,
   };
 
-  let orders = [];
-  orders.push(order);
   console.log("Transformed order:", order);
 
   /*futuresSDK.futuresOpenOrders().then((res) => {
     console.log("Open orders:", res.data.items);
-  });
+  });*/
 
-  futuresSDK.futuresStopOrders().then((res) => {
+  /*futuresSDK.futuresStopOrders().then((res) => {
     console.log("Stop orders:", res.data.items);
   });*/
+
   // Additional processing logic goes here
 };
 
-const handleStopOrders = (data) => {
+const handleStopOrders = async (data) => {
   // Process the data received from stop orders
   console.log("Received stop order data:", data);
+
+  const orderId = data.data.orderId;
+  const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
+  const orderData = orderDetails.data;
+  console.log("Order details:", orderDetails);
 };
 
 futuresSDK.websocket.tradeOrders("", handleTradeOrders).catch((err) => {
