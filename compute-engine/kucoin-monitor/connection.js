@@ -14,23 +14,46 @@ const futuresSDK = new KuCoinFutures({
   passphrase: API_PASSPHRASE,
 });
 
-const handleTradeOrders = (data) => {
+const handleTradeOrders = async (data) => {
   // Process the data received from trade orders
   console.log("Received trade order data:", data);
+
   const orderId = data.data.orderId;
+  const orderData = data.data;
 
-  // futuresSDK.futuresOrderDetail(orderId).then((res) => {
-  //   console.log("Order details:", res);
-  // });
+  if (orderData.type !== "canceled") {
+    const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
+    orderData = orderDetails.data;
+  }
 
+  const order = {
+    symbol: orderData.symbol,
+    type: orderData.type,
+    quantity: orderData.size,
+    orderId: String(orderData.id),
+    side: orderData.side === "buy" ? "Buy" : "Sell",
+    leverage: orderData.leverage,
+    detection: "kp",
+    entry: orderData.price,
+  };
+
+  let orders = [];
+  orders.push(order);
+  console.log("Transformed order:", order);
+
+  /*futuresSDK.futuresOpenOrders().then((res) => {
+    console.log("Open orders:", res.data.items);
+  });
+
+  futuresSDK.futuresStopOrders().then((res) => {
+    console.log("Stop orders:", res.data.items);
+  });*/
   // Additional processing logic goes here
 };
 
 const handleStopOrders = (data) => {
   // Process the data received from stop orders
   console.log("Received stop order data:", data);
-
-  // Additional processing logic goes here
 };
 
 futuresSDK.websocket.tradeOrders("", handleTradeOrders).catch((err) => {
