@@ -1,4 +1,4 @@
-const CustomError = require("../utils/error"); // Assuming CustomError is in this path
+
 
 /**
  * Base class for implementing different exchange sessions.
