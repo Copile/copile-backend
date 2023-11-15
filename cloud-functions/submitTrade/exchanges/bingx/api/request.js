@@ -44,35 +44,29 @@ async function makeSignedRequest(method, path, payload, apiKey, apiSecret) {
     url: url,
     headers: headers,
   }
-  console.log(config);
+  
   try {
     let response;
     switch (method) {
-      case 'GET':
-        response = await axios(config);
-        break;
-      case 'POST':
-        response = await axios(config);
-        break;
-      case 'PATCH':
-        response = await axios(config);
-        break;
-      case 'PUT':
-        response = await axios(config);
-        break;
-      case 'DELETE':
-        response = await axios(config);
-        break;
-      default:
-        throw new CustomError({
-          message: `Invalid method type: ${method}`,
-          source: "makeSignedRequest",
-          status: 400,
-        });
+        case 'GET':
+            response = await axios.get(url, { headers });
+            break;
+        case 'POST':
+        case 'PATCH':
+        case 'PUT':
+        case 'DELETE':
+            response = await axios({ method, url, headers });
+            break;
+        default:
+            throw new CustomError({
+                message: `Invalid method type: ${method}`,
+                source: "makeSignedRequest",
+                status: 400,
+            });
     }
 
-    console.log(payload);
-    console.log(response.data);
+    console.log(`Request Payload: ${JSON.stringify(payload)}`);
+    console.log(`Response: ${JSON.stringify(response.data)}`);
     return response.data.data;
   } catch (error) {
     if (error instanceof CustomError) throw error;

@@ -199,7 +199,9 @@ async function cancelOrder(apiKey, apiSecret, data) {
         const { traderId, tradeId, document_id, trade_type } = data;
 
         const tradeInfo = await getTradeInfo(traderId, tradeId);
-        
+        let orders = await session.currentOrders(tradeInfo.symbol);
+        console.log(BigInt(orders.orders[0].orderId));
+        await session.getOrder(tradeInfo.symbol, BigInt(orders.orders[0].orderId), null);
         await sendCancel(session, tradeInfo.symbol, traderId, tradeId, document_id, trade_type)   
         
         return

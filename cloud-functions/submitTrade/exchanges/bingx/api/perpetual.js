@@ -102,12 +102,19 @@ class BingXFunctions {
     return await makeSignedRequest("GET", path, payload, this.apiKey, this.apiSecret);
   }
 
-  async getOrder(symbol, orderId) {
+  async getOrder(symbol, orderId, clientOrderID) {
     const path = "/openApi/swap/v2/trade/order";
-    const payload = {
-        symbol,
-        orderId
-    };
+    
+    let payload = {
+      symbol,
+    }
+
+    if (orderId !== null) {
+      payload.orderId = orderId
+    } else {
+      payload.clientOrderID = clientOrderID
+    }
+
     return await makeSignedRequest("GET", path, payload, this.apiKey, this.apiSecret);
   }
 
