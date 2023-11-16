@@ -1,69 +1,90 @@
-// require("dotenv").config();
+// Import necessary modules and functions
 const KuCoinFutures = require("kucoin-futures-node-sdk").default;
 const getAction = require("./utils/getAction.js");
+const tradeExecution = require("./tradeExecution.js");
 
+// Hardcoded API credentials for demonstration (Use environment variables in production)
 const API_KEY = "637967ef0adca800011fd0a6";
 const API_SECRET = "11b7ceaf-7a2a-4134-8503-247642a01fe3";
 const API_PASSPHRASE = "mira12345678";
-// const API_KEY = process.env.API_KEY;
-// const API_SECRET = process.env.API_SECRET;
 
+// Initialize KuCoin Futures SDK with API credentials
 const futuresSDK = new KuCoinFutures({
   key: API_KEY,
   secret: API_SECRET,
   passphrase: API_PASSPHRASE,
 });
 
-const handleTradeOrders = async (data) => {
-  // Process the data received from trade orders
-  console.log("Received trade order data:", data);
-
-  const orderId = data.data.orderId;
-  let orderData = data.data;
-
-  if (orderData.type !== "canceled") {
-    const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
-    orderData = orderDetails.data;
-  }
-
-  const order = {
+// Function to transform order data
+const transformOrder = (action, orderData) => {
+  return {
     symbol: orderData.symbol,
     type: orderData.type,
     quantity: orderData.size,
     orderId: String(orderData.id),
     side: orderData.side === "buy" ? "Buy" : "Sell",
     leverage: orderData.leverage,
-    detection: "kp",
+    detection: action,
     entry: orderData.price,
   };
-
-  console.log("Transformed order:", order);
-
-  /*futuresSDK.futuresOpenOrders().then((res) => {
-    console.log("Open orders:", res.data.items);
-  });*/
-
-  /*futuresSDK.futuresStopOrders().then((res) => {
-    console.log("Stop orders:", res.data.items);
-  });*/
-
-  // Additional processing logic goes here
 };
 
+// Function to process trade orders
+const handleTradeOrders = async (data) => {
+  try {
+    console.log("Received trade order data:", data);
+
+    let orders = [];
+    const action = getAction(data);
+
+    if (action.includes("cancelled")) {
+      orders.push(transformOrder(action, data.data));
+    } else {
+      const orderId = data.data.orderId;
+      const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
+      orders.push(transformOrder(action, orderDetails.data));
+    }
+
+    console.log("Orders:", orders);
+    // await tradeExecution(orders);
+  } catch (error) {
+    console.error("Error in handleTradeOrders:", error);
+  }
+};
+
+// Function to process stop orders
 const handleStopOrders = async (data) => {
-  // Process the data received from stop orders
-  console.log("Received stop order data:", data);
+  try {
+    console.log("Received stop order data:", data);
 
-  const orderId = data.data.orderId;
-  const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
-  const orderData = orderDetails.data;
-  console.log("Order details:", orderDetails);
+    let orders = [];
+    const action = getAction(data);
+
+    if (action.includes("cancelled")) {
+      orders.push(transformOrder(action, data.data));
+    } else {
+      const orderId = data.data.orderId;
+      const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
+      orders.push(transformOrder(action, orderDetails.data));
+    }
+
+    console.log("Orders:", orders);
+    // await tradeExecution(orders);
+  } catch (error) {
+    console.error("Error in handleStopOrders:", error);
+  }
 };
 
-futuresSDK.websocket.tradeOrders("", handleTradeOrders).catch((err) => {
-  console.error("Failed to subscribe to trade orders:", err);
-});
+// Subscribing to trade and stop order topics
+const subscribeToOrders = () => {
+  futuresSDK.websocket
+    .tradeOrders("", handleTradeOrders)
+    .catch((err) => console.error("Failed to subscribe to trade orders:", err));
 
-futuresSDK.websocket.advancedOrders(handleStopOrders).catch((err) => {
-  console.error("Failed to subscribe to stop orders:", err);
-});
+  futuresSDK.websocket
+    .advancedOrders(handleStopOrders)
+    .catch((err) => console.error("Failed to subscribe to stop orders:", err));
+};
+
+// Invoke the subscription function
+subscribeToOrders();

@@ -1,39 +1,49 @@
+// getAction.js for KuCoin
+function getAction(data) {
+    const orderData = data.data;
+    const isStopOrder = data.topic.includes("advancedOrders");
 
-// Identifies the meaning of the order and returns it
-function getAction(order) {
-    const actionMap = {
-      "UNKNOWN": {
-        "false": {
-          "default": "new_order",
-        },
-        "true": {
-          "default": "partial_close",
-          "TakeProfit": "new_take_profit",
-          "PartialTakeProfit": "new_take_profit",
-          "StopLoss": "new_stop_loss",
-          "PartialStopLoss": "new_stop_loss"
+    // Determine order specifics for market or limit
+    const getOrderSpecifics = (orderData) => {
+        if (orderData.orderType === 'market') {
+            return 'market';
+        } else if (orderData.orderType === 'limit') {
+            return 'limit';
         }
-      },
-      "default": {
-        "false": {
-          "default": "cancelled_order",
-        },
-        "true": {
-          "default": "Unknown",
-          "TakeProfit": "cancelled_take_profit",
-          "PartialTakeProfit": "cancelled_take_profit",
-          "StopLoss": "cancelled_stop_loss",
-          "PartialStopLoss": "cancelled_stop_loss"
-        }
-      }
+        return '';
     };
-  
-    const cancelType = actionMap[order.cancelType] || actionMap['default'];
-    const reduceOnly = cancelType[order.reduceOnly] || cancelType['true'];
-    const stopOrderType = reduceOnly[order.stopOrderType] || reduceOnly['default'];
-  
-    return stopOrderType;
-};
+
+    // Determine if it's a take profit or stop loss for stop orders
+    const getStopOrderType = (orderData) => {
+        if (orderData.stop === 'up' && orderData.side === 'sell' || orderData.stop === 'down' && orderData.side === 'buy') {
+            return 'take_profit';
+        } else if (orderData.stop === 'down' && orderData.side === 'sell' || orderData.stop === 'up' && orderData.side === 'buy') {
+            return 'stop_loss';
+        }
+        return 'unknown_stop_type';
+    };
+
+    // Mapping for standard trade orders
+    const standardOrderActions = {
+        'open': orderData.status === 'done' ? `filled_${getOrderSpecifics(orderData)}_order` : `new_${getOrderSpecifics(orderData)}_order`,
+        'match': `matched_${getOrderSpecifics(orderData)}_order`,
+        'filled': `filled_${getOrderSpecifics(orderData)}_order`,
+        'canceled': `cancelled_${getOrderSpecifics(orderData)}_order`,
+        'update': `updated_${getOrderSpecifics(orderData)}_order`
+    };
+
+    // Mapping for stop orders
+    const stopOrderActions = {
+        'open': `new_${getStopOrderType(orderData)}_order`,
+        'triggered': `triggered_${getStopOrderType(orderData)}_order`,
+        'cancel': `cancelled_${getStopOrderType(orderData)}_order`
+    };
+
+    if (isStopOrder) {
+        return stopOrderActions[orderData.type] || 'unknown_stop_order';
+    } else {
+        return standardOrderActions[orderData.type] || 'unknown_order';
+    }
+}
 
 module.exports = getAction;
-
