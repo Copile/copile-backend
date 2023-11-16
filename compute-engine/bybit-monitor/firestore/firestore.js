@@ -1,16 +1,17 @@
-//const { Firestore } = require("@google-cloud/firestore");
-const CustomError = require("./error");
+const { Firestore } = require("@google-cloud/firestore");
+const CustomError = require("./error.js");
+const decryptData = require('../utils/decryption.js');
 
-var admin = require("firebase-admin");
+// var admin = require("firebase-admin");
 
-var serviceAccount = require("./serviceAccount.json");
+// var serviceAccount = require("./serviceAccount.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
 // Initialize Firestore
-const db = admin.firestore();
+const db = new Firestore();
 
 // Load configuration from config.json file
 const config = require("./config.json");
@@ -41,6 +42,32 @@ const {
     FIELD_SL_PERCENTAGE,
     FIELD_SL_AMOUNT
 } = config;
+
+// Function to get the trader api keys
+async function getUserKeys(accountId, exchange) {
+    // Get user keys from Firestore with accountId and exchange
+    const documentRef = firestore.collection('traders').doc(accountId);
+    const documentSnapshot = await documentRef.get();
+    const userData = documentSnapshot.data();
+    
+    if (userData.is_monitor_enabled === true) {
+        if (!userData || !userData.exchanges || !userData.exchanges[exchange]) {
+            throw new Error('User data not found');
+          }
+        
+          const exchangeData = userData.exchanges[exchange];
+          exchangeData.read_only_api_secret = await decryptData(accountId, exchangeData.read_only_api_secret);
+        
+          // Decrypt the api_passphrase if encrypted
+          if (exchangeData.api_passphrase) {
+            exchangeData.api_passphrase = await decryptData(accountId, exchangeData.api_passphrase);
+          }
+        
+          return exchangeData;
+    } else {
+        return userData.is_monitor_enabled
+    }
+}
 
 // Function to fetch the latest trade document ID for a trader
 async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
@@ -391,6 +418,7 @@ const getTpSlOrders = async (accountId, tradeId) => {
 };
 
 module.exports = {
+    getUserKeys,
     fetchLatestTradeDoc,
     storeTrade,
     updateTradeQuantity,
