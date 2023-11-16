@@ -1,5 +1,5 @@
 const { KeyManagementServiceClient } = require("@google-cloud/kms");
-const CustomError = require('./error.js');
+const CustomError = require('../firestore/error.js');
 
 const kms = new KeyManagementServiceClient();
 

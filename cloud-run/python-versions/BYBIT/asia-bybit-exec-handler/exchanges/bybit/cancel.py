@@ -21,6 +21,7 @@ async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info,
             api_key=keys["api_key"],
             api_secret=keys["api_secret"],
         )
+        
         cancel = await session.cancel_order(
             category="linear",
             symbol=symbol,
