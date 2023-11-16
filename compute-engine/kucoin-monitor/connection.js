@@ -1,7 +1,7 @@
 // Import necessary modules and functions
 const KuCoinFutures = require("kucoin-futures-node-sdk").default;
 const getAction = require("./utils/getAction.js");
-const tradeExecution = require("./tradeExecution.js");
+// const tradeExecution = require("./tradeExecution.js");
 
 // Hardcoded API credentials for demonstration (Use environment variables in production)
 const API_KEY = "637967ef0adca800011fd0a6";
@@ -19,30 +19,39 @@ const futuresSDK = new KuCoinFutures({
 const transformOrder = (action, orderData) => {
   return {
     symbol: orderData.symbol,
-    type: orderData.type,
+    type: orderData.type || "unknown", // Fallback to 'unknown' if type is not available
     quantity: orderData.size,
-    orderId: String(orderData.id),
+    orderId: String(orderData.orderId || orderData.id),
     side: orderData.side === "buy" ? "Buy" : "Sell",
-    leverage: orderData.leverage,
+    leverage: orderData.leverage || "N/A", // Fallback to 'N/A' if leverage is not available
     detection: action,
-    entry: orderData.price,
+    entry: orderData.price || orderData.stopPrice, // Fallback to 'N/A' if price is not available
   };
 };
 
 // Function to process trade orders
 const handleTradeOrders = async (data) => {
   try {
-    console.log("Received trade order data:", data);
+    // console.log("Received trade order data:", data);
 
     let orders = [];
-    const action = getAction(data);
+    const orderData = data.data;
+    const action = getAction(orderData);
 
     if (action.includes("cancelled")) {
-      orders.push(transformOrder(action, data.data));
+      orders.push(transformOrder(action, orderData));
     } else {
-      const orderId = data.data.orderId;
-      const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
-      orders.push(transformOrder(action, orderDetails.data));
+      try {
+        const orderDetails = await futuresSDK.futuresOrderDetail(
+          orderData.orderId
+        );
+        orders.push(
+          transformOrder(getAction(orderDetails.data), orderDetails.data)
+        );
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+        orders.push(transformOrder({ ...orderData, type: "unknown" }));
+      }
     }
 
     console.log("Orders:", orders);
@@ -55,18 +64,12 @@ const handleTradeOrders = async (data) => {
 // Function to process stop orders
 const handleStopOrders = async (data) => {
   try {
-    console.log("Received stop order data:", data);
+    // console.log("Received stop order data:", data);
 
     let orders = [];
-    const action = getAction(data);
-
-    if (action.includes("cancelled")) {
-      orders.push(transformOrder(action, data.data));
-    } else {
-      const orderId = data.data.orderId;
-      const orderDetails = await futuresSDK.futuresOrderDetail(orderId);
-      orders.push(transformOrder(action, orderDetails.data));
-    }
+    const orderData = data.data;
+    const action = getAction(orderData);
+    orders.push(transformOrder(action, orderData));
 
     console.log("Orders:", orders);
     // await tradeExecution(orders);

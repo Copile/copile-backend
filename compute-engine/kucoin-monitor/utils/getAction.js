@@ -1,13 +1,11 @@
 // getAction.js for KuCoin
-function getAction(data) {
-    const orderData = data.data;
-    const isStopOrder = data.topic.includes("advancedOrders");
-
+function getAction(orderData) {
+    const isStopOrder = orderData.orderType === 'stop';
     // Determine order specifics for market or limit
     const getOrderSpecifics = (orderData) => {
-        if (orderData.orderType === 'market') {
+        if (orderData.orderType === 'market' || orderData.type === 'market') {
             return 'market';
-        } else if (orderData.orderType === 'limit') {
+        } else if (orderData.orderType === 'limit' || orderData.type === 'limit') {
             return 'limit';
         }
         return '';
@@ -29,7 +27,9 @@ function getAction(data) {
         'match': `matched_${getOrderSpecifics(orderData)}_order`,
         'filled': `filled_${getOrderSpecifics(orderData)}_order`,
         'canceled': `cancelled_${getOrderSpecifics(orderData)}_order`,
-        'update': `updated_${getOrderSpecifics(orderData)}_order`
+        'update': `updated_${getOrderSpecifics(orderData)}_order`,
+        'limit': `new_limit_order`,
+        'market': `new_market_order`,
     };
 
     // Mapping for stop orders
