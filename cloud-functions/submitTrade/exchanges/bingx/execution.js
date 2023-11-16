@@ -66,12 +66,6 @@ async function bulkOrder(apiKey, apiSecret, data) {
             sl.sl_amount = roundToPrecision(parseFloat(quantity) * parseFloat(sl.sl_percentage), precision.quantityPrecision)
             preparedOrders.push(new Order(symbol, "TRIGGER_MARKET", side === "Buy" ? "SELL" : "BUY", null, sl.sl_amount, tpSlPositionSide, slPrice, sl.orderId));
         });
-        
-        // const MAX_ORDERS_PER_CALL = 5;
-        // for (let i = 0; i < preparedOrders.length; i += MAX_ORDERS_PER_CALL) {
-        //     const chunk = preparedOrders.slice(i, i + MAX_ORDERS_PER_CALL);
-        //     await session.bulkOrder(chunk);
-        // }
 
         await Promise.all(preparedOrders.map(order => session.tradeOrder(order)));
 
@@ -199,7 +193,9 @@ async function cancelOrder(apiKey, apiSecret, data) {
         const { traderId, tradeId, document_id, trade_type } = data;
 
         const tradeInfo = await getTradeInfo(traderId, tradeId);
-        
+        let orders = await session.currentOrders(tradeInfo.symbol);
+        console.log(BigInt(orders.orders[0].orderId));
+        await session.getOrder(tradeInfo.symbol, BigInt(orders.orders[0].orderId), null);
         await sendCancel(session, tradeInfo.symbol, traderId, tradeId, document_id, trade_type)   
         
         return
