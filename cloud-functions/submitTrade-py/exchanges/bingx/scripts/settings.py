@@ -5,3 +5,10 @@ def convert_symbol(symbol):
         return converted_symbol
     else:
         return symbol
+    
+def get_position_quantity(position, trade_info):
+    if len(position) != 0:
+        position_quantity = abs(float(position[0]["positionAmt"]))
+    else:
+        position_quantity = trade_info["quantity"]
+    return position_quantity

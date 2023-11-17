@@ -4,7 +4,7 @@ from .api.perpetual import BingXFunctions
 from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
 from ...utils.partial import distribute_percentages
 from .scripts.order_factory import Order
-from .scripts.settings import convert_symbol
+from .scripts.settings import convert_symbol, get_position_quantity
 from .scripts.cancel import send_cancel
 from .scripts.distribution import calculate_tp_amounts
 from .scripts.order import get_tps_status
@@ -83,8 +83,8 @@ async def bulkOrder(api_key, api_secret, data):
         }
         await store_trade(traderId, trade_info)
         
-        tp_promises = [storeTP(trader_id, tp) for tp in new_take_profits_with_ids]
-        sl_promises = [storeSL(trader_id, sl) for sl in stop_losses_with_ids]
+        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         all_results = await asyncio.gather(*tp_promises, *sl_promises)
 
@@ -109,10 +109,7 @@ async def send_sl(api_key, api_secret, data):
             session.get_precisions(symbol)
         )
 
-        if len(position) != 0:
-            position_quantity = abs(float(position[0]["positionAmt"]))
-        else:
-            position_quantity = trade_info["quantity"]
+        position_quantity = get_position_quantity(position, trade_info)
 
         price = round(float(payload["sl_value"], precision["price_precision"]))
 
@@ -127,6 +124,90 @@ async def send_sl(api_key, api_secret, data):
 
         return
     
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+async def replace_sl(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+        traderId, tradeId, document_id, payload = data
+
+        trade_info = await get_trade_info(traderId, tradeId)
+
+        symbol = trade_info["symbol"]
+        side = trade_info["side"]
+        sl_position_side = "LONG" if side.upper() == "BUY" else "SHORT"
+
+        # Cancel the current stoploss
+        await send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
+
+        # Fetch the current position and precisions
+        position, precision = await asyncio.gather(
+            session.get_position(symbol),
+            session.get_precisions(symbol)
+        )
+
+        position_quantity = get_position_quantity(position, trade_info)
+
+        price = round(float(payload["sl_value"], precision["price_precision"]))
+
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity), sl_position_side, None, None)
+
+        create_order = await session.trade_order(order)
+
+        payload["sl_amount"] = float(position_quantity)
+        payload["orderId"] = create_order["order"]["orderId"]
+
+        await store_sl(traderId, payload)
+
+        return
+
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+async def cancel_order(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+        traderId, tradeId, document_id, trade_type = data
+
+        trade_info = await get_trade_info(traderId, tradeId)
+
+        symbol = trade_info["symbol"]
+
+        await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
+
+        return
+    
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+async def cancel_all_orders(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+        traderId, tradeId = data
+
+        trade_info = await get_trade_info(traderId, tradeId)
+
+        symbol = trade_info["symbol"]
+
+        position = await session.get_position(symbol)
+    
+        if len(position) != 0:
+            quantity = position[0]["positionAmt"]
+            position_side = position[0]["positionSide"]
+
+            emergency_side = "SELL" if position_side == "LONG" else "BUY"
+
+            emergency_order = Order(symbol, "MARKET", emergency_side, None, quantity, position_side, None, None)
+
+            emergency = await session.trade_order(emergency_order)
+        else:
+            await session.cancel_order(symbol, trade_info["orderID"], None)
+
+        await session.cancel_all_orders(symbol)
+
+        return
+
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
