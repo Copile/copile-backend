@@ -34,9 +34,9 @@ function getAction(orderData) {
 
     // Mapping for stop orders
     const stopOrderActions = {
-        'open': `new_${getStopOrderType(orderData)}_order`,
-        'triggered': `triggered_${getStopOrderType(orderData)}_order`,
-        'cancel': `cancelled_${getStopOrderType(orderData)}_order`
+        'open': `new_${getStopOrderType(orderData)}`,
+        'triggered': `triggered_${getStopOrderType(orderData)}`,
+        'cancel': `cancelled_${getStopOrderType(orderData)}`
     };
 
     if (isStopOrder) {

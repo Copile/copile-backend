@@ -32,13 +32,14 @@ const transformOrder = (action, orderData) => {
 // Function to process trade orders
 const handleTradeOrders = async (data) => {
   try {
-    // console.log("Received trade order data:", data);
+    console.log("Received trade order data:", data);
 
     let orders = [];
     const orderData = data.data;
     const action = getAction(orderData);
-
-    if (action.includes("cancelled")) {
+    console.log("Action:", action);
+    
+    if (action.includes("cancelled" || "filled" || "closed")) {
       orders.push(transformOrder(action, orderData));
     } else {
       try {
