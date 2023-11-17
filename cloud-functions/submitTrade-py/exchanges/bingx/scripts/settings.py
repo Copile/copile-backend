@@ -11,4 +11,4 @@ def get_position_quantity(position, trade_info):
         position_quantity = abs(float(position[0]["positionAmt"]))
     else:
         position_quantity = trade_info["quantity"]
-    return position_quantity
+    return float(position_quantity)

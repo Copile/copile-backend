@@ -3,6 +3,9 @@ from .decryption import decryptData
 import time
 import asyncio
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 db = firestore.AsyncClient()
 
@@ -58,41 +61,45 @@ def change_collection(collection):
     refresh_globals_from_config()
     return
 
+# Store trade data in db
 async def store_trade(account_id, order_dict):
-    # Store trade data in firestore
-    trade_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        order_dict["trade_id"])
-    await trade_doc_ref.set({
-        FIELD_TRADE_ID: str(order_dict["trade_id"]),
-        FIELD_ORDER_ID: order_dict["order_id"],
-        FIELD_SYMBOL: order_dict["symbol"],
-        FIELD_ORDER_TYPE: order_dict["type"],
-        FIELD_SIDE: order_dict["side"].capitalize(),
-        FIELD_QUANTITY: order_dict["quantity"],
-        FIELD_ENTRY: order_dict["entry"],
-        FIELD_LEVERAGE: order_dict["leverage"],
-        FIELD_MARGIN: order_dict["margin"],
-        FIELD_EXCHANGE: order_dict["exchange"],
-        FIELD_CREATED_AT: int(time.time())
-    })
+    try:
+        trade_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            order_dict["trade_id"])
+        await trade_doc_ref.set({
+            FIELD_TRADE_ID: str(order_dict["trade_id"]),
+            FIELD_ORDER_ID: order_dict["order_id"],
+            FIELD_SYMBOL: order_dict["symbol"],
+            FIELD_ORDER_TYPE: order_dict["type"],
+            FIELD_SIDE: order_dict["side"].capitalize(),
+            FIELD_QUANTITY: order_dict["quantity"],
+            FIELD_ENTRY: order_dict["entry"],
+            FIELD_LEVERAGE: order_dict["leverage"],
+            FIELD_MARGIN: order_dict["margin"],
+            FIELD_EXCHANGE: order_dict["exchange"],
+            FIELD_CREATED_AT: int(time.time())
+        })
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Store take profit data in db
 async def store_tp(account_id, tp_dict):
-    # Store take profit data in firestore
-    tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
-    await tp_doc_ref.set({
-        FIELD_ORDER_ID: str(tp_dict["order_id"]),
-        FIELD_EXECUTED: "1",
-        FIELD_TP_NUMBER: tp_dict["tp_number"],
-        FIELD_TP_VALUE: tp_dict["tp_value"],
-        FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
-        FIELD_TP_AMOUNT: tp_dict["tp_amount"]
-    })
+    try:
+        tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
+        await tp_doc_ref.set({
+            FIELD_ORDER_ID: str(tp_dict["order_id"]),
+            FIELD_EXECUTED: "1",
+            FIELD_TP_NUMBER: tp_dict["tp_number"],
+            FIELD_TP_VALUE: tp_dict["tp_value"],
+            FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
+            FIELD_TP_AMOUNT: tp_dict["tp_amount"]
+        })
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Store stop loss data in db
 async def store_sl(account_id, sl_dict):
-    # Store stop loss data in firestore
     sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
         sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
     await sl_doc_ref.set({
@@ -104,135 +111,186 @@ async def store_sl(account_id, sl_dict):
         FIELD_SL_AMOUNT: sl_dict['sl_amount']
     })
 
-
+# Delete single order from db
 async def delete_order(account_id, trade_id):
-    # Delete single order from firestore
-    await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id).delete()
+    try:
+        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id).delete()
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Delete single take profit or stop loss from db
 async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
-    # Delete single take profit or stop loss from firestore
-    if is_tp_or_sl == "tp":
-        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).delete()
-    if is_tp_or_sl == "sl":
-        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
+    try:
+        if is_tp_or_sl == "tp":
+            await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).delete()
+        if is_tp_or_sl == "sl":
+            await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Get user api keys for a specific exchange
 async def get_user_keys(account_id, exchange):
-    # Get user keys from firestore with account_id and exchange
-    keys = db.collection(COLLECTION_TRADERS).document(account_id)
-    exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-    exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
+    try:
+        keys = db.collection(COLLECTION_TRADERS).document(account_id)
+        exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
+        exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
 
-    # Decrypt the api_passphrase if encrypted
-    if 'api_passphrase' in exchange_data:
-        exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
+        # Decrypt the api_passphrase if encrypted
+        if 'api_passphrase' in exchange_data:
+            exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
 
-    return exchange_data
+        return exchange_data
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Get user margin from a specific user and plan
 async def get_user_margin(account_id, plan_id):
-    # Get user margin from firestore with account_id and plan_id
-    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
-    margin = (await plan.get()).to_dict()["margin"]
-    return margin
+    try:
+        plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
+        margin = (await plan.get()).to_dict()["margin"]
+        return margin
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
 # get user plans from firestore with account_id and exchange
 async def get_user_plan(account_id, plan_id, trader_id):
-    plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id).collection(COLLECTION_WORKERS).document(trader_id)
-    plan_object = (await plan.get()).to_dict()
-    return plan_object
+    try:
+        plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id).collection(COLLECTION_WORKERS).document(trader_id)
+        plan_object = (await plan.get()).to_dict()
+        return plan_object
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
+# Get trade related info for a specific tradeId
 async def get_trade_info(account_id, trade_id):
-    # Get general trade info from firestore with account_id and trade_id
-    trade_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        trade_id).get()).to_dict()
-    return trade_info
+    try:
+        # Get general trade info from firestore with account_id and trade_id
+        trade_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).get()).to_dict()
+        return trade_info
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
+# Get specific tp/sl order document
 async def get_specific_order(account_id, trade_id, document_id, trade_type):
-    trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
+    try:
+        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
 
-    collection_name = COLLECTION_TAKE_PROFITS if trade_type == 'tp' else COLLECTION_STOP_LOSSES
+        collection_name = COLLECTION_TAKE_PROFITS if trade_type == 'tp' else COLLECTION_STOP_LOSSES
 
-    order_doc_ref = trade_ref.collection(collection_name).document(document_id)
-    order_doc = await order_doc_ref.get()
+        order_doc_ref = trade_ref.collection(collection_name).document(document_id)
+        order_doc = await order_doc_ref.get()
 
-    if order_doc.exists:
-        order_data = order_doc.to_dict()
-        order_data['document_id'] = order_doc.id
-        order_data['trade_type'] = trade_type
-        return order_data
-    else:
-        return None
+        if order_doc.exists:
+            order_data = order_doc.to_dict()
+            order_data['document_id'] = order_doc.id
+            order_data['trade_type'] = trade_type
+            return order_data
+        else:
+            return None
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
+# Get take profit or stop loss info
 async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
-    # Get take profit or stop loss info from firestore with account_id, trade_id, document_id, and is_tp_or_sl
-    tp_sl_info = ""
-    if is_tp_or_sl == "tp":
-        tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()
-    if is_tp_or_sl == "sl":
-        tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
-    return tp_sl_info
+    try:
+        tp_sl_info = ""
+        if is_tp_or_sl == "tp":
+            tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()
+        if is_tp_or_sl == "sl":
+            tp_sl_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
+        return tp_sl_info
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Check executed status of a specific order
 async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
-    # Check executed status from firestore with account_id, trade_id, document_id, and is_tp_or_sl
-    if is_tp_or_sl == "tp":
-        executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
-    if is_tp_or_sl == "sl":
-        executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
-    else:
-        executed_info = None
-    return executed_info
+    try:
+        if is_tp_or_sl == "tp":
+            executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
+        if is_tp_or_sl == "sl":
+            executed_info = (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
+        else:
+            executed_info = None
+        return executed_info
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
-
+# Update quantity field for a specific order
 async def update_trade_quantity(account_id, trade_id, new_quantity):
-    trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
-    
-    await trade_ref.update({'quantity': new_quantity})
-    return f"Trade quantity successfully updated to {new_quantity}"
+    try:
+        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
+        
+        await trade_ref.update({'quantity': new_quantity})
+        return f"Trade quantity successfully updated to {new_quantity}"
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
+# Change executed status of take profit or stop loss
 async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_or_sl, status):
-    # Change executed status of take profit or stop loss in firestore with account_id, trade_id, document_id, and is_tp_or_sl
-    if is_tp_or_sl == "tp":
-        tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id)
-        await tp_doc_ref.update({FIELD_EXECUTED: str(status)})
-    if is_tp_or_sl == "sl":
-        sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id)
-        await sl_doc_ref.update({
-            FIELD_EXECUTED: str(status)
-        })
+    try:
+        if is_tp_or_sl == "tp":
+            tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id)
+            await tp_doc_ref.update({FIELD_EXECUTED: str(status)})
+        if is_tp_or_sl == "sl":
+            sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id)
+            await sl_doc_ref.update({
+                FIELD_EXECUTED: str(status)
+            })
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
+# Async function to get all take profit orders for a trade
+async def get_tp_orders(account_id, trade_id):
+    try:
+        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(trade_id)
 
+        tp_collection = await trade_ref.collection(COLLECTION_TAKE_PROFITS).get()
+
+        tp_orders = []
+
+        for doc in tp_collection:
+            tp_data = doc.to_dict()
+            tp_data['documentId'] = doc.id
+            tp_data['tradeType'] = 'tp'
+            tp_orders.append(tp_data)
+
+        return tp_orders
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+# Get take profit and stop loss orders from firestore with account_id and trade_id
 async def get_tp_sl_orders(account_id, trade_id):
-    # Get take profit and stop loss orders from firestore with account_id and trade_id
-    tp_sl_orders = []
+    try:
+        tp_sl_orders = []
 
-    tp_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        trade_id).collection(COLLECTION_TAKE_PROFITS).get()
-    sl_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        trade_id).collection(COLLECTION_STOP_LOSSES).get()
+        tp_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_TAKE_PROFITS).get()
+        sl_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            trade_id).collection(COLLECTION_STOP_LOSSES).get()
 
-    tp_collection, sl_collection = await asyncio.gather(tp_collection_task, sl_collection_task)
+        tp_collection, sl_collection = await asyncio.gather(tp_collection_task, sl_collection_task)
 
-    for tp_doc in tp_collection:
-        tp_data = tp_doc.to_dict()
-        tp_data['document_id'] = tp_doc.id  # Add document ID to the dictionary
-        tp_data['trade_type'] = "tp"
-        tp_sl_orders.append(tp_data)
+        for tp_doc in tp_collection:
+            tp_data = tp_doc.to_dict()
+            tp_data['document_id'] = tp_doc.id  # Add document ID to the dictionary
+            tp_data['trade_type'] = "tp"
+            tp_sl_orders.append(tp_data)
 
-    for sl_doc in sl_collection:
-        sl_data = sl_doc.to_dict()
-        sl_data['document_id'] = sl_doc.id  # Add document ID to the dictionary
-        sl_data['trade_type'] = "sl"
-        tp_sl_orders.append(sl_data)
+        for sl_doc in sl_collection:
+            sl_data = sl_doc.to_dict()
+            sl_data['document_id'] = sl_doc.id  # Add document ID to the dictionary
+            sl_data['trade_type'] = "sl"
+            tp_sl_orders.append(sl_data)
 
-    return tp_sl_orders
+        return tp_sl_orders
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)

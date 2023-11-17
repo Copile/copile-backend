@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from .api.perpetual import BingXFunctions
-from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
+from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
 from ...utils.partial import distribute_percentages
 from .scripts.order_factory import Order
 from .scripts.settings import convert_symbol, get_position_quantity
@@ -211,3 +211,49 @@ async def cancel_all_orders(api_key, api_secret, data):
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
+async def cancel_all_tps(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+
+        traderId, tradeId = data
+
+        trade_info, tp_orders = await asyncio.gather(
+            get_trade_info(traderId, tradeId),
+            get_tp_orders(traderId, tradeId)
+        )
+
+        await asyncio.gather(*[session.cancelOrder(trade_info["symbol"], None, order.orderID) for order in tp_orders])
+
+        return
+
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+async def bulk_tp(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+        traderId, tradeId, take_profits = data
+
+        trade_info = await get_trade_info(traderId, tradeId)
+
+        symbol = trade_info["symbol"]
+        side = trade_info["side"]
+        tp_postion_side = "LONG" if side == "BUY" else "SHORT"
+
+        # Fetch the current position and precisions
+        position, precision = await asyncio.gather(
+            session.get_position(symbol),
+            session.get_precisions(symbol)
+        )
+
+        postion_quantity = get_position_quantity(position, trade_info)
+
+        new_take_profits = await calculate_tp_amounts(take_profits, postion_quantity, precision)
+
+        prepared_orders = []
+
+        
+        
+
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
