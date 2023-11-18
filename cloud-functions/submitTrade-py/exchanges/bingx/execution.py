@@ -35,7 +35,6 @@ async def bulkOrder(api_key, api_secret, data):
 
         prepared_orders = [initial_order]
 
-
         new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
 
         tp_sl_position_side = "LONG" if side == "Buy" else "SHORT"
@@ -43,14 +42,14 @@ async def bulkOrder(api_key, api_secret, data):
         for tp in new_take_profits:
             tp.trade_id = tradeId
             tp_price = round(float(tp.tp_value), precision["price_precision"])
-            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_sl_position_side, tp_price, tp_order_id)
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_sl_position_side, tp_price, None)
             prepared_orders.append(tp_order)
 
         for sl in stop_losses:
             sl.trade_id = tradeId
             sl_price = round(float(sl.sl_value), precision["price_precision"])
             sl.sl_amount = round(float(quantity) * float(sl.sl_percentage), precision["quantity_precision"])
-            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount, tp_sl_position_side, sl_price, sl_order_id)
+            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount, tp_sl_position_side, sl_price, None)
             prepared_orders.append(sl_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -79,8 +78,8 @@ async def bulkOrder(api_key, api_secret, data):
             "leverage": leverage,
             "margin": margin,
             "exchange": trader_exchange
-
         }
+
         await store_trade(traderId, trade_info)
         
         tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
@@ -252,8 +251,128 @@ async def bulk_tp(api_key, api_secret, data):
 
         prepared_orders = []
 
-        
-        
+        for tp in new_take_profits:
+            tp.trade_id = tradeId
+            tp_price = round(float(tp.tp_value), precision["price_precision"])
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_postion_side, tp_price, None)
+            prepared_orders.append(tp_order)
 
+        order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
+
+        new_take_profits_with_ids = []
+        
+        # Assign orderIds to take profits
+        for i, tp_order in enumerate(prepared_orders[1:len(new_take_profits) + 1], start=1):
+            new_take_profits_with_ids.append((tp_order, order_ids[i]["order"]["orderId"]))
+
+        # Store take profits in firestore
+        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
+
+        await asyncio.gather(*tp_promises)
+
+        return
+
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
+
+async def partial_close(api_key, api_secret, data):
+    try:
+        session = BingXFunctions(api_key, api_secret)
+
+        traderId, tradeId, percentage = data
+
+        trade_info, tp_sl_orders = await asyncio.gather(
+            get_trade_info(traderId, tradeId),
+            get_tp_sl_orders(traderId, tradeId)
+        )
+
+        symbol = trade_info["symbol"]
+        side = trade_info["side"]
+        tp_sl_position_side = "LONG" if side.upper() == "BUY" else "SHORT"
+
+        # Split tp_sl_orders into tp/sl orders
+        tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
+        sl_orders = [order for order in tp_sl_orders if order['trade_type'] == 'sl']
+
+        # Fetch the current position and precisions
+        position, precision = await asyncio.gather(
+            session.get_position(symbol),
+            session.get_precisions(symbol)
+        )
+
+        executed = True if len(position) != 0 else False
+
+        position_quantity = get_position_quantity(position, trade_info)
+
+        quantity_to_sell = round(position_quantity * float(percentage), precision["quantity_precision"])
+        new_quantity = round(position_quantity - quantity_to_sell, precision["quantity_precision"])
+
+        tps_data = await get_tps_status(session, tp_orders)
+
+        take_proftis = distribute_percentages(tps_data)
+
+        new_take_profits = await calculate_tp_amounts(take_proftis, new_quantity, precision)
+
+        await session.cancel_all_orders(symbol)
+
+        if (executed):
+            sell_order = Order(symbol, "MARKET", "BUY" if side.upper() == "SELL" else "SELL", position_quantity, tp_sl_position_side, None, None)
+            await session.trade_order(sell_order)
+            await update_trade_quantity(traderId, tradeId, new_quantity)
+        else:
+            await session.cancel_order(symbol, trade_info["orderID"])
+            
+            order = Order(symbol, "LIMIT", side.upper(), trade_info["entry"], new_quantity, None, None, None)
+
+            create_order = await session.trade_order(order)
+            
+            trade_info = {
+                "trade_id": tradeId,
+                "order_id": create_order["order"]["orderId"],
+                "symbol": symbol,
+                "type": "LIMIT",
+                "side": side,
+                "quantity": new_quantity,
+                "entry": trade_info["entry"],
+                "leverage": trade_info["leverage"],
+                "margin": round(float(trade_info["margin"] * float(percentage)), 2),
+                "exchange": trade_info["exchange"]
+            }
+            
+            await store_trade(traderId, trade_info)
+        
+        prepared_orders = []
+        new_take_profits_with_ids = []
+        stop_losses_with_ids = []
+
+        for tp in new_take_profits:
+            tp.trade_id = tradeId
+            tp_price = round(float(tp.tp_value), precision["price_precision"])
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_sl_position_side, tp_price, None)
+            prepared_orders.append(tp_order)
+
+        for sl in sl_orders:
+            sl.trade_id = tradeId
+            sl_price = round(float(sl.sl_value), precision["price_precision"])
+            sl.sl_amount = round(float(new_quantity) * float(sl.sl_percentage), precision["quantity_precision"])
+            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount, tp_sl_position_side, sl_price, None)
+            prepared_orders.append(sl_order)
+
+        order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
+
+        # Assign orderIds to take profits and stop losses
+        for i, tp_order in enumerate(prepared_orders[1:len(new_take_profits) + 1], start=0):
+            new_take_profits_with_ids.append((tp_order, order_ids[i]["order"]["orderId"]))
+
+        for i, sl_order in enumerate(prepared_orders[len(new_take_profits) + 1:], start=len(new_take_profits)):
+            stop_losses_with_ids.append((sl_order, order_ids[i]["order"]["orderId"]))
+
+        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
+
+        all_results = await asyncio.gather(*tp_promises, *sl_promises)
+
+        return
+    
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

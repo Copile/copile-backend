@@ -356,6 +356,8 @@ async function partialClose(apiKey, apiSecret, data) {
         let tpsData = await getTpsStatus(session, symbol, tpOrders);
         let takeProfits = distributionPercentages(tpsData);
 
+        const newQuantity = parseFloat((parseFloat(positionQuantity) - quantityToSell).toFixed(precision.quantityPrecision));
+
         let newTakeProfits = await calculateTpAmounts(takeProfits, newQuantity, precision)
 
         await session.cancelAllOrders(symbol);
@@ -368,8 +370,6 @@ async function partialClose(apiKey, apiSecret, data) {
             await updateTradeQuantity(traderId, tradeId, newQuantity);
 
         } else {
-            const newQuantity = parseFloat((parseFloat(positionQuantity) - quantityToSell).toFixed(precision.quantityPrecision));
-
             let orderId = String(uuidv4()); 
             let order = new Order(symbol, "LIMIT", side.toUpperCase(), tradeInfo["entry"], newQuantity, null, null, orderId)
             
