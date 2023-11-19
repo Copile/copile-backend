@@ -1,0 +1,707 @@
+swagger: '2.0'
+info:
+  title: copile-trader-api
+  version: 1.0.0
+host: user-api-2bo4cs8336hkz.apigateway.copile.cloud.goog
+paths:
+  /admintrades/trades/{exchange}:
+    get:
+      operationId: getAdminTrades
+      parameters:
+        - in: path
+          name: exchange
+          required: true
+          type: string
+        - name: traderId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              trades:
+                type: array
+                items:
+                  type: object
+              executionTime:
+                type: integer
+      x-google-backend:
+        address: https://europe-west2-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /admintrades/order/{exchange}/{symbol}/{tradeId}:
+    get:
+      operationId: getAdminOrderDetails
+      parameters:
+        - name: exchange
+          in: path
+          required: true
+          type: string
+        - name: symbol
+          in: path
+          required: true
+          type: string
+        - name: tradeId
+          in: path
+          required: true
+          type: string
+        - name: traderId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              takeProfits:
+                type: array
+                items:
+                  type: object
+              stopLosses:
+                type: array
+                items:
+                  type: object
+      x-google-backend:
+        address: https://europe-west2-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/newTrade:
+    post:
+      operationId: submitTrade
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTradeRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/newTrade
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/submitTP:
+    post:
+      operationId: submitTakeProfit
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmitTPRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/submitTP
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/submitSL:
+    post:
+      operationId: submitStopLoss
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmitSLRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/submitSL
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/cancelOrder:
+    post:
+      operationId: cancelOrder
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CancelOrderRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/cancelOrder
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/cancelAllOrders:
+    post:
+      operationId: cancelAllOrders
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CancelAllOrdersRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/cancelAllOrders
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/cancelAllTPs:
+    post:
+      operationId: cancelAllTakeProfits
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CancelAllTPsRequest'
+        - name: traderId
+          in: header    # Updated to read traderId from header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/cancelAllTPs
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/bulkOrder:
+    post:
+      operationId: submitBulkOrder
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkOrderRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/bulkOrder
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/bulkTP:
+    post:
+      operationId: submitBulkTP
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkTPRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/bulkTP
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/replaceTP:
+    post:
+      operationId: replaceTP
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ReplaceTPRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/replaceTP
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/replaceSL:
+    post:
+      operationId: replaceSL
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ReplaceSLRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/replaceSL
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/partialClose:
+    post:
+      operationId: partialCloseOrder
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/PartialCloseRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/submitTrade/partialClose
+        path_translation: CONSTANT_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/pubKey:
+    get:
+      operationId: pubKey
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/trader/pubKey
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/updateExchange:
+    post:
+      operationId: updateExchange
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateExchangeRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/account:
+    get:
+      operationId: getAccount
+      parameters:
+        - name: traderId
+          in: header    # Updated to read traderId from header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/AccountResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /trader/alwaysExchanges:
+    put:
+      operationId: updateAlwaysExchanges
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/AlwaysExchangesRequest'
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /admintrades/balance/{exchange}:
+    get:
+        operationId: getTraderBalance
+        parameters:
+          - name: exchange
+            in: path
+            required: true
+            type: string
+          - name: traderId
+            in: header
+            required: true
+            type: string
+        responses:
+          '200':
+            description: Successful response
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                balance:
+                  type: array
+                  items:
+                    type: object
+                executionTime:
+                  type: integer
+        x-google-backend:
+          address: https://europe-west2-copile.cloudfunctions.net
+          path_translation: APPEND_PATH_TO_ADDRESS
+        consumes:
+          - application/json
+        produces:
+          - application/json
+  /trader/deleteExchange:
+    delete:
+      operationId: deleteExchange
+      parameters:
+        - name: traderId
+          in: header    # Updated to read traderId from header
+          required: true
+          type: string
+        - name: exchange
+          in: query
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ApiResponse'
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+
+  /:
+    get:
+      operationId: getRoot
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: string
+
+definitions:
+  NewTradeRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      exchange:
+        type: string
+      api_key:
+        type: string
+      api_secret:
+        type: string
+      api_passphrase:
+        type: string
+
+  SubmitTPRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      tradeId:
+        type: string
+      payload:
+        type: object
+        properties:
+          tp_number:
+            type: string
+          tp_value:
+            type: number
+          tp_percentage:
+            type: number
+
+  SubmitSLRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      tradeId:
+        type: string
+      payload:
+        type: object
+        properties:
+          sl_number:
+            type: string
+          sl_value:
+            type: number
+          sl_percentage:
+            type: number
+
+  CancelOrderRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      tradeId:
+        type: string
+      type:
+        type: string
+      order_ID:
+        type: string
+
+  CancelAllOrdersRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      tradeId:
+        type: string
+
+  BulkOrderRequest:
+    type: object
+    properties:
+      traderId:
+        type: string
+      exchanges:
+        type: array
+        items:
+          type: string
+      plans:
+        type: array
+        items:
+          type: string
+      payload:
+        type: object
+        properties:
+          side:
+            type: string
+          symbol:
+            type: string
+          leverage:
+            type: string
+          entry:
+            type: number
+          take_profits:
+            type: array
+            items:
+              type: object
+              properties:
+                tp_id:
+                  type: string
+                tp_number:
+                  type: string
+                tp_value:
+                  type: number
+                tp_percentage:
+                  type: number
+          stop_losses:
+            type: array
+            items:
+              type: object
+              properties:
+                sl_id:
+                  type: string
+                sl_number:
+                  type: string
+                sl_value:
+                  type: number
+                sl_percentage:
+                  type: number
+
+  PartialCloseRequest:
+    type: object
+    properties:
+      userId:
+        type: string
+      tradeId:
+        type: string
+      percentage:
+        type: number
+
+  ApiResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      message:
+        type: string
+
+  UpdateExchangeRequest:
+    type: object
+    properties:
+      exchange:
+        type: string
+      api_key:
+        type: string
+      api_secret:
+        type: string
+      api_passphrase:
+        type: string
+
+  AccountResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      existingApis:
+        type: object
+        additionalProperties:
+          type: boolean
+      always_exchanges:
+        type: boolean
+      connected_discord:
+        type: boolean
+      connected_telegram:
+        type: boolean
+      trader_name:
+        type: string
+
+  AlwaysExchangesRequest:
+    type: object
+    properties:
+      always_exchanges:
+        type: boolean
+
+  CancelAllTPsRequest:
+    type: object
+    properties:
+      trades:
+        type: array
+        items:
+          type: object
+          properties:
+            tradeId:
+              type: string
+
+  BulkTradeData:
+    type: object
+    properties:
+      trades:
+        type: array
+        items:
+          $ref: '#/definitions/TradeData'
+
+  ReplaceTPRequest:
+    type: object
+    properties:
+      tradeData:
+        type: object
+
+  ReplaceSLRequest:
+    type: object
+    properties:
+      tradeData:
+        type: object
+
+  BulkTPRequest:
+    type: object
+    properties:
+      trades:
+        type: array
+        items:
+          type: object
+          properties:
+            tradeId:
+              type: string

@@ -1,0 +1,427 @@
+swagger: '2.0'
+info:
+  title: copile-user-api
+  version: 1.0.0
+host: user-api-2bo4cs8336hkz.apigateway.copile.cloud.goog
+paths:
+  /user/updateExchange:
+    post:
+      operationId: updateExchange
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              exchange:
+                type: string
+              api_key:
+                type: string
+              api_secret:
+                type: string
+              api_passphrase:
+                type: string
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/updateExchange
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/pubKey:
+    get:
+      operationId: pubKey
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/pubKey
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/exchanges:
+    get:
+      operationId: getExchanges
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/exchanges
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/verify:
+    get:
+      operationId: verifyJWT
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/checkMember/verify
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/plans:
+    get:
+      operationId: getPlans
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/plans
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/updateMargin:
+    post:
+      operationId: updateMargin
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              license_key:
+                type: string
+              margin:
+                type: string
+              maxloss:
+                type: string
+              option:
+                type: string
+              preferred_exchange:
+                type: string
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/updateMargin
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/deleteExchange:
+    delete:
+      operationId: deleteExchange
+      parameters:
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              exchange:
+                type: string
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/member/deleteExchange
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/getDaily:
+    get:
+      operationId: getDaily
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/get-balance/getDaily
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/auth:
+    post:
+      operationId: authenticate
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              user:
+                type: object
+              licenses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    planID:
+                      type: string
+                    key:
+                      type: string
+                    membership:
+                      type: string
+                    product:
+                      type: string
+                    price:
+                      type: string
+                    currency:
+                      type: string
+                    next_renewal:
+                      type: string
+                    expires_at:
+                      type: string
+                    cancel_at_period:
+                      type: boolean
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/checkMember/auth
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /user/cancel:
+    post:
+      operationId: cancelMembership
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/checkMember/cancel
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /root:
+    get:
+      operationId: getRoot
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: string
+  /error:
+    get:
+      operationId: getError
+      responses:
+        '400':
+          description: Not Authorized
+          schema:
+            type: string
+  /user/stripe:
+    post:
+      operationId: stripeEndpoint
+      parameters:
+        - name: userId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              mem_id:
+                type: string
+              return_url:
+                type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              url:
+                type: string
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net/checkMember/stripe
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /usertrades/trades/{exchange}:
+    get:
+      operationId: getTrades
+      parameters:
+        - in: path
+          name: exchange
+          required: true
+          type: string
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              trades:
+                type: array
+                items:
+                  type: object
+              orders:
+                type: array
+                items:
+                  type: object
+      x-google-backend:
+        address: https://europe-west2-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /usertrades/order/{exchange}/{symbol}/{tradeId}:
+    get:
+      operationId: getOrderDetails
+      parameters:
+        - name: exchange
+          in: path
+          required: true
+          type: string
+        - name: symbol
+          in: path
+          required: true
+          type: string
+        - name: tradeId
+          in: path
+          required: true
+          type: string
+        - name: userId
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              takeProfits:
+                type: array
+                items:
+                  type: object
+              stopLosses:
+                type: array
+                items:
+                  type: object
+      x-google-backend:
+        address: https://europe-west2-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
+        - application/json
+
