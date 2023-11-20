@@ -1,6 +1,5 @@
 from .pybit.unified_trading import HTTP
 from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status, change_executed_status_tp_sl
-import asyncio
 
 async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info, keys):
     symbol = trade_info["symbol"]

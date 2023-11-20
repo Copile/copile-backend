@@ -11,7 +11,7 @@ async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
         api_secret=keys["api_secret"],
     )
     try:
-        stop = await session.place_order(
+        await session.place_order(
             category="linear",
             side='Buy' if side == 'Sell' else 'Sell',
             symbol=symbol,

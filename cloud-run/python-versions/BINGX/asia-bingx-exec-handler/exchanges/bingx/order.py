@@ -1,6 +1,5 @@
 from .bingX.perpetual.v2.Perpetual import Perpetual
-from ..firestore_functions import get_tp_sl_info, delete_tp_sl_order, delete_order, check_executed_status
-import asyncio
+from ..firestore_functions import get_tp_sl_info
 
 async def get_order_quantity(account_id, trade_id, document_id, trade_info, keys):
     symbol = trade_info["symbol"]

@@ -17,7 +17,7 @@ async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info,
                 await change_executed_status_tp_sl(account_id, trade_id, document_id, trade_type)
                 return f"Cancelled potential {trade_type}-order for {account_id}"
 
-        cancel = await client_trade.cancel_order(
+        await client_trade.cancel_order(
             orderId=order_id,
         )
         if trade_type == "tp" or trade_type == "sl":

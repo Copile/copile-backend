@@ -19,7 +19,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
 
         # Placing Stop order
         try:
-            stop_order = await client_trade.create_market_order(
+            await client_trade.create_market_order(
                 symbol=symbol,
                 size=quantity,
                 side=side,

@@ -14,7 +14,7 @@ async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
 
     # Placing Stop order
     try:
-        stop_order = await client_trade.create_market_order(
+        await client_trade.create_market_order(
             symbol=symbol,
             size=float(quantity),
             side=side,
