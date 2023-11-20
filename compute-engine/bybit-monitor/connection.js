@@ -88,7 +88,7 @@ async function initWebSocket(keys) {
 }
 
 async function startProcess() {
-  const accountId = process.env.accountId;
+  const accountId = process.env.ACCOUNT_ID;
   let keys = await getKeys(accountId);
 
   await initWebSocket(keys);

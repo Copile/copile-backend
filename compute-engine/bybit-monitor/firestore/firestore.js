@@ -46,7 +46,7 @@ const {
 // Function to get the trader api keys
 async function getUserKeys(accountId, exchange) {
     // Get user keys from Firestore with accountId and exchange
-    const documentRef = firestore.collection('traders').doc(accountId);
+    const documentRef = db.collection('traders').doc(accountId);
     const documentSnapshot = await documentRef.get();
     const userData = documentSnapshot.data();
     

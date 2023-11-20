@@ -11,10 +11,11 @@ const kms = new KeyManagementServiceClient();
  * @throws {CustomError} When decryption fails.
  * @returns {Promise<string>} The decrypted plaintext.
  */
-async function decryptData(ciphertext, traderName) {
+async function decryptData(traderName, ciphertext) {
   try {
+    console.log(traderName, ciphertext)
     const [result] = await kms.asymmetricDecrypt({
-      name: `${process.env.keyRing}/${traderName}/cryptoKeyVersions/1`,
+      name: `projects/copile/locations/global/keyRings/UserAPIKeys/cryptoKeys/${traderName}/cryptoKeyVersions/1`,
       ciphertext: Buffer.from(ciphertext, "base64"),
     });
 
