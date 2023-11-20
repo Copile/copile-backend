@@ -1,9 +1,15 @@
-from google.cloud import firestore
+#from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials, firestore
 from .decryption import decryptData
 import time
 import asyncio
 import json
 import logging
+
+cred = credentials.Certificate('serviceAccount.json')
+
+firebase_admin.initialize_app(cred)
 
 logger = logging.getLogger(__name__)
 

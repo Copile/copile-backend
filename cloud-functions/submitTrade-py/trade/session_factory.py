@@ -1,4 +1,4 @@
-from ..exchanges.bingx.api.session import BingXSession
+from exchanges.bingx.api.session import BingXSession
 
 def create_session(exchange, api_key, api_secret, api_passphrase=None):
 
