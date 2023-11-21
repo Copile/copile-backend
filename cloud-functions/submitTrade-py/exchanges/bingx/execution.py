@@ -1,10 +1,9 @@
 import asyncio
 import logging
 from .api.perpetual import BingXFunctions
-from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
-from utils.partial import distribute_percentages
-#from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
-#from ...utils.partial import distribute_percentages
+from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, \
+    get_tp_orders
+from ...utils.partial import distribute_percentages
 from .scripts.order_factory import Order
 from .scripts.settings import convert_symbol, get_position_quantity
 from .scripts.cancel import send_cancel
@@ -13,7 +12,8 @@ from .scripts.order import get_tps_status
 
 logger = logging.getLogger(__name__)
 
-async def bulkOrder(api_key, api_secret, data):
+
+async def bulk_order(api_key, api_secret, data):
     try:
         session = BingXFunctions(api_key, api_secret)
 
@@ -30,10 +30,13 @@ async def bulkOrder(api_key, api_secret, data):
             session.set_leverage(symbol, side, leverage)
         )
 
-        quantity = round((float(margin) * int(leverage) / float(entry)), precision["quantity_precision"]) if entry != "market" else round((float(margin) * int(leverage) / float(await session.get_market(symbol))), precision["quantity_precision"])
+        quantity = round((float(margin) * int(leverage) / float(entry)),
+                         precision["quantity_precision"]) if entry != "market" else round(
+            (float(margin) * int(leverage) / float(await session.get_market(symbol))), precision["quantity_precision"])
 
         order_side = "LONG" if side == "Buy" else "SHORT"
-        initial_order = Order(symbol, order_type, side.upper(), None if entry == "market" else entry, quantity, order_side, None, None)
+        initial_order = Order(symbol, order_type, side.upper(), None if entry == "market" else entry, quantity,
+                              order_side, None, None)
 
         prepared_orders = [initial_order]
 
@@ -44,14 +47,16 @@ async def bulkOrder(api_key, api_secret, data):
         for tp in new_take_profits:
             tp.trade_id = tradeId
             tp_price = round(float(tp.tp_value), precision["price_precision"])
-            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_sl_position_side, tp_price, None)
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount,
+                             tp_sl_position_side, tp_price, None)
             prepared_orders.append(tp_order)
 
         for sl in stop_losses:
             sl.trade_id = tradeId
             sl_price = round(float(sl.sl_value), precision["price_precision"])
             sl.sl_amount = round(float(quantity) * float(sl.sl_percentage), precision["quantity_precision"])
-            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount, tp_sl_position_side, sl_price, None)
+            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount,
+                             tp_sl_position_side, sl_price, None)
             prepared_orders.append(sl_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -83,7 +88,7 @@ async def bulkOrder(api_key, api_secret, data):
         }
 
         await store_trade(traderId, trade_info)
-        
+
         tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
@@ -94,13 +99,14 @@ async def bulkOrder(api_key, api_secret, data):
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
+
 async def send_sl(api_key, api_secret, data):
     try:
         session = BingXFunctions(api_key, api_secret)
         traderId, tradeId, document_id, payload = data
 
         trade_info = await get_trade_info(traderId, tradeId)
-        
+
         symbol = trade_info["symbol"]
         side = trade_info["side"]
         sl_position_side = "LONG" if side.upper() == "BUY" else "SHORT"
@@ -114,7 +120,8 @@ async def send_sl(api_key, api_secret, data):
 
         price = round(float(payload["sl_value"], precision["price_precision"]))
 
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity), sl_position_side, None, None)
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity),
+                      sl_position_side, None, None)
 
         create_order = await session.trade_order(order)
 
@@ -124,9 +131,10 @@ async def send_sl(api_key, api_secret, data):
         await store_sl(traderId, payload)
 
         return
-    
+
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
 
 async def replace_sl(api_key, api_secret, data):
     try:
@@ -152,7 +160,8 @@ async def replace_sl(api_key, api_secret, data):
 
         price = round(float(payload["sl_value"], precision["price_precision"]))
 
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity), sl_position_side, None, None)
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity),
+                      sl_position_side, None, None)
 
         create_order = await session.trade_order(order)
 
@@ -166,6 +175,7 @@ async def replace_sl(api_key, api_secret, data):
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
+
 async def cancel_order(api_key, api_secret, data):
     try:
         session = BingXFunctions(api_key, api_secret)
@@ -178,9 +188,10 @@ async def cancel_order(api_key, api_secret, data):
         await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
 
         return
-    
+
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
 
 async def cancel_all_orders(api_key, api_secret, data):
     try:
@@ -192,7 +203,7 @@ async def cancel_all_orders(api_key, api_secret, data):
         symbol = trade_info["symbol"]
 
         position = await session.get_position(symbol)
-    
+
         if len(position) != 0:
             quantity = position[0]["positionAmt"]
             position_side = position[0]["positionSide"]
@@ -212,6 +223,7 @@ async def cancel_all_orders(api_key, api_secret, data):
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
+
 async def cancel_all_tps(api_key, api_secret, data):
     try:
         session = BingXFunctions(api_key, api_secret)
@@ -229,6 +241,7 @@ async def cancel_all_tps(api_key, api_secret, data):
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
 
 async def bulk_tp(api_key, api_secret, data):
     try:
@@ -256,13 +269,14 @@ async def bulk_tp(api_key, api_secret, data):
         for tp in new_take_profits:
             tp.trade_id = tradeId
             tp_price = round(float(tp.tp_value), precision["price_precision"])
-            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_postion_side, tp_price, None)
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount,
+                             tp_postion_side, tp_price, None)
             prepared_orders.append(tp_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
         new_take_profits_with_ids = []
-        
+
         # Assign orderIds to take profits
         for i, tp_order in enumerate(prepared_orders[1:len(new_take_profits) + 1], start=1):
             new_take_profits_with_ids.append((tp_order, order_ids[i]["order"]["orderId"]))
@@ -276,6 +290,7 @@ async def bulk_tp(api_key, api_secret, data):
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
 
 async def partial_close(api_key, api_secret, data):
     try:
@@ -318,16 +333,17 @@ async def partial_close(api_key, api_secret, data):
         await session.cancel_all_orders(symbol)
 
         if (executed):
-            sell_order = Order(symbol, "MARKET", "BUY" if side.upper() == "SELL" else "SELL", position_quantity, tp_sl_position_side, None, None)
+            sell_order = Order(symbol, "MARKET", "BUY" if side.upper() == "SELL" else "SELL", position_quantity,
+                               tp_sl_position_side, None, None)
             await session.trade_order(sell_order)
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
             await session.cancel_order(symbol, trade_info["orderID"])
-            
+
             order = Order(symbol, "LIMIT", side.upper(), trade_info["entry"], new_quantity, None, None, None)
 
             create_order = await session.trade_order(order)
-            
+
             trade_info = {
                 "trade_id": tradeId,
                 "order_id": create_order["order"]["orderId"],
@@ -340,9 +356,9 @@ async def partial_close(api_key, api_secret, data):
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
             }
-            
+
             await store_trade(traderId, trade_info)
-        
+
         prepared_orders = []
         new_take_profits_with_ids = []
         stop_losses_with_ids = []
@@ -350,14 +366,16 @@ async def partial_close(api_key, api_secret, data):
         for tp in new_take_profits:
             tp.trade_id = tradeId
             tp_price = round(float(tp.tp_value), precision["price_precision"])
-            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount, tp_sl_position_side, tp_price, None)
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount,
+                             tp_sl_position_side, tp_price, None)
             prepared_orders.append(tp_order)
 
         for sl in sl_orders:
             sl.trade_id = tradeId
             sl_price = round(float(sl.sl_value), precision["price_precision"])
             sl.sl_amount = round(float(new_quantity) * float(sl.sl_percentage), precision["quantity_precision"])
-            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount, tp_sl_position_side, sl_price, None)
+            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount,
+                             tp_sl_position_side, sl_price, None)
             prepared_orders.append(sl_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -375,6 +393,6 @@ async def partial_close(api_key, api_secret, data):
         all_results = await asyncio.gather(*tp_promises, *sl_promises)
 
         return
-    
+
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

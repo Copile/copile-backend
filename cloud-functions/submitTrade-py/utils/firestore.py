@@ -1,6 +1,6 @@
 #from google.cloud import firestore
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, firestore_async
 #from .decryption import decryptData
 from pathlib import Path
 import time
@@ -8,15 +8,13 @@ import asyncio
 import json
 import logging
 
-print(json.loads(open('serviceAccount.json')))
+cred = credentials.Certificate('/Users/Me223/Desktop/Copile/copile-backend/cloud-functions/submitTrade-py/utils/serviceAccount.json')
 
-cred = credentials.Certificate('serviceAccount.json')
-
-firebase_admin.initialize_app(cred)
+default_app = firebase_admin.initialize_app(cred)
 
 logger = logging.getLogger(__name__)
 
-db = firestore.AsyncClient()
+db = firestore_async.client()
 
 # Read the JSON file
 with open('config.json') as f:

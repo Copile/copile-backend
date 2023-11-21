@@ -1,8 +1,10 @@
 import logging
-from trade.exchange_session import ExchangeSession
-from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tps, bulk_tp, partial_close, send_sl, cancel_order
+from ....trade.exchange_session import ExchangeSession
+from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tps, bulk_tp, partial_close, send_sl, \
+    cancel_order
 
 logger = logging.getLogger(__name__)
+
 
 class BingXSession(ExchangeSession):
     """

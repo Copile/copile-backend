@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def calculate_tp_amounts(take_profits, quantity, precision):
     try:
         # Extracting tp_percentage from each take-profit data
