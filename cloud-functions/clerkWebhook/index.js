@@ -75,10 +75,30 @@ app.post("/addWorkerToGroup", async (req, res) => {
   const groupRef = firestore.collection("groups").doc(organizationMembership.data.organization.id);
   const workersRef = groupRef.collection("workers");
 
+  // first_name is null if the user does not use a social connection to sign up and the username is not provided
+  // here we are adding a backup name to the worker in preparation for adding to group by fetching
+  // the username from the traders collection
+  // this is because the user.created DOES include the username but the organizationMember.created does not
+  // which is the one that hits this endpoint.
+  let name = organizationMembership.data.public_user_data.first_name;
+  if (!name) {
+    // Fetch the username from the traders collection if first_name is not provided
+    const traderDoc = await firestore
+      .collection("traders")
+      .doc(organizationMembership.data.public_user_data.user_id)
+      .get();
+    if (traderDoc.exists) {
+      name = traderDoc.data().trader_name;
+    } else {
+      console.error("Unable to add a backup name to worker in preparation for adding to group");
+      name = "Unknown";
+    }
+  }
+
   try {
     await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
       id: organizationMembership.data.public_user_data.user_id,
-      name: organizationMembership.data.public_user_data.first_name,
+      name: name,
     });
     console.log("Worker added to group");
     res.status(200).send("Worker added to group");
@@ -88,7 +108,5 @@ app.post("/addWorkerToGroup", async (req, res) => {
     return;
   }
 });
-
-exports.addWorkerToGroup = app;
 
 exports.clerkWebhook = app;
