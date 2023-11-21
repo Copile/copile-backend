@@ -12,7 +12,7 @@ app.use(bodyParser.text({ type: "application/json" }));
 
 app.post("/createGroup", async (req, res) => {
   let payload = JSON.stringify(req.body);
-  const wh = new Webhook(process.env.secret);
+  const wh = new Webhook(process.env.CREATE_GROUP_SECRET);
 
   const headers_svix = {
     "svix-id": String(req.get("svix-id")),
@@ -52,5 +52,43 @@ app.post("/createGroup", async (req, res) => {
     return;
   }
 });
+
+app.post("/addWorkerToGroup", async (req, res) => {
+  let payload = JSON.stringify(req.body);
+  const wh = new Webhook(process.env.ADD_WORKER_SECRET);
+
+  const headers_svix = {
+    "svix-id": String(req.get("svix-id")),
+    "svix-timestamp": String(req.get("svix-timestamp")),
+    "svix-signature": String(req.get("svix-signature")),
+  };
+
+  let organizationMembership;
+  try {
+    organizationMembership = wh.verify(payload, headers_svix);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({});
+    return;
+  }
+
+  const groupRef = firestore.collection("groups").doc(organizationMembership.data.organization.id);
+  const workersRef = groupRef.collection("workers");
+
+  try {
+    await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
+      id: organizationMembership.data.public_user_data.user_id,
+      name: organizationMembership.data.public_user_data.first_name,
+    });
+    console.log("Worker added to group");
+    res.status(200).send("Worker added to group");
+  } catch (error) {
+    console.error("Error adding worker to group", error);
+    res.status(500).send("Error adding worker to group");
+    return;
+  }
+});
+
+exports.addWorkerToGroup = app;
 
 exports.clerkWebhook = app;
