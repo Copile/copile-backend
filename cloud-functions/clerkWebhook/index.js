@@ -53,4 +53,4 @@ app.post("/createGroup", async (req, res) => {
   }
 });
 
-exports.createGroup = app;
+exports.clerkWebhook = app;
