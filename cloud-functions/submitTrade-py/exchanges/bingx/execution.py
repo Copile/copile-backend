@@ -1,8 +1,10 @@
 import asyncio
 import logging
 from .api.perpetual import BingXFunctions
-from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
-from ...utils.partial import distribute_percentages
+from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
+from utils.partial import distribute_percentages
+#from ...utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, get_tp_orders
+#from ...utils.partial import distribute_percentages
 from .scripts.order_factory import Order
 from .scripts.settings import convert_symbol, get_position_quantity
 from .scripts.cancel import send_cancel

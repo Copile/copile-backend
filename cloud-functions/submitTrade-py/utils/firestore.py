@@ -1,11 +1,14 @@
 #from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, firestore
-from .decryption import decryptData
+#from .decryption import decryptData
+from pathlib import Path
 import time
 import asyncio
 import json
 import logging
+
+print(json.loads(open('serviceAccount.json')))
 
 cred = credentials.Certificate('serviceAccount.json')
 
