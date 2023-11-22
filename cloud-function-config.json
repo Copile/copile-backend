@@ -7,6 +7,13 @@
     "entry_point": "createLicense"
   },
   {
+    "name": "groups",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "groups"
+  },
+  {
     "name": "clerkWebhook",
     "runtime": "nodejs18",
     "memory": "256MB",
