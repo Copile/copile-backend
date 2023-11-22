@@ -7,7 +7,7 @@ async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
 
         client = UMFutures(key=keys['api_key'], secret=keys['api_secret'])
 
-        sell = await client.new_order(
+        await client.new_order(
             symbol=symbol,
             side="SELL" if side == "Buy" else "BUY",
             type="MARKET",
