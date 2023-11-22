@@ -1,4 +1,4 @@
-from ....utils.shuffle import rearrange_tps
+from utils.shuffle import rearrange_tps
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ async def calculate_tp_amounts(take_profits, quantity, precision):
         tps_amount = [quantity * tp for tp in tps_percentage]
 
         # Rearrange the take-profit amounts based on precision
-        tp_amounts = await rearrange_tps(quantity, precision['quantityPrecision'], tps_amount, precision['minQty'])
+        tp_amounts = await rearrange_tps(quantity, precision['quantity_precision'], tps_amount, precision['min_qty'])
 
         new_take_profits = []
         total_amount = sum(tp_amounts)

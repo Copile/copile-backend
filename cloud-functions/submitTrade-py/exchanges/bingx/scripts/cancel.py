@@ -1,7 +1,8 @@
-from ....utils.firestore import get_specific_order, delete_tp_sl_order
+from utils.firestore import get_specific_order, delete_tp_sl_order
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 async def send_cancel(session, symbol, trader_id, trade_id, document_id, trade_type):
     try:

@@ -13,7 +13,7 @@ body_bulk_order = {
     "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
     "margin": 5,
     "trader_exchange": "bingx",
-    "marginType": "ISOLATED",
+    "margin_type": "ISOLATED",
     "exchanges": [
         "bybit",
     ],
@@ -27,33 +27,21 @@ body_bulk_order = {
             {
                 "tp_id": "85371c2c-addd-4cd6-844d-c955db11f3df",
                 "tp_number": 1,
-                "tp_value": 0.61,
-                "tp_percentage": 0.25
+                "tp_value": 0.55,
+                "tp_percentage": 0.5
             },
             {
                 "tp_id": "d4f68472-1da9-4e58-9c6a-080bdba8740f",
                 "tp_number": 2,
-                "tp_value": 0.60,
-                "tp_percentage": 0.25
-            },
-            {
-                "tp_id": "4d8367d2-bc8d-467a-8f42-5f1d7ce83930",
-                "tp_number": 2,
-                "tp_value": 0.58,
-                "tp_percentage": 0.25
-            },
-            {
-                "tp_id": "4c27ab73-f053-479c-b518-58653e8ad2b6",
-                "tp_number": 2,
-                "tp_value": 0.55,
-                "tp_percentage": 0.25
-            },
+                "tp_value": 0.52,
+                "tp_percentage": 0.5
+            }
         ],
         "stop_losses": [
             {
                 "sl_id": "9c070bc8-709f-4a64-a8d1-0d8c852bef44",
                 "sl_number": 1,
-                "sl_value": 0.66,
+                "sl_value": 0.62,
                 "sl_percentage": 1
             }
         ]
@@ -94,3 +82,5 @@ async def test():
 
     except Exception as e:
         logging.error("An error occurred: %s", e, exc_info=True)
+
+asyncio.run(test())
