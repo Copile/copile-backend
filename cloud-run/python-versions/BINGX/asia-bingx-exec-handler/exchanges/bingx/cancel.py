@@ -16,7 +16,7 @@ async def send_cancel(account_id, trade_id, document_id, trade_type, trade_info,
             return f"Cancelled potential {trade_type}-order for {account_id}"
     # Cancelling specific order
     try:
-        cancel = await client.cancel_order(
+        await client.cancel_order(
             orderId=int(order_id),
             symbol=symbol
         )

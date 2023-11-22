@@ -22,7 +22,7 @@ async def clear_orders(account_id, trade_id, trade_info, keys):
         if len(tp_sl_orders_active) > 1:
             order_ids = [int(order['orderID']) for order in tp_sl_orders_active]
 
-            cancel_batch = await client.cancel_orders(
+            await client.cancel_orders(
                 symbol=symbol,
                 orderIdList=order_ids
             )
@@ -33,7 +33,7 @@ async def clear_orders(account_id, trade_id, trade_info, keys):
         elif len(tp_sl_orders_active) == 1:
             orderID = tp_sl_orders_active[0]["orderID"]
 
-            cancel = await client.cancel_order(
+            await client.cancel_order(
                 symbol=symbol,
                 orderId=int(orderID)
             )

@@ -17,7 +17,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
         fetch = await session.get_positions(category="linear", symbol=symbol)
         position = fetch['result']['list'][0]['size']
         if float(position) != 0:
-                stop = await session.place_order(
+                await session.place_order(
                     category="linear",
                     side='Buy' if side == 'Sell' else 'Sell',
                     symbol=symbol,
@@ -30,7 +30,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
                 await clear_orders(account_id, trade_id, trade_info, keys)
                 return
         else:
-            stop = await session.cancel_order(
+            await session.cancel_order(
                 category="linear",
                 symbol=symbol,
                 orderId=order_id

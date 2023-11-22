@@ -37,7 +37,7 @@ async def clear_orders(account_id, trade_id, trade_info, keys):
         elif len(tp_sl_orders_active) == 1:
             orderID = tp_sl_orders_active[0]["orderID"]
 
-            cancel = await session.cancel_order(
+            await session.cancel_order(
                 category="linear",
                 symbol=symbol,
                 orderId=str(orderID)
@@ -76,7 +76,7 @@ async def clear_tps_sls(account_id, trade_id, type, trade_info, keys):
             
             order_id = tp_sl_info["orderID"]
                 
-            stop = await session.cancel_order(
+            await session.cancel_order(
                 category="linear",
                 symbol=symbol,
                 orderId=str(order_id)
