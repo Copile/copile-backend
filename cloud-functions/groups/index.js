@@ -1,7 +1,6 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
-const { getPublicKey } = require("./encryption");
-const CustomError = require("../utils/error");
+const CustomError = require("./utils/error");
 
 const express = require("express");
 const applyMiddleware = require("./middleware");
