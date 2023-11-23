@@ -20,7 +20,7 @@ async def trade_execution(api_key, api_secret, api_passphrase, method, data):
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.replace_sl(data)
-        elif method == 'bulkTP':
+        elif method == 'bulkTp':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.bulk_tp(data)
@@ -28,7 +28,7 @@ async def trade_execution(api_key, api_secret, api_passphrase, method, data):
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.cancel_order(data)
-        elif method == 'cancelAllTPs':
+        elif method == 'cancelAllTps':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.cancel_all_tps(data)

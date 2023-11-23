@@ -1,7 +1,7 @@
 # from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, firestore, firestore_async
-# from .decryption import decryptData
+#from .decryption import decryptData
 from pathlib import Path
 import time
 import asyncio
@@ -17,65 +17,38 @@ logger = logging.getLogger(__name__)
 
 db = firestore_async.client()
 
-# Read the JSON file
-with open('config.json') as f:
-    config = json.load(f)
-
-COLLECTION_TRADES = config["COLLECTION_TRADES"]
-COLLECTION_PLANS = config["COLLECTION_PLANS"]
-COLLECTION_TAKE_PROFITS = config["COLLECTION_TAKE_PROFITS"]
-COLLECTION_STOP_LOSSES = config["COLLECTION_STOP_LOSSES"]
-COLLECTION_WORKERS = config["COLLECTION_WORKERS"]
-FIELD_TRADE_ID = config["FIELD_TRADE_ID"]
-FIELD_ORDER_ID = config["FIELD_ORDER_ID"]
-FIELD_EXECUTED = config["FIELD_EXECUTED"]
-FIELD_SYMBOL = config["FIELD_SYMBOL"]
-FIELD_ORDER_TYPE = config["FIELD_ORDER_TYPE"]
-FIELD_SIDE = config["FIELD_SIDE"]
-FIELD_QUANTITY = config["FIELD_QUANTITY"]
-FIELD_ENTRY = config["FIELD_ENTRY"]
-FIELD_LEVERAGE = config["FIELD_LEVERAGE"]
-FIELD_MARGIN = config["FIELD_MARGIN"]
-FIELD_EXCHANGE = config["FIELD_EXCHANGE"]
-FIELD_CREATED_AT = config["FIELD_CREATED_AT"]
-FIELD_TP_NUMBER = config["FIELD_TP_NUMBER"]
-FIELD_TP_VALUE = config["FIELD_TP_VALUE"]
-FIELD_TP_PERCENTAGE = config["FIELD_TP_PERCENTAGE"]
-FIELD_TP_AMOUNT = config["FIELD_TP_AMOUNT"]
-FIELD_SL_NUMBER = config["FIELD_SL_NUMBER"]
-FIELD_SL_VALUE = config["FIELD_SL_VALUE"]
-FIELD_SL_PERCENTAGE = config["FIELD_SL_PERCENTAGE"]
-FIELD_SL_AMOUNT = config["FIELD_SL_AMOUNT"]
-
-
-def refresh_globals_from_config():
-    global COLLECTION_TRADERS
-
-    with open('../config.json') as f:
-        config = json.load(f)
-
-    COLLECTION_TRADERS = config["COLLECTION_TRADERS"]
-
-
-def change_collection(collection):
-    # Read the JSON file
-    with open('../config.json') as f:
-        config = json.load(f)
-
-    # Modify the COLLECTION_TRADERS variable
-    config["COLLECTION_TRADERS"] = collection
-    # Write the updated JSON back to the file
-    with open('../config.json', 'w') as f:
-        json.dump(config, f)
-
-    refresh_globals_from_config()
-    return
+COLLECTION_TRADERS = "traders"
+COLLECTION_TRADES = "trades"
+COLLECTION_PLANS = "plans"
+COLLECTION_WORKERS = "workers"
+COLLECTION_TAKE_PROFITS = "take-profits"
+COLLECTION_STOP_LOSSES = "stop-losses"
+FIELD_TRADE_ID = "tradeID"
+FIELD_ORDER_ID = "orderID"
+FIELD_EXECUTED = "executed"
+FIELD_SYMBOL = "symbol"
+FIELD_ORDER_TYPE = "orderType"
+FIELD_SIDE = "side"
+FIELD_QUANTITY = "quantity"
+FIELD_ENTRY = "entry"
+FIELD_LEVERAGE = "leverage"
+FIELD_MARGIN = "margin"
+FIELD_EXCHANGE = "exchange"
+FIELD_CREATED_AT = "created_at"
+FIELD_TP_NUMBER = "tp_number"
+FIELD_TP_VALUE = "tp_value"
+FIELD_TP_PERCENTAGE = "tp_percentage"
+FIELD_TP_AMOUNT = "tp_amount"
+FIELD_SL_NUMBER = "sl_number"
+FIELD_SL_VALUE = "sl_value"
+FIELD_SL_PERCENTAGE = "sl_percentage"
+FIELD_SL_AMOUNT = "sl_amount"
 
 
 # Function to check if trader exists
 async def trader_check(traderId):
     try:
-        document_ref = db.collection(COLLECTION_TRADERS).doc(traderId)
+        document_ref = db.collection(COLLECTION_TRADERS).document(traderId)
         document_snapshot = await document_ref.get()
 
         return document_snapshot.exists
@@ -159,20 +132,20 @@ async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
         logger.error("An error occurred: %s", e, exc_info=True)
 
 
-# Get user api keys for a specific exchange
-async def get_user_keys(account_id, exchange):
-    try:
-        keys = db.collection(COLLECTION_TRADERS).document(account_id)
-        exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-        exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
-
-        # Decrypt the api_passphrase if encrypted
-        if 'api_passphrase' in exchange_data:
-            exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
-
-        return exchange_data
-    except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+# # Get user api keys for a specific exchange
+# async def get_user_keys(account_id, exchange):
+#     try:
+#         keys = db.collection(COLLECTION_TRADERS).document(account_id)
+#         exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
+#         exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
+#
+#         # Decrypt the api_passphrase if encrypted
+#         if 'api_passphrase' in exchange_data:
+#             exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
+#
+#         return exchange_data
+#     except Exception as e:
+#         logger.error("An error occurred: %s", e, exc_info=True)
 
 
 # Get user margin from a specific user and plan
@@ -252,12 +225,12 @@ async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
     try:
         if is_tp_or_sl == "tp":
             executed_info = \
-            (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
+                (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                    trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
         if is_tp_or_sl == "sl":
             executed_info = \
-            (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
+                (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                    trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
         else:
             executed_info = None
         return executed_info
@@ -306,8 +279,8 @@ async def get_tp_orders(account_id, trade_id):
 
         for doc in tp_collection:
             tp_data = doc.to_dict()
-            tp_data['documentId'] = doc.id
-            tp_data['tradeType'] = 'tp'
+            tp_data['document_id'] = doc.id
+            tp_data['trade_type'] = 'tp'
             tp_orders.append(tp_data)
 
         return tp_orders
