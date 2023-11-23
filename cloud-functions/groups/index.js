@@ -52,19 +52,19 @@ app.post("/createPlan", async (req, res, next) => {
   };
 
   try {
-    await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
+    const planResponse = await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
 
-    newPlan.workers = [];
+    planResponse.workers = [];
     await db
       .collection("groups")
       .doc(req.body.group_id)
       .collection("plans")
       .doc(plan_id)
-      .set(newPlan);
+      .set(planResponse);
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
     return next(
