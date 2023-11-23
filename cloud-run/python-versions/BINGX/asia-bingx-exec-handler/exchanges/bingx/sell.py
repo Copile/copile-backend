@@ -2,7 +2,6 @@ from .bingX.perpetual.v2.Perpetual import Perpetual
 
 async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
     symbol = trade_info["symbol"]
-    side = trade_info["side"]
 
     client = Perpetual(api_key=keys["api_key"], api_secret=keys["api_secret"])
     
@@ -11,7 +10,7 @@ async def sell_quantity(account_id, trade_id, quantity, trade_info, keys):
     )
     positionSide = position[0]["positionSide"]
     try:
-        emergency = await client.trade_order(
+        await client.trade_order(
             symbol=symbol,
             type="MARKET",
             side="SELL" if positionSide == "LONG" else "BUY",

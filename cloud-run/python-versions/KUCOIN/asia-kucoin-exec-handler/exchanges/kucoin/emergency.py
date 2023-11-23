@@ -35,7 +35,7 @@ async def send_emergency(account_id, trade_id, trade_info, keys):
 
         # Cancelling open order
         try:
-            cancel = await client_trade.cancel_order(
+            await client_trade.cancel_order(
                 orderId=order_id,
             )
             await clear_orders(account_id, trade_id, trade_info, keys)
