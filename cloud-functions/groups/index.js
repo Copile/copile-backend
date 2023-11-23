@@ -186,6 +186,4 @@ app.get("*", (req, res) => {
   return res.status(400).json("Not Authorized");
 });
 
-module.exports = {
-  trader: app,
-};
+exports.groups = app;
