@@ -11,6 +11,7 @@ const WHOP_TOKEN = process.env.whopToken;
 const axios = require("axios");
 
 app.post("/createPlan", async (req, res, next) => {
+  console.log("Creating a new plan...");
   const requiredFields = [
     "group_id",
     "base_currency",
@@ -22,10 +23,13 @@ app.post("/createPlan", async (req, res, next) => {
     "trial_period_days",
     "unlimited_stock",
   ];
+  console.log("Required fields: ", requiredFields);
 
   const missingFields = requiredFields.filter((field) => !req.body[field]);
+  console.log("Missing fields: ", missingFields);
 
   if (missingFields.length) {
+    console.log("Error: Missing required fields");
     return next(
       new CustomError({
         message: `Missing required fields: ${missingFields.join(", ")}`,
@@ -45,23 +49,29 @@ app.post("/createPlan", async (req, res, next) => {
     product_id: "prod_dhhu0FLQNLOKi",
     release_method: "buy_now",
   };
+  console.log("New plan: ", newPlan);
 
   try {
+    console.log("Sending request to create plan...");
     await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
+    console.log("Request sent successfully");
 
     newPlan.workers = [];
+    console.log("Adding workers to the new plan...");
     await db
       .collection("groups")
       .doc(req.body.group_id)
       .collection("plans")
       .doc(plan_id)
       .set(newPlan);
+    console.log("Workers added successfully");
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
+    console.log("Error: Failed to create plan");
     return next(
       new CustomError({
         message: "Failed to create plan",
