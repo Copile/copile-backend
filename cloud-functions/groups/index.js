@@ -21,12 +21,6 @@ app.post("/createPlan", async (req, res, next) => {
     "stock",
     "trial_period_days",
     "unlimited_stock",
-    "visibility",
-    "grace_period_days",
-    "one_per_user",
-    "plan_type",
-    "product_id",
-    "release_method",
   ];
 
   const missingFields = requiredFields.filter((field) => !req.body[field]);
@@ -45,6 +39,7 @@ app.post("/createPlan", async (req, res, next) => {
     ...req.body,
     grace_period_days: 0,
     visibility: "hidden",
+    allow_multiple_quantitiy: true,
     one_per_user: true,
     plan_type: "renewal",
     product_id: "prod_dhhu0FLQNLOKi",
@@ -52,19 +47,19 @@ app.post("/createPlan", async (req, res, next) => {
   };
 
   try {
-    const planResponse = await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
+    await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
 
-    planResponse.workers = [];
+    newPlan.workers = [];
     await db
       .collection("groups")
       .doc(req.body.group_id)
       .collection("plans")
       .doc(plan_id)
-      .set(planResponse);
+      .set(newPlan);
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
     return next(
@@ -79,20 +74,13 @@ app.post("/createPlan", async (req, res, next) => {
 
 app.post("/updatePlan", async (req, res, next) => {
   const requiredFields = [
-    "group_id",
     "plan_id",
-    "card_payments",
-    "expiration_days",
-    "grace_period_days",
-    "initial_price",
+    "group_id",
+    "intial_price",
     "internal_notes",
-    "metadata",
-    "one_per_user",
-    "refillable",
     "stock",
     "trial_period_days",
     "unlimited_stock",
-    "visibility",
   ];
 
   const missingFields = requiredFields.filter((field) => !req.body[field]);
@@ -106,16 +94,6 @@ app.post("/updatePlan", async (req, res, next) => {
       })
     );
   }
-
-  const updatedPlan = {
-    ...req.body,
-    grace_period_days: 0,
-    visibility: "hidden",
-    one_per_user: true,
-    plan_type: "renewal",
-    product_id: "prod_dhhu0FLQNLOKi",
-    release_method: "buy_now",
-  };
 
   try {
     // Update the plan in Whop
@@ -177,6 +155,10 @@ app.get("/getPlans", async (req, res, next) => {
     );
   }
 });
+
+// Add worker to plan endpoint, and resynchronize with users
+
+// Remove worker from plan endpoint, and resynchronize with users. Do we also need to remove the worker from the group?
 
 app.get("/", (req, res) => {
   res.send("Copile Groups API");
