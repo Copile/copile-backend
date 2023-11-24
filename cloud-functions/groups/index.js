@@ -71,7 +71,7 @@ app.post("/createPlan", async (req, res, next) => {
     console.log("Workers added successfully");
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
-    console.log("Failed to create plan:", error);
+    console.log("Failed to create plan:", error.message);
     return next(
       new CustomError({
         message: "Failed to create plan",
