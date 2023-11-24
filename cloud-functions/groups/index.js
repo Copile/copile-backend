@@ -57,7 +57,7 @@ app.post("/createPlan", async (req, res, next) => {
 
   try {
     console.log("Sending request to create plan...");
-    await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
+    const { data } = await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
@@ -67,6 +67,8 @@ app.post("/createPlan", async (req, res, next) => {
     newPlan.workers = [];
     newPlan.group_id = groupId;
     console.log("Adding workers to the new plan...");
+
+    const plan_id = data.id;
     await db.collection("groups").doc(groupId).collection("plans").doc(plan_id).set(newPlan);
     console.log("Workers added successfully");
     res.status(200).json({ message: "Plan created successfully" });
