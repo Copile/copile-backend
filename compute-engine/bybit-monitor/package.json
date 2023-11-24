@@ -1,5 +1,5 @@
 {
-    "name": "bybit-monitor",
+    "name": "bybit-monito",
     "version": "1.0.0",
     "description": "GCP Compute Engine",
     "main": "connection.js",
