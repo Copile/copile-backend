@@ -136,9 +136,12 @@ app.post("/updatePlan", async (req, res, next) => {
 });
 
 app.get("/getPlans", async (req, res, next) => {
+  console.log("getPlans endpoint hit. Processing request...");
   const { group_id } = req.query;
+  console.log(`group_id: ${group_id}`);
 
   if (!group_id) {
+    console.log("Missing required field: group_id. Sending error response...");
     return next(
       new CustomError({
         message: "Missing required field: group_id",
@@ -149,6 +152,7 @@ app.get("/getPlans", async (req, res, next) => {
   }
 
   try {
+    console.log(`Fetching plans for group_id: ${group_id} from Firestore...`);
     const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
 
     const plans = [];
@@ -156,8 +160,10 @@ app.get("/getPlans", async (req, res, next) => {
       plans.push(doc.data());
     });
 
+    console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
     res.status(200).json(plans);
   } catch (error) {
+    console.error("Error occurred while fetching plans: ", error);
     return next(
       new CustomError({
         message: "Failed to get plans",
