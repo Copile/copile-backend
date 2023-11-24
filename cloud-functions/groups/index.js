@@ -25,7 +25,7 @@ app.post("/createPlan", async (req, res, next) => {
   ];
   console.log("Required fields: ", requiredFields);
 
-  const missingFields = requiredFields.filter((field) => !req.body[field]);
+  const missingFields = requiredFields.filter((field) => req.body[field] === undefined);
   console.log("Missing fields: ", missingFields);
 
   if (missingFields.length) {
@@ -39,16 +39,20 @@ app.post("/createPlan", async (req, res, next) => {
     );
   }
 
+  const groupId = req.body.group_id;
   const newPlan = {
     ...req.body,
     grace_period_days: 0,
     visibility: "hidden",
-    allow_multiple_quantitiy: true,
+    allow_multiple_quantitiy: false,
     one_per_user: true,
     plan_type: "renewal",
     product_id: "prod_dhhu0FLQNLOKi",
     release_method: "buy_now",
   };
+
+  // Temporarily delete group id before hitting whop. We'll add it back before saving to firestore
+  delete newPlan.group_id;
   console.log("New plan: ", newPlan);
 
   try {
@@ -61,13 +65,9 @@ app.post("/createPlan", async (req, res, next) => {
     console.log("Request sent successfully");
 
     newPlan.workers = [];
+    newPlan.group_id = groupId;
     console.log("Adding workers to the new plan...");
-    await db
-      .collection("groups")
-      .doc(req.body.group_id)
-      .collection("plans")
-      .doc(plan_id)
-      .set(newPlan);
+    await db.collection("groups").doc(groupId).collection("plans").doc(plan_id).set(newPlan);
     console.log("Workers added successfully");
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
