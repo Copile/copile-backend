@@ -16,7 +16,7 @@ app.post("/createPlan", async (req, res, next) => {
     "group_id",
     "base_currency",
     "billing_period",
-    "intial_price",
+    "initial_price",
     "internal_notes",
     "renewal_price",
     "stock",
@@ -86,7 +86,7 @@ app.post("/updatePlan", async (req, res, next) => {
   const requiredFields = [
     "plan_id",
     "group_id",
-    "intial_price",
+    "initial_price",
     "internal_notes",
     "stock",
     "trial_period_days",
