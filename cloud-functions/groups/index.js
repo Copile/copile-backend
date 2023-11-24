@@ -44,7 +44,7 @@ app.post("/createPlan", async (req, res, next) => {
     ...req.body,
     grace_period_days: 0,
     visibility: "hidden",
-    allow_multiple_quantitiy: false,
+    allow_multiple_quantity: false,
     one_per_user: true,
     plan_type: "renewal",
     product_id: "prod_dhhu0FLQNLOKi",
