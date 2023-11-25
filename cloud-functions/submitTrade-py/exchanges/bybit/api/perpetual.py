@@ -63,3 +63,32 @@ class BybitFunctions:
         payload = {'category': category, "symbol": symbol, "buyLeverage": str(leverage), "sellLeverage": str(leverage)}
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
+    async def switch_margin_mode(self, margin_mode):
+        # https://bybit-exchange.github.io/docs/v5/account/set-margin-mode
+        path = "/v5/account/set-margin-mode"
+        payload = {'category': category, "setMarginMode": margin_mode}
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+
+    async def set_tp_sl_mode(self, symbol, tp_sl_mode):
+        # https://bybit-exchange.github.io/docs/v5/position/tpsl-mode
+        path = "/v5/position/set-tpsl-mode"
+        payload = {'category': category, "symbol": symbol, "tpSlMode": tp_sl_mode}
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+
+    async def get_market(self, symbol):
+        # https://bybit-exchange.github.io/docs/v5/market/tickers
+        path = "/v5/market/tickers"
+        payload = {'category': category, "symbol": symbol}
+        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+
+    async def get_precisions(self, symbol):
+        # https://bybit-exchange.github.io/docs/v5/market/instrument
+        path = "/v5/market/instruments-info"
+        payload = {'category': category, "symbol": symbol}
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        symbol_info = response['result']['list'][0]
+        price_precision = symbol_info['priceScale']
+        quantity_precision = 0 if float(symbol_info["lotSizeFilter"]["qtyStep"]).is_integer() else int(
+            len(str(symbol_info["lotSizeFilter"]["qtyStep"]).split(".")[1]))
+        min_qty = symbol_info["lotSizeFilter"]['minOrderQty']
+        return {'quantity_precision': quantity_precision, 'price_precision': price_precision, 'min_qty': min_qty}
