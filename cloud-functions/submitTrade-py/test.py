@@ -11,7 +11,7 @@ api_secret = "Ssz3IWYyiDmUmE4l9DytiX6opbllCl3uZn6E9euMS28v2WLxXQMW74ywzgtdcHClBo
 body_bulk_order = {
     "traderId": "newfuckingacc",
     "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
-    "margin": 5,
+    "margin": 4,
     "trader_exchange": "bingx",
     "margin_type": "ISOLATED",
     "exchanges": [
@@ -39,13 +39,50 @@ body_bulk_order = {
         ],
         "stop_losses": [
             {
-                "sl_id": "9c070bc8-709f-4a64-a8d1-0d8c852bef44",
-                "sl_number": 1,
-                "sl_value": 0.62,
+                "sl_id": "08471ed3-3904-4bcc-8424-b7f51f1fe0a4",
+                "sl_number": '1',
+                "sl_value": '0.68',
                 "sl_percentage": 1
             }
         ]
     }
+}
+
+body_send_sl = {
+    "traderId": "newfuckingacc",
+    "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
+    "sl_id": "08471ed3-3904-4bcc-8424-b7f51f1fe0a4",
+    "payload": {"sl_number": '1', "sl_value": '0.65', "sl_percentage": 1},
+    "trader_exchange": "bingx"
+}
+
+body_replace_sl = {
+    "traderId": "newfuckingacc",
+    "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
+    "document_id": "08471ed3-3904-4bcc-8424-b7f51f1fe0a4",
+    "payload": {"sl_number": '1', "sl_value": '0.68', "sl_percentage": 1},
+    "trader_exchange": "bingx"
+
+}
+
+body_bulk_tp = {
+    "traderId": "newfuckingacc",
+    "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
+    "trader_exchange": "bingx",
+    "take_profits": [
+        {
+            "tp_id": "85371c2c-addd-4cd6-844d-c955db11f3df",
+            "tp_number": 1,
+            "tp_value": 0.55,
+            "tp_percentage": 0.5
+        },
+        {
+            "tp_id": "d4f68472-1da9-4e58-9c6a-080bdba8740f",
+            "tp_number": 2,
+            "tp_value": 0.52,
+            "tp_percentage": 0.5
+        }
+    ]
 }
 
 body_close_all = {
@@ -63,9 +100,16 @@ body_close_tps = {
 body_cancel_order = {
     "traderId": "newfuckingacc",
     "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
-    "document_id": "85371c2c-addd-4cd6-844d-c955db11f3df",
-    "trade_type": "tp",
+    "document_id": "08471ed3-3904-4bcc-8424-b7f51f1fe0a4",
+    "trade_type": "sl",
     "trader_exchange": "bingx"
+}
+
+body_partial_close = {
+    "traderId": "newfuckingacc",
+    "tradeId": "4e568ae0-07d5-4251-962c-f4f13210bb17",
+    "trader_exchange": "bingx",
+    "percentage": 0.5
 }
 
 
@@ -73,14 +117,15 @@ async def test():
     try:
         start_time = time.time()
 
-        execution = await trade_execution(api_key, api_secret, None, "bulkOrder", body_bulk_order)
+        execution = await trade_execution(api_key, api_secret, None, "partialClose", body_partial_close)
 
         end_time = time.time()
 
         elapsed_time = end_time - start_time
-        logging.info('Execution time:', elapsed_time, 'seconds')
+        logging.info(f'Execution time: {elapsed_time} seconds')
 
     except Exception as e:
         logging.error("An error occurred: %s", e, exc_info=True)
+
 
 asyncio.run(test())

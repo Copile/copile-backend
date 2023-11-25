@@ -6,7 +6,7 @@ from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tp
 logger = logging.getLogger(__name__)
 
 
-class BingXSession(ExchangeSession):
+class BybitSession(ExchangeSession):
     """
     Represents a BingX exchange session.
     Extends ExchangeSession.

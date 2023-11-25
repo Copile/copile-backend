@@ -2,7 +2,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-async def distribute_percentages(orders):
+
+def distribute_percentages(orders):
     try:
         # Extract the tp_percentage for each order
         tps = [order["tp_percentage"] for order in orders]

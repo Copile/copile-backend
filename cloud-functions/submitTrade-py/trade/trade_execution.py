@@ -3,11 +3,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def trade_execution(api_key, api_secret, api_passphrase, method, data):
     try:
-        session = None
-        trade_execution_result = None
 
+        trade_execution_result = None
         if method == 'bulkOrder':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
@@ -16,7 +16,7 @@ async def trade_execution(api_key, api_secret, api_passphrase, method, data):
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.send_sl(data)
-        elif method == 'replaceSL':
+        elif method == 'replaceSl':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.replace_sl(data)

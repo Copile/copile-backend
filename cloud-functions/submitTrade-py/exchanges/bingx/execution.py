@@ -98,9 +98,6 @@ async def bulk_order(api_key, api_secret, data):
             stop_losses_with_ids.append(sl_order_dict)
             sl_count += 1
 
-        print(new_take_profits_with_ids)
-        print(stop_losses_with_ids)
-
         trade_info = {
             "trade_id": tradeId,
             "order_id": order_ids[0]["order"]["orderId"],
@@ -133,7 +130,7 @@ async def send_sl(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
-        document_id = data['document_id']
+        document_id = data['sl_id']
         payload = data['payload']
 
         trade_info = await get_trade_info(traderId, tradeId)
@@ -151,13 +148,14 @@ async def send_sl(api_key, api_secret, data):
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity),
-                      sl_position_side, None, None)
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, float(position_quantity),
+                      sl_position_side, price, None)
 
         create_order = await session.trade_order(order)
 
+        payload['trade_id'] = tradeId
         payload["sl_amount"] = float(position_quantity)
-        payload["orderId"] = create_order["order"]["orderId"]
+        payload["order_id"] = create_order["order"]["orderId"]
         payload['sl_document_id'] = document_id
 
         await store_sl(traderId, payload)
@@ -196,13 +194,15 @@ async def replace_sl(api_key, api_secret, data):
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", price, float(position_quantity),
-                      sl_position_side, None, None)
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, float(position_quantity),
+                      sl_position_side, price, None)
 
         create_order = await session.trade_order(order)
 
+        payload['trade_id'] = tradeId
         payload["sl_amount"] = float(position_quantity)
-        payload["orderId"] = create_order["order"]["orderId"]
+        payload["order_id"] = create_order["order"]["orderId"]
+        payload['sl_document_id'] = document_id
 
         await store_sl(traderId, payload)
 
@@ -278,8 +278,10 @@ async def cancel_all_tps(api_key, api_secret, data):
             get_tp_orders(traderId, tradeId)
         )
 
-        await asyncio.gather(*[session.cancel_order(trade_info["symbol"], order['orderID'], None) for order in tp_orders])
-        await asyncio.gather(*[delete_tp_sl_order(traderId, tradeId, order['document_id'], "tp") for order in tp_orders])
+        await asyncio.gather(
+            *[session.cancel_order(trade_info["symbol"], order['orderID'], None) for order in tp_orders])
+        await asyncio.gather(
+            *[delete_tp_sl_order(traderId, tradeId, order['document_id'], "tp") for order in tp_orders])
         return
 
     except Exception as e:
@@ -391,14 +393,15 @@ async def partial_close(api_key, api_secret, data):
         await session.cancel_all_orders(symbol)
 
         if executed:
-            sell_order = Order(symbol, "MARKET", "BUY" if side.upper() == "SELL" else "SELL", position_quantity,
-                               tp_sl_position_side, None, None, None)
+            sell_order = Order(symbol, "MARKET", "BUY" if side.upper() == "SELL" else "SELL", None, quantity_to_sell,
+                               tp_sl_position_side, None, None)
             await session.trade_order(sell_order)
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
             await session.cancel_order(symbol, trade_info["orderID"], None)
 
-            order = Order(symbol, "LIMIT", side.upper(), trade_info["entry"], new_quantity, None, None, None)
+            order = Order(symbol, "LIMIT", side.upper(), trade_info["entry"], new_quantity, tp_sl_position_side, None,
+                          None)
 
             create_order = await session.trade_order(order)
 
@@ -422,15 +425,15 @@ async def partial_close(api_key, api_secret, data):
         stop_losses_with_ids = []
 
         for tp in new_take_profits:
-            tp_price = round(float(tp.tp_value), precision["price_precision"])
-            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp.tp_amount,
+            tp_price = round(float(tp['tp_value']), precision["price_precision"])
+            tp_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, tp['tp_amount'],
                              tp_sl_position_side, tp_price, None)
             prepared_orders.append(tp_order)
 
         for sl in sl_orders:
-            sl_price = round(float(sl.sl_value), precision["price_precision"])
-            sl['sl_amount'] = round(float(new_quantity) * float(sl.sl_percentage), precision["quantity_precision"])
-            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl.sl_amount,
+            sl_price = round(float(sl['sl_value']), precision["price_precision"])
+            sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
+            sl_order = Order(symbol, "TRIGGER_MARKET", "SELL" if side == "Buy" else "BUY", None, sl['sl_amount'],
                              tp_sl_position_side, sl_price, None)
             prepared_orders.append(sl_order)
 
