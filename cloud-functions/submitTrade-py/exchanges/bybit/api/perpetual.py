@@ -1,5 +1,4 @@
-from .request import make_signed_request
-import json
+from request import make_signed_request
 
 category = "linear"
 
@@ -15,7 +14,14 @@ class BybitFunctions:
         order.remove_none_attributes()
         payload = order.__dict__
         payload['category'] = category
-        return make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+
+    async def modify_order(self, symbol, order_id, modification):
+        # https://bybit-exchange.github.io/docs/v5/order/amend-order
+        path = "/v5/order/amend"
+        payload = {'category': category, 'symbol': symbol, 'order_id': order_id}
+        payload.update(modification)
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
     async def cancel_order(self, symbol, order_id, order_link_id):
         # https://bybit-exchange.github.io/docs/v5/order/cancel-order
@@ -31,7 +37,8 @@ class BybitFunctions:
         # https://bybit-exchange.github.io/docs/v5/order/open-order
         path = "/v5/order/realtime"
         payload = {'category': category, 'symbol': symbol}
-        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return response['list']
 
     async def cancel_all_orders(self, symbol):
         # https://bybit-exchange.github.io/docs/v5/order/cancel-all
@@ -75,20 +82,28 @@ class BybitFunctions:
         payload = {'category': category, "symbol": symbol, "tpSlMode": tp_sl_mode}
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
+    async def switch_position_mode(self, symbol, mode):
+        # https://bybit-exchange.github.io/docs/v5/position/position-mode
+        path = "/v5/position/switch-mode"
+        payload = {'category': category, "symbol": symbol, "mode": mode}
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+
     async def get_market(self, symbol):
         # https://bybit-exchange.github.io/docs/v5/market/tickers
         path = "/v5/market/tickers"
         payload = {'category': category, "symbol": symbol}
-        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return response['list'][0]['markPrice']
 
     async def get_precisions(self, symbol):
         # https://bybit-exchange.github.io/docs/v5/market/instrument
         path = "/v5/market/instruments-info"
         payload = {'category': category, "symbol": symbol}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
-        symbol_info = response['result']['list'][0]
+        symbol_info = response['list'][0]
         price_precision = symbol_info['priceScale']
         quantity_precision = 0 if float(symbol_info["lotSizeFilter"]["qtyStep"]).is_integer() else int(
             len(str(symbol_info["lotSizeFilter"]["qtyStep"]).split(".")[1]))
         min_qty = symbol_info["lotSizeFilter"]['minOrderQty']
-        return {'quantity_precision': quantity_precision, 'price_precision': price_precision, 'min_qty': min_qty}
+        return {'quantity_precision': int(quantity_precision), 'price_precision': int(price_precision),
+                'min_qty': float(min_qty)}

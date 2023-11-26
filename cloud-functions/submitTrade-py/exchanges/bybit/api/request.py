@@ -5,7 +5,7 @@ import hmac
 from urllib.parse import urlencode
 
 api_config = {
-    "host": "api.bybit.com",
+    "host": "api-testnet.bybit.com",
     "protocol": "https"
 }
 
@@ -21,7 +21,7 @@ def sign_request(params, api_secret):
 
 # Function to send the request to BingX
 async def make_signed_request(method, path, payload, api_key, api_secret):
-    timestamp = int(time.time())
+    timestamp = str(int(time.time()))
     payload['timestamp'] = timestamp
 
     params = payload.copy()
@@ -45,5 +45,4 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
             if response.status != 200:
                 raise Exception(f"Failed to send BingX API request to {path}: {response.reason}")
             data = await response.json()
-            print(data)
-            return data['data']
+            return data['result']
