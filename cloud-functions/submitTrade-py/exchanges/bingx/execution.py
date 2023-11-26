@@ -148,13 +148,13 @@ async def send_sl(api_key, api_secret, data):
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, float(position_quantity),
+        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, position_quantity,
                       sl_position_side, price, None)
 
         create_order = await session.trade_order(order)
 
         payload['trade_id'] = tradeId
-        payload["sl_amount"] = float(position_quantity)
+        payload["sl_amount"] = position_quantity
         payload["order_id"] = create_order["order"]["orderId"]
         payload['sl_document_id'] = document_id
 
@@ -256,7 +256,7 @@ async def cancel_all_orders(api_key, api_secret, data):
 
             await session.trade_order(emergency_order)
         else:
-            await session.cancel_order(symbol, trade_info["orderID"], None)
+            await session.cancel_all_orders(symbol)
 
         await session.cancel_all_orders(symbol)
 

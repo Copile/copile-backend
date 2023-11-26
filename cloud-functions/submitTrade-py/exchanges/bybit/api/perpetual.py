@@ -62,7 +62,8 @@ class BybitFunctions:
         # https://bybit-exchange.github.io/docs/v5/position
         path = "/v5/position/list"
         payload = {'category': category, "symbol": symbol}
-        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return response['list'][0]
 
     async def set_leverage(self, symbol, leverage):
         # https://bybit-exchange.github.io/docs/v5/position/leverage
