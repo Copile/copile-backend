@@ -98,7 +98,7 @@ app.post("/createPlan", async (req, res, next) => {
     });
 
     // Extract the group id and worker ids from the request body and reassign them to variables
-    const { group_id, worker_ids } = req.body;
+    const { group_id, workers: worker_ids } = req.body;
     console.log("Group id:", group_id);
     console.log("Worker ids:", worker_ids);
 
