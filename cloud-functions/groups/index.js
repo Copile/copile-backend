@@ -52,6 +52,7 @@ app.post("/createPlan", async (req, res, next) => {
 
   // Check for any missing required fields in the request body
   const missingFields = requiredFields.filter((field) => req.body[field] === undefined);
+  console.log("Missing fields:", missingFields);
 
   // If there are missing fields, return an error
   if (missingFields.length) {
@@ -77,8 +78,11 @@ app.post("/createPlan", async (req, res, next) => {
     release_method: "buy_now",
   };
 
+  console.log("New plan:", newPlan);
+
   // Temporarily delete group id before hitting whop. We'll add it back before saving to firestore
   delete newPlan.group_id;
+  console.log("Deleted group id from new plan");
 
   try {
     // Send a request to the Whop API to create the plan
@@ -90,9 +94,12 @@ app.post("/createPlan", async (req, res, next) => {
 
     // Extract the group id and worker ids from the request body and reassign them to variables
     const { group_id, workers: worker_ids } = req.body;
+    console.log("Group id:", group_id);
+    console.log("Worker ids:", worker_ids);
 
     // Extract the plan id from the response data
     const plan_id = data.id;
+    console.log("Plan id:", plan_id);
 
     // Add the group id back in and plan id to the new plan object
     newPlan.group_id = group_id;
@@ -100,27 +107,34 @@ app.post("/createPlan", async (req, res, next) => {
 
     // Save the new plan in Firestore under the corresponding group
     await db.collection("groups").doc(group_id).collection("plans").doc(plan_id).set(newPlan);
+    console.log("Saved new plan to firestore");
 
     // If there are any workers specified in the request, assign them to the plan in Firestore
     if (worker_ids && worker_ids.length > 0) {
+      console.log("Assigning workers to plan in firestore...");
       // Get the workers collection and the assigned workers collection in Firestore
       const workersCollection = db.collection("groups").doc(group_id).collection("workers");
+      console.log("Workers collection:", workersCollection);
       const assignedWorkersCollection = db
         .collection("groups")
         .doc(group_id)
         .collection("plans")
         .doc(plan_id)
         .collection("assigned_workers");
+      console.log("Assigned workers collection:", assignedWorkersCollection);
 
       // Fetch the worker documents from Firestore
       const workerSnapshots = await Promise.all(
         worker_ids.map((id) => workersCollection.doc(id).get())
       );
 
+      console.log("Filtering out non-existing workers...");
       // Filter out any non-existing workers and map the snapshots to their data
       const existingWorkers = workerSnapshots
         .filter((snapshot) => snapshot.exists)
         .map((snapshot) => snapshot.data());
+
+      console.log("Existing workers:", existingWorkers);
 
       // Assign the workers to the plan in Firestore
       await Promise.all(
