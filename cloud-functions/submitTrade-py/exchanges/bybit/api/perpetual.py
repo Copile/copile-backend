@@ -2,7 +2,6 @@ from request import make_signed_request
 
 category = "linear"
 
-
 class BybitFunctions:
     def __init__(self, api_key, api_secret):
         self.api_key = api_key
