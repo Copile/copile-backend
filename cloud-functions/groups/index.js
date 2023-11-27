@@ -135,8 +135,8 @@ app.post("/updatePlan", async (req, res, next) => {
   }
 });
 
-app.get("/getPlans", async (req, res, next) => {
-  console.log("getPlans endpoint hit. Processing request...");
+app.get("/getData", async (req, res, next) => {
+  console.log("getData endpoint hit. Processing request...");
   const { group_id } = req.query;
   console.log(`group_id: ${group_id}`);
 
@@ -146,29 +146,37 @@ app.get("/getPlans", async (req, res, next) => {
       new CustomError({
         message: "Missing required field: group_id",
         status: 400,
-        source: "getPlans",
+        source: "getData",
       })
     );
   }
 
   try {
-    console.log(`Fetching plans for group_id: ${group_id} from Firestore...`);
+    console.log(`Fetching plans and workers for group_id: ${group_id} from Firestore...`);
     const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
+    const workersSnapshot = await db.collection("groups").doc(group_id).collection("workers").get();
 
     const plans = [];
     plansSnapshot.forEach((doc) => {
       plans.push(doc.data());
     });
 
-    console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
-    res.status(200).json(plans);
+    const workers = [];
+    workersSnapshot.forEach((doc) => {
+      workers.push(doc.data());
+    });
+
+    console.log(
+      `Successfully fetched ${plans.length} plans and ${workers.length} workers. Sending response...`
+    );
+    res.status(200).json({ plans, workers });
   } catch (error) {
-    console.error("Error occurred while fetching plans: ", error);
+    console.error("Error occurred while fetching plans and workers: ", error);
     return next(
       new CustomError({
-        message: "Failed to get plans",
+        message: "Failed to get data",
         status: 500,
-        source: "getPlans",
+        source: "getData",
       })
     );
   }
