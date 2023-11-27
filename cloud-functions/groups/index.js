@@ -88,6 +88,8 @@ app.post("/createPlan", async (req, res, next) => {
   console.log("Deleted workers from new plan");
 
   try {
+    console.log("New plan before hitting whop:", newPlan);
+
     // Send a request to the Whop API to create the plan
     const { data } = await axios.post("https://api.whop.com/api/v2/plans", newPlan, {
       headers: {
