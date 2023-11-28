@@ -84,7 +84,7 @@ app.post("/createPlan", async (req, res, next) => {
   delete newPlan.group_id;
   console.log("Deleted group id from new plan");
 
-  delete newPlan.worker_ids;
+  delete newPlan.workers;
   console.log("Deleted workers from new plan");
 
   try {
