@@ -221,16 +221,6 @@ app.post("/updatePlan", async (req, res, next) => {
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
     const assignedWorkersCollection = planRef.collection("assigned_workers");
 
-    const workerSnapshots = await Promise.all(
-      assigned_workers.map((id) => workersCollection.doc(id).get())
-    );
-
-    console.log("Filtering out non-existing workers...");
-    const existingWorkers = workerSnapshots
-      .filter((snapshot) => snapshot.exists)
-      .map((snapshot) => snapshot.data());
-    console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
-
     console.log("Deleting old assigned workers...");
     await assignedWorkersCollection.get().then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
@@ -239,11 +229,23 @@ app.post("/updatePlan", async (req, res, next) => {
     });
     console.log("Old assigned workers deleted.");
 
-    console.log("Assigning new workers to the plan...");
-    await Promise.all(
-      existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
-    );
-    console.log("New workers assigned.");
+    if (assigned_workers && assigned_workers.length > 0) {
+      console.log("Assigning new workers to the plan...");
+      const workerSnapshots = await Promise.all(
+        assigned_workers.map((id) => workersCollection.doc(id).get())
+      );
+
+      console.log("Filtering out non-existing workers...");
+      const existingWorkers = workerSnapshots
+        .filter((snapshot) => snapshot.exists)
+        .map((snapshot) => snapshot.data());
+      console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
+
+      await Promise.all(
+        existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
+      );
+      console.log("New workers assigned.");
+    }
 
     console.log("Updating plan in Firestore...");
     await planRef.update(updatedPlan);
