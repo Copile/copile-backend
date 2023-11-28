@@ -12,8 +12,11 @@ class BybitFunctions:
         # https://bybit-exchange.github.io/docs/v5/order/create-order
         path = "/v5/order/create"
         order.remove_none_attributes()
-        payload = order.__dict__
-        payload['category'] = category
+        payload = {
+            'category': category,
+            **order.__dict__,
+            'timeInForce': 'GTC'
+        }
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
     async def modify_order(self, symbol, order_id, modification):

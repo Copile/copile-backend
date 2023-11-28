@@ -4,12 +4,12 @@ class Order:
         self.symbol = symbol
         self.orderType = order_type
         self.side = side
-        self.price = price
-        self.qty = quantity
-        self.triggerDirection = trigger_direction,
-        self.triggerPrice = trigger_price,
-        self.triggerBy = trigger_by,
-        self.reduceOnly = reduce_only,
+        self.price = str(price)
+        self.qty = str(quantity)
+        self.triggerDirection = trigger_direction
+        self.triggerPrice = str(trigger_price) if trigger_price is not None else None
+        self.triggerBy = trigger_by
+        self.reduceOnly = reduce_only
         self.closeOnTrigger = close_on_trigger
 
     def remove_none_attributes(self):

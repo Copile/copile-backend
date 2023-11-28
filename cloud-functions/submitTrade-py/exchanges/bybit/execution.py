@@ -39,9 +39,11 @@ async def bulk_order(api_key, api_secret, data):
             session.switch_margin_mode(margin_type)
         )
 
+        market_price = float(await session.get_market(symbol))
+
         quantity = round((float(margin) * int(leverage) / float(entry)),
                          precision["quantity_precision"]) if entry != "market" else round(
-            (float(margin) * int(leverage) / float(await session.get_market(symbol))), precision["quantity_precision"])
+            (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
 
         initial_order = Order(symbol, order_type, side, entry, quantity, None, None, None, False, False)
 
@@ -49,19 +51,20 @@ async def bulk_order(api_key, api_secret, data):
 
         new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
 
-        tp_sl_side = "Sell" if side == "Buy" else "buy"
-        trigger_direction = 2 if side == "Sell" else 1
+        tp_sl_side = "Sell" if side == "Buy" else "Buy"
+        tp_trigger_direction = 2 if side == "Sell" else 1
+        sl_trigger_direction = 1 if side == "Sell" else 2
 
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], trigger_direction, tp_price,
+            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
                              "MarkPrice", True, True)
             prepared_orders.append(tp_order)
 
         for sl in stop_losses:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
-            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], trigger_direction, sl_price,
+            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
                              "MarkPrice", True, True)
             prepared_orders.append(sl_order)
 
@@ -87,7 +90,7 @@ async def bulk_order(api_key, api_secret, data):
         sl_count = 0
         for i, sl_order in enumerate(prepared_orders[len(new_take_profits) + 1:], start=len(new_take_profits) + 1):
             sl_order_dict = vars(sl_order)
-            sl_order_dict['order_id'] = order_ids[i]['order']['orderId']
+            sl_order_dict['order_id'] = order_ids[i]['orderId']
             sl_order_dict['sl_document_id'] = stop_losses[sl_count]['sl_id']
             sl_order_dict['sl_number'] = stop_losses[sl_count]['sl_number']
             sl_order_dict['sl_percentage'] = stop_losses[sl_count]['sl_percentage']
@@ -147,7 +150,7 @@ async def send_sl(api_key, api_secret, data):
         position_quantity = get_position_quantity(position, trade_info)
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
-        trigger_direction = 2 if side == "Sell" else 1
+        trigger_direction = 1 if side == "Sell" else 2
 
         order = Order(symbol, "Limit", sl_side, price, position_quantity, trigger_direction, price,
                       "MarkPrice", True, True)
@@ -193,7 +196,7 @@ async def replace_sl(api_key, api_secret, data):
         position_quantity = get_position_quantity(position, trade_info)
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
-        trigger_direction = 2 if side == "Sell" else 1
+        trigger_direction = 1 if side == "Sell" else 2
 
         order = Order(symbol, "Limit", sl_side, price, position_quantity, trigger_direction, price,
                       "MarkPrice", True, True)
@@ -366,7 +369,8 @@ async def partial_close(api_key, api_secret, data):
         symbol = trade_info["symbol"]
         side = trade_info["side"]
         tp_sl_side = "Sell" if side == "Buy" else "buy"
-        trigger_direction = 2 if side == "Sell" else 1
+        tp_trigger_direction = 2 if side == "Sell" else 1
+        sl_trigger_direction = 1 if side == "Sell" else 2
 
         # Split tp_sl_orders into tp/sl orders
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
@@ -427,7 +431,7 @@ async def partial_close(api_key, api_secret, data):
 
             for tp in new_take_profits:
                 tp_price = round(float(tp['tp_value']), precision["price_precision"])
-                tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], trigger_direction, tp_price,
+                tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
                                  "MarkPrice", True, True)
                 prepared_orders.append(tp_order)
 
@@ -435,7 +439,7 @@ async def partial_close(api_key, api_secret, data):
                 sl_price = round(float(sl['sl_value']), precision["price_precision"])
                 sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']),
                                         precision["quantity_precision"])
-                sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], trigger_direction, sl_price,
+                sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
                                  "MarkPrice", True, True)
                 prepared_orders.append(sl_order)
 
