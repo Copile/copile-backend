@@ -163,22 +163,20 @@ app.post("/createPlan", async (req, res, next) => {
 });
 
 app.post("/updatePlan", async (req, res, next) => {
-  const requiredFields = [
-    "plan_id",
-    "group_id",
-    "initial_price",
-    "internal_notes",
-    "stock",
-    "trial_period_days",
-    "unlimited_stock",
-  ];
+  const { group_id, plan_id } = req.query;
+  const { renewal_price, trial_period_days, stock, unlimited_stock, assigned_workers } = req.body;
 
-  const missingFields = requiredFields.filter((field) => !req.body[field]);
-
-  if (missingFields.length) {
+  if (
+    !group_id ||
+    !plan_id ||
+    typeof group_id !== "string" ||
+    group_id.trim() === "" ||
+    typeof plan_id !== "string" ||
+    plan_id.trim() === ""
+  ) {
     return next(
       new CustomError({
-        message: `Missing required fields: ${missingFields.join(", ")}`,
+        message: "Missing or invalid required field: group_id or plan_id",
         status: 400,
         source: "updatePlan",
       })
@@ -186,20 +184,49 @@ app.post("/updatePlan", async (req, res, next) => {
   }
 
   try {
-    // Update the plan in Whop
-    await axios.post(`https://api.whop.com/api/v2/plans/${req.body.plan_id}`, updatedPlan, {
-      headers: {
-        Authorization: `Bearer ${WHOP_TOKEN}`,
-      },
+    const planRef = db.collection("groups").doc(group_id).collection("plans").doc(plan_id);
+    const planSnapshot = await planRef.get();
+
+    if (!planSnapshot.exists) {
+      return next(
+        new CustomError({
+          message: "Plan not found",
+          status: 404,
+          source: "updatePlan",
+        })
+      );
+    }
+
+    const updatedPlan = {
+      ...planSnapshot.data(),
+      renewal_price,
+      trial_period_days,
+      stock,
+      unlimited_stock,
+    };
+
+    const workersCollection = db.collection("groups").doc(group_id).collection("workers");
+    const assignedWorkersCollection = planRef.collection("assigned_workers");
+
+    const workerSnapshots = await Promise.all(
+      assigned_workers.map((id) => workersCollection.doc(id).get())
+    );
+
+    const existingWorkers = workerSnapshots
+      .filter((snapshot) => snapshot.exists)
+      .map((snapshot) => snapshot.data());
+
+    await assignedWorkersCollection.get().then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        doc.ref.delete();
+      });
     });
 
-    // Update the plan in Firestore
-    await db
-      .collection("groups")
-      .doc(req.body.group_id)
-      .collection("plans")
-      .doc(req.body.plan_id)
-      .update(updatedPlan);
+    await Promise.all(
+      existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
+    );
+
+    await planRef.update(updatedPlan);
 
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
