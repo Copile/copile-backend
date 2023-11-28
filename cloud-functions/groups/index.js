@@ -232,22 +232,27 @@ app.get("/getData", async (req, res, next) => {
   try {
     console.log(`Fetching plans and workers for group_id: ${group_id} from Firestore...`);
     const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
-    const workersSnapshot = await db.collection("groups").doc(group_id).collection("workers").get();
 
     const plans = [];
-    plansSnapshot.forEach((doc) => {
-      plans.push(doc.data());
-    });
+    for (let planDoc of plansSnapshot.docs) {
+      let planData = planDoc.data();
+      const workersSnapshot = await db
+        .collection("groups")
+        .doc(group_id)
+        .collection("plans")
+        .doc(planData.plan_id)
+        .collection("assigned_workers")
+        .get();
+      let workers = [];
+      workersSnapshot.forEach((doc) => {
+        workers.push(doc.data());
+      });
+      planData.assigned_workers = workers;
+      plans.push(planData);
+    }
 
-    const workers = [];
-    workersSnapshot.forEach((doc) => {
-      workers.push(doc.data());
-    });
-
-    console.log(
-      `Successfully fetched ${plans.length} plans and ${workers.length} workers. Sending response...`
-    );
-    res.status(200).json({ plans, workers });
+    console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
+    res.status(200).json(plans);
   } catch (error) {
     console.error("Error occurred while fetching plans and workers: ", error);
     return next(
