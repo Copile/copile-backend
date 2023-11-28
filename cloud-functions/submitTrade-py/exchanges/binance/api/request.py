@@ -11,6 +11,7 @@ api_config = {
 
 recv_window = 5000
 
+
 # Function to create signature for request based on payload
 def sign_request(params, api_secret):
     encoded_params = urlencode(params)
