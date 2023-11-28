@@ -239,10 +239,14 @@ app.post("/updatePlan", async (req, res, next) => {
       const existingWorkers = workerSnapshots
         .filter((snapshot) => snapshot.exists)
         .map((snapshot) => snapshot.data());
+
       console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
 
       await Promise.all(
-        existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
+        existingWorkers.map((worker) => {
+          console.log(`Assigning worker: ${JSON.stringify(worker)}`);
+          return assignedWorkersCollection.doc(worker.id).set(worker);
+        })
       );
       console.log("New workers assigned.");
     }
