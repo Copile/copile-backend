@@ -163,8 +163,11 @@ app.post("/createPlan", async (req, res, next) => {
 });
 
 app.post("/updatePlan", async (req, res, next) => {
+  console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
   const { renewal_price, trial_period_days, stock, unlimited_stock, assigned_workers } = req.body;
+  console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
+  console.log(`Request body: ${JSON.stringify(req.body)}`);
 
   if (
     !group_id ||
@@ -174,6 +177,9 @@ app.post("/updatePlan", async (req, res, next) => {
     typeof plan_id !== "string" ||
     plan_id.trim() === ""
   ) {
+    console.log(
+      "Missing or invalid required field: group_id or plan_id. Sending error response..."
+    );
     return next(
       new CustomError({
         message: "Missing or invalid required field: group_id or plan_id",
@@ -184,10 +190,14 @@ app.post("/updatePlan", async (req, res, next) => {
   }
 
   try {
+    console.log(`Fetching plan with id: ${plan_id} in group: ${group_id} from Firestore...`);
     const planRef = db.collection("groups").doc(group_id).collection("plans").doc(plan_id);
     const planSnapshot = await planRef.get();
 
     if (!planSnapshot.exists) {
+      console.log(
+        `Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`
+      );
       return next(
         new CustomError({
           message: "Plan not found",
@@ -197,6 +207,7 @@ app.post("/updatePlan", async (req, res, next) => {
       );
     }
 
+    console.log("Plan found. Preparing to update...");
     const updatedPlan = {
       ...planSnapshot.data(),
       renewal_price,
@@ -204,7 +215,9 @@ app.post("/updatePlan", async (req, res, next) => {
       stock,
       unlimited_stock,
     };
+    console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
+    console.log("Fetching workers from Firestore...");
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
     const assignedWorkersCollection = planRef.collection("assigned_workers");
 
@@ -212,24 +225,33 @@ app.post("/updatePlan", async (req, res, next) => {
       assigned_workers.map((id) => workersCollection.doc(id).get())
     );
 
+    console.log("Filtering out non-existing workers...");
     const existingWorkers = workerSnapshots
       .filter((snapshot) => snapshot.exists)
       .map((snapshot) => snapshot.data());
+    console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
 
+    console.log("Deleting old assigned workers...");
     await assignedWorkersCollection.get().then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
         doc.ref.delete();
       });
     });
+    console.log("Old assigned workers deleted.");
 
+    console.log("Assigning new workers to the plan...");
     await Promise.all(
       existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
     );
+    console.log("New workers assigned.");
 
+    console.log("Updating plan in Firestore...");
     await planRef.update(updatedPlan);
+    console.log("Plan updated successfully.");
 
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
+    console.log(`Failed to update plan: ${error.message}`);
     return next(
       new CustomError({
         message: "Failed to update plan",
