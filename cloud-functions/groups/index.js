@@ -218,11 +218,11 @@ app.get("/getData", async (req, res, next) => {
   const { group_id } = req.query;
   console.log(`group_id: ${group_id}`);
 
-  if (!group_id) {
-    console.log("Missing required field: group_id. Sending error response...");
+  if (!group_id || typeof group_id !== "string" || group_id.trim() === "") {
+    console.log("Missing or invalid required field: group_id. Sending error response...");
     return next(
       new CustomError({
-        message: "Missing required field: group_id",
+        message: "Missing or invalid required field: group_id",
         status: 400,
         source: "getData",
       })
@@ -236,19 +236,29 @@ app.get("/getData", async (req, res, next) => {
     const plans = [];
     for (let planDoc of plansSnapshot.docs) {
       let planData = planDoc.data();
-      const workersSnapshot = await db
-        .collection("groups")
-        .doc(group_id)
-        .collection("plans")
-        .doc(planData.plan_id)
-        .collection("assigned_workers")
-        .get();
-      let workers = [];
-      workersSnapshot.forEach((doc) => {
-        workers.push(doc.data());
-      });
-      planData.assigned_workers = workers;
-      plans.push(planData);
+      if (
+        planData.plan_id &&
+        typeof planData.plan_id === "string" &&
+        planData.plan_id.trim() !== ""
+      ) {
+        const workersSnapshot = await db
+          .collection("groups")
+          .doc(group_id)
+          .collection("plans")
+          .doc(planData.plan_id)
+          .collection("assigned_workers")
+          .get();
+        let workers = [];
+        workersSnapshot.forEach((doc) => {
+          workers.push(doc.data());
+        });
+        planData.assigned_workers = workers;
+        plans.push(planData);
+      } else {
+        console.log(
+          `Plan document with id: ${planDoc.id} in group: ${group_id} is missing a valid plan_id. Skipping...`
+        );
+      }
     }
 
     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
