@@ -165,7 +165,14 @@ app.post("/createPlan", async (req, res, next) => {
 app.post("/updatePlan", async (req, res, next) => {
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  const { initial_price, trial_period_days, stock, unlimited_stock, assigned_workers } = req.body;
+  const {
+    internal_notes,
+    initial_price,
+    trial_period_days,
+    stock,
+    unlimited_stock,
+    assigned_workers,
+  } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -210,6 +217,7 @@ app.post("/updatePlan", async (req, res, next) => {
     console.log("Plan found. Preparing to update...");
     const updatedPlan = {
       ...planSnapshot.data(),
+      internal_notes,
       initial_price,
       trial_period_days,
       stock,
