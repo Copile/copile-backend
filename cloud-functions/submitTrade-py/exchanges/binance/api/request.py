@@ -5,7 +5,7 @@ import hmac
 from urllib.parse import urlencode
 
 api_config = {
-    "host": "api-testnet.bybit.com",
+    "host": "fapi.binance.com",
     "protocol": "https"
 }
 
@@ -30,12 +30,7 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
     url = f"{api_config['protocol']}://{api_config['host']}{path}?{urlencode(params)}"
     print(url)
     headers = {
-        "Content-Type": "application/json",
-        "X-BAPI-API-KEY": api_key,
-        "X-BAPI-SIGN": signature,
-        "X-BAPI-SIGN-TYPE": "2",
-        "X-BAPI-TIMESTAMP": timestamp,
-        "X-BAPI-RECV-WINDOW": str(recv_window)
+        "X-MBX-APIKEY": api_key,
     }
 
     conn = aiohttp.TCPConnector(ssl=True)
