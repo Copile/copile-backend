@@ -462,7 +462,7 @@ async def partial_close(api_key, api_secret, data):
             sl_count = 0
             for i, sl_order in enumerate(prepared_orders[len(new_take_profits) + 1:], start=len(new_take_profits) + 1):
                 sl_order_dict = vars(sl_order)
-                sl_order_dict['order_id'] = order_ids[i]['order']['orderId']
+                sl_order_dict['order_id'] = order_ids[i]['orderId']
                 sl_order_dict['sl_document_id'] = sl_orders[sl_count]['sl_id']
                 sl_order_dict['sl_number'] = sl_orders[sl_count]['sl_number']
                 sl_order_dict['sl_percentage'] = sl_orders[sl_count]['sl_percentage']
