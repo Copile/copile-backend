@@ -55,6 +55,7 @@ app.post("/createGroup", async (req, res) => {
 
 app.post("/addWorkerToGroup", async (req, res) => {
   let payload = JSON.stringify(req.body);
+  console.log("Payload: ", payload);
   const wh = new Webhook(process.env.ADD_WORKER_SECRET);
 
   const headers_svix = {
@@ -62,12 +63,14 @@ app.post("/addWorkerToGroup", async (req, res) => {
     "svix-timestamp": String(req.get("svix-timestamp")),
     "svix-signature": String(req.get("svix-signature")),
   };
+  console.log("Headers: ", headers_svix);
 
   let organizationMembership;
   try {
     organizationMembership = wh.verify(payload, headers_svix);
+    console.log("Organization Membership: ", organizationMembership);
   } catch (err) {
-    console.log(err);
+    console.log("Error verifying payload: ", err);
     res.status(400).json({});
     return;
   }
@@ -81,6 +84,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
   // this is because the user.created DOES include the username but the organizationMember.created does not
   // which is the one that hits this endpoint.
   let name = organizationMembership.data.public_user_data.first_name;
+  console.log("Initial Name: ", name);
   if (!name) {
     // Fetch the username from the traders collection if first_name is not provided
     const traderDoc = await firestore
@@ -89,6 +93,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
       .get();
     if (traderDoc.exists) {
       name = traderDoc.data().trader_name;
+      console.log("Fetched Name: ", name);
     } else {
       console.error("Unable to add a backup name to worker in preparation for adding to group");
       name = "Unknown";
