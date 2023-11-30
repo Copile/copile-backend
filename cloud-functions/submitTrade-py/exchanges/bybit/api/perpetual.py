@@ -47,7 +47,7 @@ class BybitFunctions:
         # https://bybit-exchange.github.io/docs/v5/order/cancel-all
         path = "/v5/order/cancel-all"
         payload = {'category': category, 'symbol': symbol}
-        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
     async def batch_order(self, orders):
         # https://bybit-exchange.github.io/docs/v5/order/batch-place
