@@ -69,6 +69,10 @@ app.post("/createPlan", async (req, res, next) => {
   // Create a new plan object with the request body and some default values
   const newPlan = {
     ...req.body,
+    metadata: {
+      plan_name: req.body.internal_notes,
+      group_id: req.body.group_id,
+    },
     grace_period_days: 0,
     visibility: "hidden",
     allow_multiple_quantity: false,
@@ -263,6 +267,11 @@ app.post("/updatePlan", async (req, res, next) => {
     await planRef.update(updatedPlan);
     console.log("Plan updated successfully.");
 
+    // Sync the users
+    console.log("Syncing users...");
+    await findAndSyncUsers(plan_id);
+    console.log("Users synced successfully.");
+
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
     console.log(`Failed to update plan: ${error.message}`);
@@ -338,9 +347,97 @@ app.get("/getData", async (req, res, next) => {
   }
 });
 
-// Add worker to plan endpoint, and resynchronize with users
+async function findAndSyncUsers(groupId, planId) {
+  try {
+    // Fetch the plan document
+    const groupDocRef = db.collection("groups").doc(groupId);
+    const planDocRef = groupDocRef.collection("plans").doc(planId);
+    const planDoc = await planDocRef.get();
 
-// Remove worker from plan endpoint, and resynchronize with users. Do we also need to remove the worker from the group?
+    if (!planDoc.exists) {
+      console.log(`Plan with id: ${planId} in group: ${groupId} not found.`);
+      return;
+    }
+
+    // Get the workers in the plan
+    const planWorkersRef = planDocRef.collection("assigned_workers");
+    const planWorkersSnapshot = await planWorkersRef.get();
+    const planWorkers = planWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // Fetch all memberships from Whop
+    const response = await axios.get(
+      `https://api.whop.com/v2/memberships?plan_id=${planId}&status=completed&expand=[plan]&per=50`,
+      {
+        headers: {
+          Authorization: "Bearer WRVpaQ7IWf_etpDswHmn0jPRJjuzBd2PGQEMPdUIFf4",
+        },
+      }
+    );
+
+    // For each membership
+    for (const membership of response.data.data) {
+      // Construct request body for /createLicense endpoint
+      const requestBody = {
+        userId: membership.user,
+        planId: planId,
+        groupId: groupId,
+      };
+
+      const response = syncUser(requestBody, planWorkers);
+
+      if (response.success) {
+        console.log(`Successfully synced user ${membership.user}`);
+      }
+
+      // Wait 1s before doing next membership just incase it blows up
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const syncUser = async (data, planWorkers) => {
+  const { userId, planId, groupId } = data;
+
+  try {
+    // Get the user's plan document reference
+    const userPlanDocRef = db.collection(`users/${userId}/plans`).doc(planId);
+
+    // Fetch the user's plan document
+    const userPlanDoc = await userPlanDocRef.get();
+
+    if (!userPlanDoc.exists) {
+      return { success: false, error: "User's plan not found" };
+    }
+
+    // Get the workers in the user's plan
+    const userPlanWorkersRef = userPlanDocRef.collection("workers");
+    const userPlanWorkersSnapshot = await userPlanWorkersRef.get();
+    const userPlanWorkers = userPlanWorkersSnapshot.docs.map((doc) => doc.data());
+
+    // For each worker in the plan
+    for (const worker of planWorkers) {
+      // If the worker is not in the user's plan, add it
+      if (!userPlanWorkers.some((userPlanWorker) => userPlanWorker.id === worker.id)) {
+        await userPlanWorkersRef.doc(worker.id).set(worker);
+      }
+    }
+
+    // For each worker in the user's plan
+    for (const worker of userPlanWorkers) {
+      // If the worker is not in the plan, remove it
+      if (!planWorkers.some((planWorker) => planWorker.id === worker.id)) {
+        await userPlanWorkersRef.doc(worker.id).delete();
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+};
 
 app.get("/", (req, res) => {
   res.send("Copile Groups API");
