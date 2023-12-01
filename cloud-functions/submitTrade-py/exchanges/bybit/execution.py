@@ -185,12 +185,11 @@ async def replace_sl(api_key, api_secret, data):
         side = trade_info["side"]
         sl_side = "Buy" if side == "Sell" else "Sell"
 
-        await send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
-
-        precision, position, tp_sl_mode = await asyncio.gather(
+        precision, position, tp_sl_mode, cancel = await asyncio.gather(
             session.get_precisions(symbol),
             session.get_position(symbol),
-            session.set_tp_sl_mode(symbol, "Partial")
+            session.set_tp_sl_mode(symbol, "Partial"),
+            send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
         )
 
         position_quantity = get_position_quantity(position, trade_info)
@@ -303,7 +302,7 @@ async def bulk_tp(api_key, api_secret, data):
 
         symbol = trade_info["symbol"]
         side = trade_info['side']
-        tp_side = "Buy" if side == "Sell" else "Sell"
+        tp_side = "Buy" if trade_info['side'] == "Sell" else "Sell"
 
         position, precision = await asyncio.gather(
             session.get_position(symbol),
@@ -398,7 +397,7 @@ async def partial_close(api_key, api_secret, data):
         await session.cancel_all_orders(symbol)
 
         if executed:
-            sell_order = Order(symbol, "Market", 'Buy' if side == 'Sell' else 'Sell', None, quantity_to_sell, None,
+            sell_order = Order(symbol, "Market", tp_sl_side, None, quantity_to_sell, None,
                                None, None, True,
                                False)
             await session.trade_order(sell_order)

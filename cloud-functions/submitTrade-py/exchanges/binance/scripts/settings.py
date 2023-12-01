@@ -5,8 +5,8 @@ logger = logging.getLogger(__name__)
 
 def get_position_quantity(position, trade_info):
     try:
-        if float(position['size']) != 0:
-            position_quantity = abs(float(position['size']))
+        if float(position['positionAmt']) != 0:
+            position_quantity = abs(float(position['positionAmt']))
         else:
             position_quantity = trade_info["quantity"]
         return float(position_quantity)
