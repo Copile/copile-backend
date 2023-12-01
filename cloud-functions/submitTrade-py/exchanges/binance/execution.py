@@ -141,6 +141,21 @@ async def send_sl(api_key, api_secret, data):
             session.get_position(symbol)
         )
 
+        position_quantity = get_position_quantity(position, trade_info)
+
+        price = round(float(payload["sl_value"]), precision["price_precision"])
+
+        order = Order(symbol, "Limit", sl_side, price, position_quantity, trigger_direction, price,
+                "MarkPrice", True, True)
+        
+        create_order = await session.trade_order(order)
+
+        payload['trade_id'] = tradeId
+        payload["sl_amount"] = position_quantity
+        payload["order_id"] = create_order["orderId"]
+        payload['sl_document_id'] = document_id
+
+        await store_sl(traderId, payload)
 
         return
 
