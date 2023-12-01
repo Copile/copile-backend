@@ -40,4 +40,4 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
             if response.status != 200:
                 raise Exception(f"Failed to send BingX API request to {path}: {response.reason}")
             data = await response.json()
-            return data['result']
+            return data
