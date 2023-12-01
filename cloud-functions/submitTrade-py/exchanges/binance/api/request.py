@@ -21,7 +21,7 @@ def sign_request(params, api_secret):
 
 # Function to send the request to BingX
 async def make_signed_request(method, path, payload, api_key, api_secret):
-    timestamp = str(int(time.time()))
+    timestamp = str(int(time.time() * 1000))
     payload['timestamp'] = timestamp
 
     params = payload.copy()
