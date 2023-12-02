@@ -241,6 +241,21 @@ app.post("/updatePlan", async (req, res, next) => {
     });
     console.log("Old assigned workers deleted.");
 
+    // seems like if there are no assigned workers we're not even touching the assigned_workers collection
+    // this is wrong since if there are no assigned workers it means the admin wants to remove the assigned workers
+    // so we need to delete the assigned_workers collection if there are no assigned workers
+    // So we just need to check if assigned_workers is an empty array and if so delete the assigned_workers collection
+
+    if (assigned_workers && assigned_workers.length === 0) {
+      console.log("Deleting assigned_workers collection...");
+      await assignedWorkersCollection.get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          doc.ref.delete();
+        });
+      });
+      console.log("Assigned_workers collection deleted.");
+    }
+
     if (assigned_workers && assigned_workers.length > 0) {
       console.log("Assigning new workers to the plan...");
       const workerSnapshots = await Promise.all(
@@ -269,7 +284,7 @@ app.post("/updatePlan", async (req, res, next) => {
 
     // Sync the users
     console.log("Syncing users...");
-    await findAndSyncUsers(plan_id);
+    await findAndSyncUsers(group_id, plan_id);
     console.log("Users synced successfully.");
 
     res.status(200).json({ message: "Plan updated successfully" });
@@ -348,6 +363,7 @@ app.get("/getData", async (req, res, next) => {
 });
 
 async function findAndSyncUsers(groupId, planId) {
+  console.log(`Starting findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`);
   try {
     // Fetch the plan document
     const groupDocRef = db.collection("groups").doc(groupId);
@@ -363,6 +379,7 @@ async function findAndSyncUsers(groupId, planId) {
     const planWorkersRef = planDocRef.collection("assigned_workers");
     const planWorkersSnapshot = await planWorkersRef.get();
     const planWorkers = planWorkersSnapshot.docs.map((doc) => doc.data());
+    console.log(`Fetched ${planWorkers.length} workers for planId: ${planId}`);
 
     // Fetch all memberships from Whop
     const response = await axios.get(
@@ -373,6 +390,7 @@ async function findAndSyncUsers(groupId, planId) {
         },
       }
     );
+    console.log(`Fetched ${response.data.data.length} memberships for planId: ${planId}`);
 
     // For each membership
     for (const membership of response.data.data) {
@@ -393,12 +411,15 @@ async function findAndSyncUsers(groupId, planId) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   } catch (error) {
-    console.error(error);
+    console.error(`Error in findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`, error);
   }
 }
 
 const syncUser = async (data, planWorkers) => {
   const { userId, planId, groupId } = data;
+  console.log(
+    `Starting syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`
+  );
 
   try {
     // Get the user's plan document reference
@@ -408,6 +429,7 @@ const syncUser = async (data, planWorkers) => {
     const userPlanDoc = await userPlanDocRef.get();
 
     if (!userPlanDoc.exists) {
+      console.log(`User's plan with id: ${planId} for userId: ${userId} not found.`);
       return { success: false, error: "User's plan not found" };
     }
 
@@ -415,12 +437,16 @@ const syncUser = async (data, planWorkers) => {
     const userPlanWorkersRef = userPlanDocRef.collection("workers");
     const userPlanWorkersSnapshot = await userPlanWorkersRef.get();
     const userPlanWorkers = userPlanWorkersSnapshot.docs.map((doc) => doc.data());
+    console.log(
+      `Fetched ${userPlanWorkers.length} workers for userId: ${userId} and planId: ${planId}`
+    );
 
     // For each worker in the plan
     for (const worker of planWorkers) {
       // If the worker is not in the user's plan, add it
       if (!userPlanWorkers.some((userPlanWorker) => userPlanWorker.id === worker.id)) {
         await userPlanWorkersRef.doc(worker.id).set(worker);
+        console.log(`Added worker ${worker.id} to userId: ${userId} and planId: ${planId}`);
       }
     }
 
@@ -429,12 +455,16 @@ const syncUser = async (data, planWorkers) => {
       // If the worker is not in the plan, remove it
       if (!planWorkers.some((planWorker) => planWorker.id === worker.id)) {
         await userPlanWorkersRef.doc(worker.id).delete();
+        console.log(`Removed worker ${worker.id} from userId: ${userId} and planId: ${planId}`);
       }
     }
 
     return { success: true };
   } catch (error) {
-    console.error(error);
+    console.error(
+      `Error in syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`,
+      error
+    );
     return { success: false, error: error.message };
   }
 };
