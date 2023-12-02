@@ -241,6 +241,21 @@ app.post("/updatePlan", async (req, res, next) => {
     });
     console.log("Old assigned workers deleted.");
 
+    // seems like if there are no assigned workers we're not even touching the assigned_workers collection
+    // this is wrong since if there are no assigned workers it means the admin wants to remove the assigned workers
+    // so we need to delete the assigned_workers collection if there are no assigned workers
+    // So we just need to check if assigned_workers is an empty array and if so delete the assigned_workers collection
+
+    if (assigned_workers && assigned_workers.length === 0) {
+      console.log("Deleting assigned_workers collection...");
+      await assignedWorkersCollection.get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          doc.ref.delete();
+        });
+      });
+      console.log("Assigned_workers collection deleted.");
+    }
+
     if (assigned_workers && assigned_workers.length > 0) {
       console.log("Assigning new workers to the plan...");
       const workerSnapshots = await Promise.all(
@@ -269,7 +284,7 @@ app.post("/updatePlan", async (req, res, next) => {
 
     // Sync the users
     console.log("Syncing users...");
-    await findAndSyncUsers(plan_id);
+    await findAndSyncUsers(group_id, plan_id);
     console.log("Users synced successfully.");
 
     res.status(200).json({ message: "Plan updated successfully" });
