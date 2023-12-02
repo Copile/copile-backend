@@ -1,5 +1,6 @@
 from exchanges.bingx.api.session import BingXSession
 from exchanges.bybit.api.session import BybitSession
+from exchanges.binance.api.session import BinanceSession
 
 
 def create_session(exchange, api_key, api_secret, api_passphrase=None):
@@ -7,7 +8,7 @@ def create_session(exchange, api_key, api_secret, api_passphrase=None):
         # return KuCoinSession(api_key, api_secret, api_passphrase)
         pass
     elif exchange == "binance":
-        # return BinanceSession(api_key, api_secret)
+        return BinanceSession(api_key, api_secret)
         pass
     elif exchange == "bingx":
         return BingXSession(api_key, api_secret)

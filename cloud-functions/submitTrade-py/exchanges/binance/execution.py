@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from .api.perpetual import BybitFunctions
+from .api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, \
     get_tp_orders, delete_tp_sl_order
 from utils.partial import distribute_percentages
@@ -15,28 +15,27 @@ logger = logging.getLogger(__name__)
 
 async def bulk_order(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
         margin = data['margin']
         trader_exchange = data['trader_exchange']
-        margin_type = "ISOLATED-MARGIN" if data['margin_type'] == "ISOLATED" else "REGULAR_MARGIN"
+        margin_type = data['margin_type']
 
         symbol = data['payload']['symbol']
-        side = data['payload']['side']
+        side = data['payload']['side'].capitalize()
         leverage = data['payload']['leverage']
         entry = data['payload']['entry']
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
 
-        order_type = "Limit" if entry != "market" else "Market"
+        order_type = "LIMIT" if entry != "market" else "MARKET"
 
-        precision, set_leverage, position_mode, margin_mode = await asyncio.gather(
+        precision, set_leverage, margin_mode = await asyncio.gather(
             session.get_precisions(symbol),
             session.set_leverage(symbol, leverage),
-            session.switch_position_mode(symbol, 0),
-            session.switch_margin_mode(margin_type)
+            session.switch_margin_mode(symbol, margin_type)
         )
 
         market_price = float(await session.get_market(symbol))
@@ -45,27 +44,23 @@ async def bulk_order(api_key, api_secret, data):
                          precision["quantity_precision"]) if entry != "market" else round(
             (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
 
-        initial_order = Order(symbol, order_type, side, entry, quantity, None, None, None, False, False)
+        initial_order = Order(symbol, order_type, side, entry, quantity, None, False)
 
         prepared_orders = [initial_order]
 
         new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
 
-        tp_sl_side = "Sell" if side == "Buy" else "Buy"
-        tp_trigger_direction = 2 if side == "Sell" else 1
-        sl_trigger_direction = 1 if side == "Sell" else 2
+        tp_sl_side = "SELL" if side == "BUY" else "BUY"
 
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
-                             "MarkPrice", True, True)
+            tp_order = Order(symbol, "TAKE_PROFIT_MARKET", tp_sl_side, None, tp['tp_amount'], tp_price, True)
             prepared_orders.append(tp_order)
 
         for sl in stop_losses:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
-            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
-                             "MarkPrice", True, True)
+            sl_order = Order(symbol, "STOP_MARKET", tp_sl_side, None, sl['sl_amount'], sl_price, True)
             prepared_orders.append(sl_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -128,7 +123,7 @@ async def bulk_order(api_key, api_secret, data):
 
 async def send_sl(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -139,21 +134,18 @@ async def send_sl(api_key, api_secret, data):
 
         symbol = trade_info["symbol"]
         side = trade_info["side"]
-        sl_side = "Buy" if side == "Sell" else "Sell"
+        sl_side = "SELL" if side == "BUY" else "BUY"
 
-        precision, position, tp_sl_mode = await asyncio.gather(
+        precision, position = await asyncio.gather(
             session.get_precisions(symbol),
-            session.get_position(symbol),
-            session.set_tp_sl_mode(symbol, "Partial")
+            session.get_position(symbol)
         )
 
         position_quantity = get_position_quantity(position, trade_info)
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
-        trigger_direction = 1 if side == "Sell" else 2
 
-        order = Order(symbol, "Limit", sl_side, price, position_quantity, trigger_direction, price,
-                      "MarkPrice", True, True)
+        order = Order(symbol, "STOP_MARKET", sl_side, None, position_quantity, price, True)
 
         create_order = await session.trade_order(order)
 
@@ -172,7 +164,7 @@ async def send_sl(api_key, api_secret, data):
 
 async def replace_sl(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -183,22 +175,19 @@ async def replace_sl(api_key, api_secret, data):
 
         symbol = trade_info["symbol"]
         side = trade_info["side"]
-        sl_side = "Buy" if side == "Sell" else "Sell"
+        sl_side = "BUY" if side == "SELL" else "SELL"
 
-        precision, position, tp_sl_mode, cancel = await asyncio.gather(
+        precision, position, cancel = await asyncio.gather(
             session.get_precisions(symbol),
             session.get_position(symbol),
-            session.set_tp_sl_mode(symbol, "Partial"),
             send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
         )
 
         position_quantity = get_position_quantity(position, trade_info)
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
-        trigger_direction = 1 if side == "Sell" else 2
 
-        order = Order(symbol, "Limit", sl_side, price, position_quantity, trigger_direction, price,
-                      "MarkPrice", True, True)
+        order = Order(symbol, "STOP_MARKET", sl_side, None, position_quantity, price, True)
 
         create_order = await session.trade_order(order)
 
@@ -217,7 +206,7 @@ async def replace_sl(api_key, api_secret, data):
 
 async def cancel_order(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -238,7 +227,7 @@ async def cancel_order(api_key, api_secret, data):
 
 async def cancel_all_orders(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -249,13 +238,12 @@ async def cancel_all_orders(api_key, api_secret, data):
 
         position = await session.get_position(symbol)
 
-        quantity = float(position['size'])
+        quantity = get_position_quantity(position, trade_info)
 
         if quantity != 0:
             side = trade_info['side']
 
-            order = Order(symbol, "Market", 'Buy' if side == 'Sell' else 'Sell', None, quantity, None, None, None, True,
-                          False)
+            order = Order(symbol, "MARKET", "SELL" if side == "BUY" else "BUY", None, None, True)
             await session.trade_order(order)
         else:
             await session.cancel_order(symbol, trade_info['orderID'], None)
@@ -270,7 +258,7 @@ async def cancel_all_orders(api_key, api_secret, data):
 
 async def cancel_all_tps(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -292,7 +280,7 @@ async def cancel_all_tps(api_key, api_secret, data):
 
 async def bulk_tp(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -301,8 +289,7 @@ async def bulk_tp(api_key, api_secret, data):
         trade_info = await get_trade_info(traderId, tradeId)
 
         symbol = trade_info["symbol"]
-        side = trade_info['side']
-        tp_side = "Buy" if trade_info['side'] == "Sell" else "Sell"
+        tp_side = "BUY" if trade_info['side'] == "SELL" else "SELL"
 
         position, precision = await asyncio.gather(
             session.get_position(symbol),
@@ -315,12 +302,9 @@ async def bulk_tp(api_key, api_secret, data):
 
         prepared_orders = []
 
-        trigger_direction = 2 if side == "Sell" else 1
-
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_side, tp_price, tp['tp_amount'], trigger_direction, tp_price,
-                             "MarkPrice", True, True)
+            tp_order = Order(symbol, "TAKE_PROFIT_MARKET", tp_side, None, tp['tp_amount'], tp_price, True)
             prepared_orders.append(tp_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -354,7 +338,7 @@ async def bulk_tp(api_key, api_secret, data):
 
 async def partial_close(api_key, api_secret, data):
     try:
-        session = BybitFunctions(api_key, api_secret)
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -367,9 +351,7 @@ async def partial_close(api_key, api_secret, data):
 
         symbol = trade_info["symbol"]
         side = trade_info["side"]
-        tp_sl_side = "Sell" if side == "Buy" else "Buy"
-        tp_trigger_direction = 2 if side == "Sell" else 1
-        sl_trigger_direction = 1 if side == "Sell" else 2
+        tp_sl_side = "BUY" if side == "SELL" else "SELL"
 
         # Split tp_sl_orders into tp/sl orders
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
@@ -381,7 +363,7 @@ async def partial_close(api_key, api_secret, data):
             session.get_precisions(symbol)
         )
 
-        executed = True if float(position['size']) != 0 else False
+        executed = True if float(position['positionAmt']) != 0 else False
 
         position_quantity = get_position_quantity(position, trade_info)
 
@@ -397,15 +379,11 @@ async def partial_close(api_key, api_secret, data):
         await session.cancel_all_orders(symbol)
 
         if executed:
-            sell_order = Order(symbol, "Market", tp_sl_side, None, quantity_to_sell, None,
-                               None, None, True,
-                               False)
+            sell_order = Order(symbol, "MARKET", tp_sl_side, None, quantity_to_sell, None, True)
             await session.trade_order(sell_order)
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
-            await session.cancel_order(symbol, trade_info["orderID"], None)
-
-            order = Order(symbol, "Limit", side, trade_info['entry'], new_quantity, None, None, None, False, False)
+            order = Order(symbol, "LIMIT", tp_sl_side, trade_info['entry'], new_quantity, None, False)
 
             create_order = await session.trade_order(order)
 
@@ -430,16 +408,13 @@ async def partial_close(api_key, api_secret, data):
 
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
-                             "MarkPrice", True, True)
+            tp_order = Order(symbol, "TAKE_PROFIT_MARKET", tp_sl_side, None, tp['tp_amount'], tp_price, True)
             prepared_orders.append(tp_order)
 
         for sl in sl_orders:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
-            sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']),
-                                    precision["quantity_precision"])
-            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
-                             "MarkPrice", True, True)
+            sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
+            sl_order = Order(symbol, "STOP_MARKET", tp_sl_side, None, sl['sl_amount'], sl_price, True)
             prepared_orders.append(sl_order)
 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
