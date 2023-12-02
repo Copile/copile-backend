@@ -27,9 +27,8 @@ def prepare_payload(method, parameters):
         return json.dumps(parameters)
 
 
-# Function to send the request to BingX
+# Function to send the request to Bybit
 async def make_signed_request(method, path, payload, api_key, api_secret):
-    print(payload)
     timestamp = str(int(time.time() * 10 ** 3))
     params = prepare_payload(method, payload)
     signature = sign_request(api_key, api_secret, timestamp, params, str(recv_window))

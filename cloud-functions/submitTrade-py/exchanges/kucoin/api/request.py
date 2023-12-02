@@ -5,7 +5,7 @@ import hmac
 from urllib.parse import urlencode
 
 api_config = {
-    "host": "fapi.binance.com",
+    "host": "api-futures.kucoin.com",
     "protocol": "https"
 }
 
@@ -19,8 +19,8 @@ def sign_request(params, api_secret):
     return signature
 
 
-# Function to send the request to Binance
-async def make_signed_request(method, path, payload, api_key, api_secret):
+# Function to send the request to Kucoin
+async def make_signed_request(method, path, payload, api_key, api_secret, api_passphrase):
     timestamp = str(int(time.time() * 1000))
     payload['timestamp'] = timestamp
 
@@ -30,14 +30,20 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
 
     url = f"{api_config['protocol']}://{api_config['host']}{path}?{urlencode(params)}"
     print(url)
+
     headers = {
-        "X-MBX-APIKEY": api_key,
+        "Content-Type": "application/json",
+        "X-BAPI-API-KEY": api_key,
+        "KC-API-PASSPHRASE": api_passphrase,
+        "KC-API-SIGN": signature,
+        "KC-API-TIMESTAMP": timestamp,
+        "KC-API-KEY-VERSION": "2",
     }
 
     conn = aiohttp.TCPConnector(ssl=True)
     async with aiohttp.ClientSession(connector=conn) as session:
         async with session.request(method, url, headers=headers) as response:
             if response.status != 200:
-                raise Exception(f"Failed to send Binance API request to {path}: {response.reason}")
+                raise Exception(f"Failed to send Kucoin API request to {path}: {response.reason}")
             data = await response.json()
             return data
