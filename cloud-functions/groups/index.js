@@ -35,6 +35,7 @@ const axios = require("axios");
  */
 app.post("/createPlan", async (req, res, next) => {
   // Log the start of the plan creation process
+  console.log("=====================================");
   console.log("Creating a new plan...");
 
   // Define the required fields for creating a new plan
@@ -151,6 +152,7 @@ app.post("/createPlan", async (req, res, next) => {
       );
     }
 
+    console.log("=====================================");
     // Send a success response
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
@@ -167,6 +169,8 @@ app.post("/createPlan", async (req, res, next) => {
 });
 
 app.post("/updatePlan", async (req, res, next) => {
+  console.log("=====================================");
+
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
   const {
@@ -287,6 +291,8 @@ app.post("/updatePlan", async (req, res, next) => {
     await findAndSyncUsers(group_id, plan_id);
     console.log("Users synced successfully.");
 
+    console.log("=====================================");
+
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
     console.log(`Failed to update plan: ${error.message}`);
@@ -301,6 +307,8 @@ app.post("/updatePlan", async (req, res, next) => {
 });
 
 app.get("/getData", async (req, res, next) => {
+  console.log("=====================================");
+
   console.log("getData endpoint hit. Processing request...");
   const { group_id } = req.query;
   console.log(`group_id: ${group_id}`);
@@ -349,6 +357,7 @@ app.get("/getData", async (req, res, next) => {
     }
 
     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
+    console.log("=====================================");
     res.status(200).json(plans);
   } catch (error) {
     console.error("Error occurred while fetching plans and workers: ", error);
@@ -363,6 +372,8 @@ app.get("/getData", async (req, res, next) => {
 });
 
 async function findAndSyncUsers(groupId, planId) {
+  console.log("-------------------------------------");
+
   console.log(`Starting findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`);
   try {
     // Fetch the plan document
@@ -410,6 +421,7 @@ async function findAndSyncUsers(groupId, planId) {
       // Wait 1s before doing next membership just incase it blows up
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
+    console.log("-------------------------------------");
   } catch (error) {
     console.error(`Error in findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`, error);
   }
