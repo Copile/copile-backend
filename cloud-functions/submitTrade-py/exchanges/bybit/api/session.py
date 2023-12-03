@@ -8,15 +8,15 @@ logger = logging.getLogger(__name__)
 
 class BybitSession(ExchangeSession):
     """
-    Represents a BingX exchange session.
+    Represents a Bybit exchange session.
     Extends ExchangeSession.
     """
 
     def __init__(self, api_key, api_secret):
         """
-        Creates a BingXSession instance.
-        :param apiKey: API key for the BingX session.
-        :param apiSecret: API secret for the BingX session.
+        Creates a BybitSession instance.
+        :param apiKey: API key for the Bybit session.
+        :param apiSecret: API secret for the Bybit session.
         """
         super().__init__(api_key, api_secret)
 

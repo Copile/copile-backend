@@ -67,7 +67,7 @@ async def store_trade(account_id, order_dict):
             FIELD_ORDER_ID: order_dict["order_id"],
             FIELD_SYMBOL: order_dict["symbol"],
             FIELD_ORDER_TYPE: order_dict["type"],
-            FIELD_SIDE: order_dict["side"].capitalize(),
+            FIELD_SIDE: order_dict["side"],
             FIELD_QUANTITY: order_dict["quantity"],
             FIELD_ENTRY: order_dict["entry"],
             FIELD_LEVERAGE: order_dict["leverage"],

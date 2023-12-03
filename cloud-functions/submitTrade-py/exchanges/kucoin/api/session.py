@@ -6,17 +6,17 @@ from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tp
 logger = logging.getLogger(__name__)
 
 
-class BinanceSession(ExchangeSession):
+class KucoinSession(ExchangeSession):
     """
-    Represents a Binance exchange session.
+    Represents a Kucoin exchange session.
     Extends ExchangeSession.
     """
 
     def __init__(self, api_key, api_secret):
         """
-        Creates a BinanceSession instance.
-        :param apiKey: API key for the Binance session.
-        :param apiSecret: API secret for the Binance session.
+        Creates a KucoinSession instance.
+        :param apiKey: API key for the Kucoin session.
+        :param apiSecret: API secret for the Kucoin session.
         """
         super().__init__(api_key, api_secret)
 

@@ -39,7 +39,7 @@ class KucoinFunctions:
         path = "/api/v1/orders"
         payload = {'status': "active", 'symbol': symbol}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
-        return response
+        return response['items']
 
     async def get_market(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-ticker
