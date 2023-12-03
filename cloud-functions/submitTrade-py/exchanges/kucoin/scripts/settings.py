@@ -16,10 +16,12 @@ def reformat_symbol(symbol):
         logger.error("An error occurred: %s", e, exc_info=True)
 
 
-def get_position_quantity(position, trade_info):
+def get_position_quantity(position_details, trade_info):
     try:
-        if float(position['size']) != 0:
-            position_quantity = abs(float(position['size']))
+        position = position_details['currentQty'] if position_details['currentQty'] > 0 else position_details[
+                                                                                                 'currentQty'] * (-1)
+        if float(position) != 0:
+            position_quantity = abs(float(position))
         else:
             position_quantity = trade_info["quantity"]
         return float(position_quantity)

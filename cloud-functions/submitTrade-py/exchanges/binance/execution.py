@@ -383,7 +383,7 @@ async def partial_close(api_key, api_secret, data):
             await session.trade_order(sell_order)
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
-            order = Order(symbol, "LIMIT", tp_sl_side, trade_info['entry'], new_quantity, None, False)
+            order = Order(symbol, "LIMIT", side, trade_info['entry'], new_quantity, None, False)
 
             create_order = await session.trade_order(order)
 
