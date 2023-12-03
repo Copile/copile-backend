@@ -383,7 +383,7 @@ async function findAndSyncUsers(groupId, planId) {
 
     // Fetch all memberships from Whop
     const response = await axios.get(
-      `https://api.whop.com/v2/memberships?plan_id=${planId}&status=completed&expand=[plan]&per=50`,
+      `https://api.whop.com/v2/memberships?plan_id=${planId}&expand=[plan]&per=50`,
       {
         headers: {
           Authorization: "Bearer WRVpaQ7IWf_etpDswHmn0jPRJjuzBd2PGQEMPdUIFf4",
