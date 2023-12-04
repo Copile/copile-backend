@@ -2,9 +2,10 @@ from .request import make_signed_request
 
 
 class KucoinFunctions:
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key, api_secret, api_passphrase):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.api_passphrase = api_passphrase
 
     async def trade_order(self, order):
         # https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
@@ -13,46 +14,46 @@ class KucoinFunctions:
         payload = {
             **order.__dict__,
         }
-        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret, self.api_passphrase)
 
     async def get_position(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/positions/get-position-details
         path = "/api/v1/position"
         payload = {"symbol": symbol}
-        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
         return response
 
     async def cancel_all_orders(self, symbol):
         # https://docs.kucoin.com/#cancel-all-orders
         path = "/api/v1/stopOrders"
         payload = {'symbol': symbol}
-        return await make_signed_request("DELETE", path, payload, self.api_key, self.api_secret)
+        return await make_signed_request("DELETE", path, payload, self.api_key, self.api_secret, self.api_passphrase)
 
     async def cancel_order(self, order_id):
         # https://www.kucoin.com/docs/rest/futures-trading/orders/cancel-futures-order-by-orderid
         path = f"/api/v1/orders"
         payload = {"orderId": order_id}
-        return await make_signed_request("DELETE", path, payload, self.api_key, self.api_secret)
+        return await make_signed_request("DELETE", path, payload, self.api_key, self.api_secret, self.api_passphrase)
 
     async def current_orders(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-list
         path = "/api/v1/orders"
         payload = {'status': "active", 'symbol': symbol}
-        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
         return response['items']
 
     async def get_market(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-ticker
         path = "/api/v1/ticker"
         payload = {"symbol": symbol}
-        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
         return response["price"]
 
     async def get_precisions(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-symbol-detail
         path = "/api/v1/contracts"
         payload = {"symbol": symbol}
-        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
         multiplier = response['multiplier']
         min_qty = 1 * float(multiplier)
         quantity_precision = int(len(str(min_qty).split(".")[1])) if min_qty != 1 else 0

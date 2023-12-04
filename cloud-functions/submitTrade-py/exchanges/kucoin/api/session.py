@@ -12,66 +12,68 @@ class KucoinSession(ExchangeSession):
     Extends ExchangeSession.
     """
 
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key, api_secret, api_passphrase):
         """
         Creates a KucoinSession instance.
-        :param apiKey: API key for the Kucoin session.
-        :param apiSecret: API secret for the Kucoin session.
+        :param api_key: API key for the Kucoin session.
+        :param api_secret: API secret for the Kucoin session.
+        :param api_passphrase: API passphrase for the Kucoin session.
         """
         super().__init__(api_key, api_secret)
+        self.api_passphrase = api_passphrase
 
     async def bulk_order(self, data):
         try:
-            return await bulk_order(self.api_key, self.api_secret, data)
+            return await bulk_order(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send bulk_order: {str(e)}", exc_info=True)
             raise
 
     async def cancel_all_orders(self, data):
         try:
-            return await cancel_all_orders(self.api_key, self.api_secret, data)
+            return await cancel_all_orders(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send cancel_all_orders: {str(e)}", exc_info=True)
             raise
 
     async def replace_sl(self, data):
         try:
-            return await replace_sl(self.api_key, self.api_secret, data)
+            return await replace_sl(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send replace_sl: {str(e)}", exc_info=True)
             raise
 
     async def cancel_all_tps(self, data):
         try:
-            return await cancel_all_tps(self.api_key, self.api_secret, data)
+            return await cancel_all_tps(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send cancel_all_tps: {str(e)}", exc_info=True)
             raise
 
     async def bulk_tp(self, data):
         try:
-            return await bulk_tp(self.api_key, self.api_secret, data)
+            return await bulk_tp(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send bulk_tp: {str(e)}", exc_info=True)
             raise
 
     async def partial_close(self, data):
         try:
-            return await partial_close(self.api_key, self.api_secret, data)
+            return await partial_close(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send partial_close: {str(e)}", exc_info=True)
             raise
 
     async def send_sl(self, data):
         try:
-            return await send_sl(self.api_key, self.api_secret, data)
+            return await send_sl(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send send_sl: {str(e)}", exc_info=True)
             raise
 
     async def cancel_order(self, data):
         try:
-            return await cancel_order(self.api_key, self.api_secret, data)
+            return await cancel_order(self.api_key, self.api_secret, self.api_passphrase, data)
         except Exception as e:
             logger.error(f"Failed to send cancel_order: {str(e)}", exc_info=True)
             raise
