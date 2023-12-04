@@ -329,7 +329,7 @@ app.post("/updatePlan", async (req, res, next) => {
 
     // Sync the users
     console.log("Syncing users...");
-    await findAndSyncUsers(group_id, plan_id);
+    await findAndSyncUsers(group_id, plan_id, internal_notes);
     console.log("Users synced successfully.");
 
     console.log("=====================================");
@@ -408,7 +408,7 @@ app.get("/getData", async (req, res, next) => {
   }
 });
 
-async function findAndSyncUsers(groupId, planId) {
+async function findAndSyncUsers(groupId, planId, planName) {
   console.log("-------------------------------------");
 
   console.log(`Starting findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`);
@@ -447,6 +447,7 @@ async function findAndSyncUsers(groupId, planId) {
         userId: membership.user,
         planId: planId,
         groupId: groupId,
+        planName: planName,
       };
 
       const response = syncUser(requestBody, planWorkers);
@@ -465,7 +466,7 @@ async function findAndSyncUsers(groupId, planId) {
 }
 
 const syncUser = async (data, planWorkers) => {
-  const { userId, planId, groupId } = data;
+  const { userId, planId, groupId, planName } = data;
   console.log(`Starting syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`);
 
   try {
@@ -497,6 +498,7 @@ const syncUser = async (data, planWorkers) => {
         worker.option = "x"; // Initialize as "x"
         worker.preferred_exchange = "x"; // Initialize as "x"
         worker.plan_id = planId;
+        worker.plan_name = planName;
 
         await userPlanWorkersRef.doc(worker.id).set(worker);
         console.log(`Added worker ${worker.id} to userId: ${userId} and planId: ${planId}`);
