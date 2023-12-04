@@ -23,9 +23,7 @@ app.post("/updateExchange", async (req, res) => {
 
   // check if api_passphrase is required
   if (exchange === "kucoin" && !api_passphrase) {
-    res
-      .status(400)
-      .json({ success: false, error: `api_passphrase is required for ${exchange} exchange` });
+    res.status(400).json({ success: false, error: `api_passphrase is required for ${exchange} exchange` });
   } else {
     try {
       const updateFields = {
@@ -63,8 +61,7 @@ app.post("/updateMargin", async (req, res) => {
   const userId = req.get("x-forwarded-authorization").split(" ")[1];
 
   // Extract the product ID, worker ID, margin, percentage, option, preferred exchange, and enabled status from the body of the incoming request
-  const { product_id, worker_id, margin, percentage, option, preferred_exchange, enabled } =
-    req.body;
+  const { plan_id, worker_id, margin, percentage, option, preferred_exchange, enabled } = req.body;
 
   try {
     // Fetch the user document from Firestore
@@ -76,18 +73,14 @@ app.post("/updateMargin", async (req, res) => {
     }
 
     // Create a reference to the worker document in the workers subcollection of the plan document in the plans subcollection of the user document
-    const workerDocRef = db
-      .collection(`users/${userId}/plans/${product_id}/workers`)
-      .doc(worker_id);
+    const workerDocRef = db.collection(`users/${userId}/plans/${plan_id}/workers`).doc(worker_id);
 
     // Fetch the worker document that the workerDocRef points to
     const workerDoc = await workerDocRef.get();
 
     // Check if the worker document exists
     if (!workerDoc.exists) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Worker not found for this user and worker id" });
+      return res.status(404).json({ success: false, error: "Worker not found for this user and worker id" });
     }
 
     // Prepare an object with the fields to update in the worker document
@@ -254,9 +247,7 @@ app.get("/pubKey", async (req, res) => {
   } catch (error) {
     // Catch any error that occurred while getting the public key
     console.log(error);
-    res
-      .status(500)
-      .json({ success: false, error: "An error occurred while getting the public key." });
+    res.status(500).json({ success: false, error: "An error occurred while getting the public key." });
   }
 });
 
