@@ -248,7 +248,7 @@ async def bulk_tp(data: dict):
 
         payload = {
             "data": {
-                "take_profits": take_profits
+                "take_pofits": take_profits
             },
             "trade_id": trade_id,
             "user_id": account_id
