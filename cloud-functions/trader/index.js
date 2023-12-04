@@ -111,11 +111,7 @@ app.get("/:traderID/members", async (req, res) => {
   try {
     const traderID = req.params.traderID;
 
-    const membersSnapshot = await db
-      .collection("traders")
-      .doc(traderID)
-      .collection("products")
-      .get();
+    const membersSnapshot = await db.collection("traders").doc(traderID).collection("products").get();
 
     const getPlanMembers = async (planID) => {
       const planSnapshot = await db
@@ -155,11 +151,7 @@ app.get("/:traderID/sales", async (req, res) => {
   const traderID = req.params.traderID;
 
   try {
-    const productsSnapshot = await db
-      .collection("traders")
-      .doc(traderID)
-      .collection("products")
-      .get();
+    const productsSnapshot = await db.collection("traders").doc(traderID).collection("products").get();
 
     const getPlanSales = async (planID) => {
       const salesSnapshot = await db
@@ -319,8 +311,7 @@ app.get("/account", async (req, res) => {
     const existingApis = {};
     const existingReadOnlyApis = {};
     for (const exchange in traderData.exchanges) {
-      const { api_key, api_secret, read_only_api_key, read_only_api_secret } =
-        traderData.exchanges[exchange];
+      const { api_key, api_secret, read_only_api_key, read_only_api_secret } = traderData.exchanges[exchange];
 
       if (api_key && api_key !== "x" && api_secret && api_secret !== "x") {
         existingApis[exchange] = true;
@@ -340,13 +331,9 @@ app.get("/account", async (req, res) => {
       }
     }
 
-    // Fetch product IDs from the 'products' subcollection
-    const productsCollectionSnapshot = await db
-      .collection("traders")
-      .doc(traderId)
-      .collection("products")
-      .get();
-    const plans = productsCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
+    // Fetch product IDs from the 'plans' subcollection
+    const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
+    const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
     const responseData = {
       success: true,
       existingApis,
