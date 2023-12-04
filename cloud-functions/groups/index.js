@@ -121,22 +121,18 @@ app.post("/createPlan", async (req, res, next) => {
 
     // If there are any workers specified in the request, assign them to the plan in Firestore
     if (worker_ids && worker_ids.length > 0) {
-      console.log("Assigning workers to plan in firestore...");
+      console.log("Assigning workers to groups plan in firestore...");
       // Get the workers collection and the assigned workers collection in Firestore
       const workersCollection = db.collection("groups").doc(group_id).collection("workers");
-      console.log("Workers collection:", workersCollection);
       const assignedWorkersCollection = db
         .collection("groups")
         .doc(group_id)
         .collection("plans")
         .doc(plan_id)
         .collection("assigned_workers");
-      console.log("Assigned workers collection:", assignedWorkersCollection);
 
       // Fetch the worker documents from Firestore
-      const workerSnapshots = await Promise.all(
-        worker_ids.map((id) => workersCollection.doc(id).get())
-      );
+      const workerSnapshots = await Promise.all(worker_ids.map((id) => workersCollection.doc(id).get()));
 
       console.log("Filtering out non-existing workers...");
       // Filter out any non-existing workers and map the snapshots to their data
@@ -150,6 +146,21 @@ app.post("/createPlan", async (req, res, next) => {
       await Promise.all(
         existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
       );
+      console.log("Workers assigned to groups plan in firestore");
+
+      console.log("Adding plan to workers own plans collection...");
+      // Add the plan to each worker's plans collection
+      const tradersCollection = db.collection("traders");
+      await Promise.all(
+        existingWorkers.map((worker) =>
+          tradersCollection
+            .doc(worker.id)
+            .collection("plans")
+            .doc(plan_id)
+            .set({ plan_id: plan_id, plan_name: req.body.internal_notes })
+        )
+      );
+      console.log("Plan added to workers own plans collection");
     }
 
     console.log("=====================================");
@@ -173,14 +184,8 @@ app.post("/updatePlan", async (req, res, next) => {
 
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  const {
-    internal_notes,
-    initial_price,
-    trial_period_days,
-    stock,
-    unlimited_stock,
-    assigned_workers,
-  } = req.body;
+  const { internal_notes, initial_price, trial_period_days, stock, unlimited_stock, assigned_workers } =
+    req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -192,9 +197,7 @@ app.post("/updatePlan", async (req, res, next) => {
     typeof plan_id !== "string" ||
     plan_id.trim() === ""
   ) {
-    console.log(
-      "Missing or invalid required field: group_id or plan_id. Sending error response..."
-    );
+    console.log("Missing or invalid required field: group_id or plan_id. Sending error response...");
     return next(
       new CustomError({
         message: "Missing or invalid required field: group_id or plan_id",
@@ -210,9 +213,7 @@ app.post("/updatePlan", async (req, res, next) => {
     const planSnapshot = await planRef.get();
 
     if (!planSnapshot.exists) {
-      console.log(
-        `Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`
-      );
+      console.log(`Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`);
       return next(
         new CustomError({
           message: "Plan not found",
@@ -237,6 +238,10 @@ app.post("/updatePlan", async (req, res, next) => {
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
     const assignedWorkersCollection = planRef.collection("assigned_workers");
 
+    // Fetch the old assigned workers before updating the plan
+    const oldAssignedWorkersSnapshot = await assignedWorkersCollection.get();
+    const oldAssignedWorkers = oldAssignedWorkersSnapshot.docs.map((doc) => doc.data());
+
     console.log("Deleting old assigned workers...");
     await assignedWorkersCollection.get().then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
@@ -250,15 +255,17 @@ app.post("/updatePlan", async (req, res, next) => {
     // so we need to delete the assigned_workers collection if there are no assigned workers
     // So we just need to check if assigned_workers is an empty array and if so delete the assigned_workers collection
 
-    if (assigned_workers && assigned_workers.length === 0) {
-      console.log("Deleting assigned_workers collection...");
-      await assignedWorkersCollection.get().then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          doc.ref.delete();
-        });
-      });
-      console.log("Assigned_workers collection deleted.");
-    }
+    // if (assigned_workers && assigned_workers.length === 0) {
+    //   console.log("Deleting assigned_workers collection...");
+    //   await assignedWorkersCollection.get().then((querySnapshot) => {
+    //     querySnapshot.forEach((doc) => {
+    //       doc.ref.delete();
+    //     });
+    //   });
+    //   console.log("Assigned_workers collection deleted.");
+    // }
+
+    // this seems obsolete since we're deleting the assigned_workers collection already
 
     if (assigned_workers && assigned_workers.length > 0) {
       console.log("Assigning new workers to the plan...");
@@ -279,7 +286,37 @@ app.post("/updatePlan", async (req, res, next) => {
           return assignedWorkersCollection.doc(worker.id).set(worker);
         })
       );
+
       console.log("New workers assigned.");
+
+      console.log("Updating the plan in each new worker's plans collection...");
+      // Update the plan in each new worker's plans collection
+      const tradersCollection = db.collection("traders");
+      await Promise.all(
+        existingWorkers.map((worker) => {
+          console.log(`Updating plan for worker: ${JSON.stringify(worker)}`);
+          return tradersCollection
+            .doc(worker.id)
+            .collection("plans")
+            .doc(plan_id)
+            .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
+        })
+      );
+      console.log("Plan updated in each new worker's plans collection.");
+
+      console.log(
+        "Removing the plan from each old worker's plans collection if they are no longer assigned..."
+      );
+      // Remove the plan from each old worker's plans collection if they are no longer assigned
+      await Promise.all(
+        oldAssignedWorkers.map((worker) => {
+          if (!existingWorkers.some((existingWorker) => existingWorker.id === worker.id)) {
+            console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+            return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
+          }
+        })
+      );
+      console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
     }
 
     console.log("Updating plan in Firestore...");
@@ -331,11 +368,7 @@ app.get("/getData", async (req, res, next) => {
     const plans = [];
     for (let planDoc of plansSnapshot.docs) {
       let planData = planDoc.data();
-      if (
-        planData.plan_id &&
-        typeof planData.plan_id === "string" &&
-        planData.plan_id.trim() !== ""
-      ) {
+      if (planData.plan_id && typeof planData.plan_id === "string" && planData.plan_id.trim() !== "") {
         const workersSnapshot = await db
           .collection("groups")
           .doc(group_id)
@@ -429,9 +462,7 @@ async function findAndSyncUsers(groupId, planId) {
 
 const syncUser = async (data, planWorkers) => {
   const { userId, planId, groupId } = data;
-  console.log(
-    `Starting syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`
-  );
+  console.log(`Starting syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`);
 
   try {
     // Get the user's plan document reference
@@ -449,9 +480,7 @@ const syncUser = async (data, planWorkers) => {
     const userPlanWorkersRef = userPlanDocRef.collection("workers");
     const userPlanWorkersSnapshot = await userPlanWorkersRef.get();
     const userPlanWorkers = userPlanWorkersSnapshot.docs.map((doc) => doc.data());
-    console.log(
-      `Fetched ${userPlanWorkers.length} workers for userId: ${userId} and planId: ${planId}`
-    );
+    console.log(`Fetched ${userPlanWorkers.length} workers for userId: ${userId} and planId: ${planId}`);
 
     // For each worker in the plan
     for (const worker of planWorkers) {

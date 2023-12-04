@@ -34,7 +34,7 @@ app.post("/saveUserToFirestore", async (req, res) => {
 
   try {
     await tradersRef.doc(user.data.id).set({
-      traderID: user.data.id,
+      trader_id: user.data.id,
       trader_name: user.data.username,
       // Add any other user data you want to save to Firestore
     });
