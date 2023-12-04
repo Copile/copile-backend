@@ -267,6 +267,21 @@ app.post("/updatePlan", async (req, res, next) => {
 
     // this seems obsolete since we're deleting the assigned_workers collection already
 
+    // Remove the plan from each old worker's plans collection if they are no longer assigned
+    console.log(
+      "Removing the plan from each old worker's plans collection if they are no longer assigned..."
+    );
+    const tradersCollection = db.collection("traders");
+    await Promise.all(
+      oldAssignedWorkers.map((worker) => {
+        if (!assigned_workers || !assigned_workers.includes(worker.id)) {
+          console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+          return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
+        }
+      })
+    );
+    console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
+
     if (assigned_workers && assigned_workers.length > 0) {
       console.log("Assigning new workers to the plan...");
       const workerSnapshots = await Promise.all(
@@ -289,9 +304,12 @@ app.post("/updatePlan", async (req, res, next) => {
 
       console.log("New workers assigned.");
 
+      // FIXME: We're only updating the plan in the workers own plans collection if there are new workers
+      // If the admin removes a worker from the plan, we're not removing the plan from the workers own plans collection
+      // We need to remove the plan from the workers own plans collection if they are no longer assigned to the plan
       console.log("Updating the plan in each new worker's plans collection...");
       // Update the plan in each new worker's plans collection
-      const tradersCollection = db.collection("traders");
+      // const tradersCollection = db.collection("traders");
       await Promise.all(
         existingWorkers.map((worker) => {
           console.log(`Updating plan for worker: ${JSON.stringify(worker)}`);
@@ -303,20 +321,6 @@ app.post("/updatePlan", async (req, res, next) => {
         })
       );
       console.log("Plan updated in each new worker's plans collection.");
-
-      console.log(
-        "Removing the plan from each old worker's plans collection if they are no longer assigned..."
-      );
-      // Remove the plan from each old worker's plans collection if they are no longer assigned
-      await Promise.all(
-        oldAssignedWorkers.map((worker) => {
-          if (!existingWorkers.some((existingWorker) => existingWorker.id === worker.id)) {
-            console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
-            return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
-          }
-        })
-      );
-      console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
     }
 
     console.log("Updating plan in Firestore...");
