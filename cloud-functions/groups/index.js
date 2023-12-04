@@ -490,6 +490,14 @@ const syncUser = async (data, planWorkers) => {
     for (const worker of planWorkers) {
       // If the worker is not in the user's plan, add it
       if (!userPlanWorkers.some((userPlanWorker) => userPlanWorker.id === worker.id)) {
+        // Initialize worker data
+        worker.enabled = false; // Initialize as disabled
+        worker.margin = "x"; // Initialize as "x"
+        worker.percentage = "x"; // Initialize as "x"
+        worker.option = "x"; // Initialize as "x"
+        worker.preferred_exchange = "x"; // Initialize as "x"
+        worker.plan_id = planId;
+
         await userPlanWorkersRef.doc(worker.id).set(worker);
         console.log(`Added worker ${worker.id} to userId: ${userId} and planId: ${planId}`);
       }
