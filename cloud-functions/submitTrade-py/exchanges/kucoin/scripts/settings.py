@@ -1,4 +1,5 @@
 import logging
+from uuid import uuid1
 
 logger = logging.getLogger(__name__)
 
@@ -27,3 +28,7 @@ def get_position_quantity(position_details, trade_info):
         return float(position_quantity)
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
+
+def create_client_oid():
+    return ''.join([each for each in str(uuid1()).split('-')])

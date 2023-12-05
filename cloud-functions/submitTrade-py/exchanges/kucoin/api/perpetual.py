@@ -1,4 +1,5 @@
 from .request import make_signed_request
+from ..scripts.settings import create_client_oid
 
 
 class KucoinFunctions:
@@ -11,9 +12,8 @@ class KucoinFunctions:
         # https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
         path = "/api/v1/orders"
         order.remove_none_attributes()
-        payload = {
-            **order.__dict__,
-        }
+        payload = {**order.__dict__, 'clientOid': create_client_oid()}
+        print(payload)
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret, self.api_passphrase)
 
     async def get_position(self, symbol):
@@ -51,9 +51,9 @@ class KucoinFunctions:
 
     async def get_precisions(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-symbol-detail
-        path = "/api/v1/contracts"
-        payload = {"symbol": symbol}
-        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
+        path = f"/api/v1/contracts/{symbol}"
+        response = await make_signed_request("GET", path, None, self.api_key, self.api_secret, self.api_passphrase)
+        print(response)
         multiplier = response['multiplier']
         min_qty = 1 * float(multiplier)
         quantity_precision = int(len(str(min_qty).split(".")[1])) if min_qty != 1 else 0

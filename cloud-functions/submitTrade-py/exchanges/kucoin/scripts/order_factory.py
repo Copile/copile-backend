@@ -9,7 +9,7 @@ class Order:
         self.leverage = str(leverage)
         self.stop = stop
         self.stopPriceType = stop_price_type
-        self.stopPrice = str(stop_price)
+        self.stopPrice = str(stop_price) if stop_price is not None else None
         self.reduceOnly = reduce_only
 
     def remove_none_attributes(self):
