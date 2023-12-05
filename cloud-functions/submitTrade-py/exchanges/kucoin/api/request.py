@@ -31,7 +31,6 @@ async def make_signed_request(method, path, payload, api_key, api_secret, api_pa
 
     if method in ['GET', 'DELETE']:
         query_string = urlencode(payload) if payload else ''
-        print(query_string)
         str_to_sign = f'{timestamp}{method}{path}?{query_string}'
         url = f"{api_config['protocol']}://{api_config['host']}{path}?{query_string}"
     else:
@@ -47,8 +46,9 @@ async def make_signed_request(method, path, payload, api_key, api_secret, api_pa
     headers['KC-API-PASSPHRASE'] = passphrase
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         async with session.request(method, url, headers=headers,
-                                   data=payload if method not in ['GET', 'DELETE'] else None) as response:
+                                   json=payload if method not in ['GET', 'DELETE'] else None) as response:
             if response.status != 200:
-                raise Exception(f"Failed to send Kucoin API request to {path}: {response.reason}")
+                raise Exception(f"Failed to send Kucoin API request to {path}: {await response.json()}")
             response_json = await response.json()
+            print(response_json)
             return response_json['data']

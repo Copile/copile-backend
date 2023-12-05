@@ -34,13 +34,20 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         precision = await session.get_precisions(symbol)
 
-        market_price = float(await session.get_market(symbol))
+        if entry != "market":
+            # Calculate quantity when a specific price is provided
+            adjusted_margin = float(margin) * int(leverage)
+            quantity_value = round(adjusted_margin / float(entry), precision['quantity_precision'])
+            quantity = int(quantity_value / precision['multiplier'])
+        else:
+            # Calculate quantity when the price is 'market'
+            market_price = await session.get_market(symbol)
+            adjusted_margin = float(margin) * int(leverage)
+            quantity_value = round(adjusted_margin / market_price, precision['quantity_precision'])
+            quantity = int(quantity_value / precision['multiplier'])
 
-        quantity = round((float(margin) * int(leverage) / float(entry)),
-                         precision["quantity_precision"]) if entry != "market" else round(
-            (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
-
-        initial_order = Order(symbol, order_type, side, entry, quantity, leverage, None, None, None, False)
+        initial_order = Order(symbol, order_type, side, entry if entry != 'market' else None, quantity, leverage, None,
+                              None, None, None)
 
         prepared_orders = [initial_order]
 
@@ -368,7 +375,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
         sl_orders = [order for order in tp_sl_orders if order['trade_type'] == 'sl']
 
-        # Fetch the current position and precisions
+        # Fetch the curre position and precisions
         position, precision = await asyncio.gather(
             session.get_position(symbol),
             session.get_precisions(symbol)
