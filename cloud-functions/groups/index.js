@@ -49,6 +49,7 @@ app.post("/createPlan", async (req, res, next) => {
     "stock",
     "trial_period_days",
     "unlimited_stock",
+    "referral_code",
   ];
 
   // Check for any missing required fields in the request body
@@ -92,6 +93,9 @@ app.post("/createPlan", async (req, res, next) => {
   delete newPlan.workers;
   console.log("Deleted workers from new plan");
 
+  delete newPlan.referral_code;
+  console.log("Deleted referral_code from new plan");
+
   try {
     console.log("New plan before hitting whop:", newPlan);
 
@@ -111,9 +115,15 @@ app.post("/createPlan", async (req, res, next) => {
     const plan_id = data.id;
     console.log("Plan id:", plan_id);
 
-    // Add the group id back in and plan id to the new plan object
+    // Extract the direct link from the response data
+    const { direct_link } = data;
+    console.log("Direct link:", direct_link);
+
+    // Add the group id, plan id, direct link, and referral code back to the plan object
     newPlan.group_id = group_id;
     newPlan.plan_id = plan_id;
+    newPlan.direct_link = direct_link;
+    newPlan.referral_code = req.body.referral_code;
 
     // Save the new plan in Firestore under the corresponding group
     await db.collection("groups").doc(group_id).collection("plans").doc(plan_id).set(newPlan);
@@ -524,6 +534,50 @@ const syncUser = async (data, planWorkers) => {
   }
 };
 
+// check referral code
+
+app.post("/checkReferral", async (req, res, next) => {
+  console.log("=====================================");
+
+  console.log("checkReferralCode endpoint hit. Processing request...");
+  const referral_code = req.query.code;
+  console.log(`referral_code: ${referral_code}`);
+
+  if (!referral_code || typeof referral_code !== "string" || referral_code.trim() === "") {
+    console.log("Missing or invalid required field: referral_code. Sending error response...");
+    return next(
+      new CustomError({
+        message: "Missing or invalid required field: referral_code",
+        status: 400,
+        source: "checkReferralCode",
+      })
+    );
+  }
+
+  try {
+    const plansRef = db.collectionGroup("plans");
+    const snapshot = await plansRef.where("referral_code", "==", referral_code).get();
+
+    if (snapshot.empty) {
+      console.log("No matching documents.");
+      return res.send({ success: false });
+    }
+
+    const doc = snapshot.docs[0];
+    console.log(doc.id, "=>", doc.data());
+    const data = doc.data();
+    res.send({ success: true, purchase_link: data.direct_link });
+  } catch (error) {
+    console.error("Error occurred while fetching referral code: ", error);
+    return next(
+      new CustomError({
+        message: "Failed to check referral code",
+        status: 500,
+        source: "checkReferralCode",
+      })
+    );
+  }
+});
 app.get("/", (req, res) => {
   res.send("Copile Groups API");
 });
