@@ -4,7 +4,7 @@ class Order:
         self.symbol = symbol
         self.type = order_type
         self.side = side
-        self.price = str(price)
+        self.price = str(price) if price is not None else None
         self.size = int(quantity)
         self.leverage = str(leverage)
         self.stop = stop
