@@ -1,6 +1,7 @@
-const Firestore = require("@google-cloud/firestore");
-const db = new Firestore();
+const { Firestore } = require("@google-cloud/firestore");
+const firestore = new Firestore();
 const express = require("express");
+const CustomError = require("./utils/CustomError");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
@@ -26,7 +27,7 @@ app.get("/checkReferral", async (req, res, next) => {
 
   try {
     console.log("Attempting to fetch referral code from database...");
-    const plansRef = db.collectionGroup("plans");
+    const plansRef = firestore.collectionGroup("plans");
     console.log("plansRef: ", plansRef);
     const snapshot = await plansRef.where("referral_code", "==", referral_code).get();
     console.log("Snapshot: ", snapshot);
