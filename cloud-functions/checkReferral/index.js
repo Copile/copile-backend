@@ -1,7 +1,7 @@
 const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 const express = require("express");
-const CustomError = require("./utils/error");
+// const CustomError = require("./utils/error");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
@@ -15,14 +15,16 @@ app.get("/checkReferral", async (req, res, next) => {
 
   if (!referral_code) {
     console.log("Missing required field: referral_code. Sending error response...");
-    res.status(400).send({ success: false, message: "Missing or invalid required field: referral_code" });
-    return next(
-      new CustomError({
-        message: "Missing or invalid required field: referral_code",
-        status: 400,
-        source: "checkReferralCode",
-      })
-    );
+    return res
+      .status(400)
+      .send({ success: false, message: "Missing or invalid required field: referral_code" });
+    // return next(
+    //   new CustomError({
+    //     message: "Missing or invalid required field: referral_code",
+    //     status: 400,
+    //     source: "checkReferralCode",
+    //   })
+    // );
   }
 
   try {
@@ -41,17 +43,17 @@ app.get("/checkReferral", async (req, res, next) => {
     console.log(`Found matching document: ${doc.id} => ${JSON.stringify(doc.data())}`);
     const data = doc.data();
     console.log("Sending success response with direct link...");
-    res.send({ success: true, direct_link: data.direct_link });
+    return res.send({ success: true, direct_link: data.direct_link });
   } catch (error) {
     console.error("Error occurred while fetching referral code: ", error);
-    res.status(500).send({ success: false, message: "Failed to check referral code" });
-    return next(
-      new CustomError({
-        message: "Failed to check referral code",
-        status: 500,
-        source: "checkReferralCode",
-      })
-    );
+    return res.status(500).send({ success: false, message: "Failed to check referral code" });
+    // return next(
+    //   new CustomError({
+    //     message: "Failed to check referral code",
+    //     status: 500,
+    //     source: "checkReferralCode",
+    //   })
+    // );
   }
 });
 
