@@ -33,7 +33,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         order_type = "limit" if entry != "market" else "market"
 
         precision = await session.get_precisions(symbol)
-
+        print(precision)
         if entry != "market":
             # Calculate quantity when a specific price is provided
             adjusted_margin = float(margin) * int(leverage)
@@ -52,20 +52,21 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         prepared_orders = [initial_order]
 
         new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
-
+        print(new_take_profits)
         tp_sl_side = "sell" if side == "buy" else "buy"
-        stop = "up" if side == "sell" else "down"
+        stop_sl = "up" if side == "sell" else "down"
+        stop_tp = "up" if side == "buy" else "down"
 
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "market", tp_sl_side, tp_price, tp['tp_amount'], leverage, stop, "MP", tp_price,
+            tp_order = Order(symbol, "market", tp_sl_side, tp_price, tp['tp_amount'], leverage, stop_tp, "MP", tp_price,
                              True)
             prepared_orders.append(tp_order)
 
         for sl in stop_losses:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
-            sl_order = Order(symbol, "market", tp_sl_side, sl_price, sl['sl_amount'], leverage, stop, "MP", sl_price,
+            sl_order = Order(symbol, "market", tp_sl_side, sl_price, sl['sl_amount'], leverage, stop_sl, "MP", sl_price,
                              True)
             prepared_orders.append(sl_order)
 

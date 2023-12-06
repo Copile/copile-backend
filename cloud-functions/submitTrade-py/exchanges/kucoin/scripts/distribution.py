@@ -13,7 +13,7 @@ async def calculate_tp_amounts(take_profits, quantity, precision):
         tps_amount = [quantity * tp for tp in tps_percentage]
 
         # Rearrange the take-profit amounts based on precision
-        tp_amounts = await rearrange_tps(quantity, precision['quantity_precision'], tps_amount, precision['min_qty'])
+        tp_amounts = await rearrange_tps(quantity, precision['quantity_precision'], tps_amount, 1)
 
         new_take_profits = []
         total_amount = sum(tp_amounts)

@@ -53,10 +53,9 @@ class KucoinFunctions:
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-symbol-detail
         path = f"/api/v1/contracts/{symbol}"
         response = await make_signed_request("GET", path, None, self.api_key, self.api_secret, self.api_passphrase)
-        print(response)
         multiplier = response['multiplier']
         min_qty = 1 * float(multiplier)
         quantity_precision = int(len(str(min_qty).split(".")[1])) if min_qty != 1 else 0
-        price_precision = 0
+        price_precision = int(len(str(response['tickSize']).split('.')[1]))
         return {'quantity_precision': int(quantity_precision), 'price_precision': int(price_precision),
                 'min_qty': float(min_qty), 'multiplier': float(multiplier)}
