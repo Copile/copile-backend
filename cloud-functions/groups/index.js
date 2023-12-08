@@ -275,6 +275,12 @@ app.post("/updatePlan", async (req, res, next) => {
       const workerSnapshot = await workersCollection.doc(id).get();
       if (workerSnapshot.exists) {
         const worker = workerSnapshot.data();
+        // Adding default stats to each worker
+        worker.stats = {
+          winrate: 0,
+          avg_pct: 0,
+          trade_count: 0,
+        };
         console.log(`Adding worker: ${JSON.stringify(worker)}`);
         await assignedWorkersCollection.doc(worker.id).set(worker);
       }
