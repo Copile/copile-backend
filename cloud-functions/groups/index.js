@@ -252,76 +252,66 @@ app.post("/updatePlan", async (req, res, next) => {
     };
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
-    console.log("Fetching workers from Firestore...");
+    console.log("Fetching provided groups global workers from Firestore...");
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
+
     const assignedWorkersCollection = planRef.collection("assigned_workers");
 
-    // Fetch the old assigned workers before updating the plan
-    const oldAssignedWorkersSnapshot = await assignedWorkersCollection.get();
-    const oldAssignedWorkers = oldAssignedWorkersSnapshot.docs.map((doc) => doc.data());
+    console.log("Fetching the current assigned workers before updating the plan...");
+    const currentAssignedWorkersSnapshot = await assignedWorkersCollection.get();
+    const currentAssignedWorkers = currentAssignedWorkersSnapshot.docs.map((doc) => doc.data());
+    console.log(`Current assigned workers: ${JSON.stringify(currentAssignedWorkers)}`);
 
-    console.log("Deleting old assigned workers...");
-    await assignedWorkersCollection.get().then((querySnapshot) => {
-      querySnapshot.forEach((doc) => {
-        doc.ref.delete();
-      });
-    });
-    console.log("Old assigned workers deleted.");
+    console.log("Identifying the workers that need to be added and removed...");
+    const workersToAdd = assigned_workers.filter(
+      (id) => !currentAssignedWorkers.some((worker) => worker.id === id)
+    );
+    const workersToRemove = currentAssignedWorkers.filter((worker) => !assigned_workers.includes(worker.id));
+    console.log(`Workers to add: ${JSON.stringify(workersToAdd)}`);
+    console.log(`Workers to remove: ${JSON.stringify(workersToRemove)}`);
+
+    console.log("Adding the new workers...");
+    for (const id of workersToAdd) {
+      const workerSnapshot = await workersCollection.doc(id).get();
+      if (workerSnapshot.exists) {
+        const worker = workerSnapshot.data();
+        console.log(`Adding worker: ${JSON.stringify(worker)}`);
+        await assignedWorkersCollection.doc(worker.id).set(worker);
+      }
+    }
+
+    console.log("Removing the workers that are no longer assigned...");
+    for (const worker of workersToRemove) {
+      console.log(`Removing worker: ${JSON.stringify(worker)}`);
+      await assignedWorkersCollection.doc(worker.id).delete();
+    }
 
     console.log(
       "Removing the plan from each old worker's plans collection if they are no longer assigned..."
     );
     const tradersCollection = db.collection("traders");
     await Promise.all(
-      oldAssignedWorkers.map((worker) => {
-        if (!assigned_workers || !assigned_workers.includes(worker.id)) {
-          console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
-          return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
-        }
+      workersToRemove.map((worker) => {
+        console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+        return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
       })
     );
-    console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
 
-    if (assigned_workers && assigned_workers.length > 0) {
-      console.log("Assigning new workers to the plan...");
-      const workerSnapshots = await Promise.all(
-        assigned_workers.map((id) => workersCollection.doc(id).get())
-      );
-
-      console.log("Filtering out non-existing workers...");
-      const existingWorkers = workerSnapshots
-        .filter((snapshot) => snapshot.exists)
-        .map((snapshot) => snapshot.data());
-
-      console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
-
-      await Promise.all(
-        existingWorkers.map((worker) => {
-          console.log(`Assigning worker: ${JSON.stringify(worker)}`);
-          return assignedWorkersCollection.doc(worker.id).set(worker);
-        })
-      );
-
-      console.log("New workers assigned.");
-
-      // FIXME: We're only updating the plan in the workers own plans collection if there are new workers
-      // If the admin removes a worker from the plan, we're not removing the plan from the workers own plans collection
-      // We need to remove the plan from the workers own plans collection if they are no longer assigned to the plan
-      console.log("Updating the plan in each new worker's plans collection...");
-      // Update the plan in each new worker's plans collection
-      // const tradersCollection = db.collection("traders");
-      await Promise.all(
-        existingWorkers.map((worker) => {
-          console.log(`Updating plan for worker: ${JSON.stringify(worker)}`);
+    console.log("Adding the plan to each new worker's plans collection...");
+    await Promise.all(
+      workersToAdd.map(async (id) => {
+        const workerSnapshot = await workersCollection.doc(id).get();
+        if (workerSnapshot.exists) {
+          const worker = workerSnapshot.data();
+          console.log(`Adding plan for worker: ${JSON.stringify(worker)}`);
           return tradersCollection
             .doc(worker.id)
             .collection("plans")
             .doc(plan_id)
             .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
-        })
-      );
-      console.log("Plan updated in each new worker's plans collection.");
-    }
+        }
+      })
+    );
 
     console.log("Updating plan in Firestore...");
     await planRef.update(updatedPlan);
@@ -346,6 +336,159 @@ app.post("/updatePlan", async (req, res, next) => {
     );
   }
 });
+
+// app.post("/updatePlan", async (req, res, next) => {
+//   console.log("=====================================");
+
+//   console.log("updatePlan endpoint hit. Processing request...");
+//   const { group_id, plan_id } = req.query;
+//   const {
+//     internal_notes,
+//     initial_price,
+//     trial_period_days,
+//     stock,
+//     unlimited_stock,
+//     referral_code,
+//     assigned_workers,
+//   } = req.body;
+//   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
+//   console.log(`Request body: ${JSON.stringify(req.body)}`);
+
+//   if (
+//     !group_id ||
+//     !plan_id ||
+//     typeof group_id !== "string" ||
+//     group_id.trim() === "" ||
+//     typeof plan_id !== "string" ||
+//     plan_id.trim() === ""
+//   ) {
+//     console.log("Missing or invalid required field: group_id or plan_id. Sending error response...");
+//     return next(
+//       new CustomError({
+//         message: "Missing or invalid required field: group_id or plan_id",
+//         status: 400,
+//         source: "updatePlan",
+//       })
+//     );
+//   }
+
+//   try {
+//     console.log(`Fetching plan with id: ${plan_id} in group: ${group_id} from Firestore...`);
+//     const planRef = db.collection("groups").doc(group_id).collection("plans").doc(plan_id);
+//     const planSnapshot = await planRef.get();
+
+//     if (!planSnapshot.exists) {
+//       console.log(`Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`);
+//       return next(
+//         new CustomError({
+//           message: "Plan not found",
+//           status: 404,
+//           source: "updatePlan",
+//         })
+//       );
+//     }
+
+//     console.log("Plan found. Preparing to update...");
+//     const updatedPlan = {
+//       ...planSnapshot.data(),
+//       internal_notes,
+//       initial_price,
+//       trial_period_days,
+//       stock,
+//       unlimited_stock,
+//       referral_code,
+//     };
+//     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
+
+//     console.log("Fetching workers from Firestore...");
+//     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
+//     const assignedWorkersCollection = planRef.collection("assigned_workers");
+
+//     // Fetch the old assigned workers before updating the plan
+//     const oldAssignedWorkersSnapshot = await assignedWorkersCollection.get();
+//     const oldAssignedWorkers = oldAssignedWorkersSnapshot.docs.map((doc) => doc.data());
+
+//     console.log("Deleting old assigned workers...");
+//     await assignedWorkersCollection.get().then((querySnapshot) => {
+//       querySnapshot.forEach((doc) => {
+//         doc.ref.delete();
+//       });
+//     });
+//     console.log("Old assigned workers deleted.");
+
+//     console.log(
+//       "Removing the plan from each old worker's plans collection if they are no longer assigned..."
+//     );
+//     const tradersCollection = db.collection("traders");
+//     await Promise.all(
+//       oldAssignedWorkers.map((worker) => {
+//         if (!assigned_workers || !assigned_workers.includes(worker.id)) {
+//           console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+//           return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
+//         }
+//       })
+//     );
+//     console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
+
+//     if (assigned_workers && assigned_workers.length > 0) {
+//       console.log("Assigning new workers to the plan...");
+//       const workerSnapshots = await Promise.all(
+//         assigned_workers.map((id) => workersCollection.doc(id).get())
+//       );
+
+//       console.log("Filtering out non-existing workers...");
+//       const existingWorkers = workerSnapshots
+//         .filter((snapshot) => snapshot.exists)
+//         .map((snapshot) => snapshot.data());
+
+//       console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
+
+//       await Promise.all(
+//         existingWorkers.map((worker) => {
+//           console.log(`Assigning worker: ${JSON.stringify(worker)}`);
+//           return assignedWorkersCollection.doc(worker.id).set(worker);
+//         })
+//       );
+
+//       console.log("New workers assigned.");
+
+//       console.log("Updating the plan in each new worker's plans collection...");
+//       await Promise.all(
+//         existingWorkers.map((worker) => {
+//           console.log(`Updating plan for worker: ${JSON.stringify(worker)}`);
+//           return tradersCollection
+//             .doc(worker.id)
+//             .collection("plans")
+//             .doc(plan_id)
+//             .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
+//         })
+//       );
+//       console.log("Plan updated in each new worker's plans collection.");
+//     }
+
+//     console.log("Updating plan in Firestore...");
+//     await planRef.update(updatedPlan);
+//     console.log("Plan updated successfully.");
+
+//     // Sync the users
+//     console.log("Syncing users...");
+//     await findAndSyncUsers(group_id, plan_id, internal_notes);
+//     console.log("Users synced successfully.");
+
+//     console.log("=====================================");
+
+//     res.status(200).json({ message: "Plan updated successfully" });
+//   } catch (error) {
+//     console.log(`Failed to update plan: ${error.message}`);
+//     return next(
+//       new CustomError({
+//         message: "Failed to update plan",
+//         status: 500,
+//         source: "updatePlan",
+//       })
+//     );
+//   }
+// });
 
 app.get("/getData", async (req, res, next) => {
   console.log("=====================================");
