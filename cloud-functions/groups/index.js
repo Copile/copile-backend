@@ -194,8 +194,15 @@ app.post("/updatePlan", async (req, res, next) => {
 
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  const { internal_notes, initial_price, trial_period_days, stock, unlimited_stock, assigned_workers } =
-    req.body;
+  const {
+    internal_notes,
+    initial_price,
+    trial_period_days,
+    stock,
+    unlimited_stock,
+    referral_code,
+    assigned_workers,
+  } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -241,6 +248,7 @@ app.post("/updatePlan", async (req, res, next) => {
       trial_period_days,
       stock,
       unlimited_stock,
+      referral_code,
     };
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
@@ -260,24 +268,6 @@ app.post("/updatePlan", async (req, res, next) => {
     });
     console.log("Old assigned workers deleted.");
 
-    // seems like if there are no assigned workers we're not even touching the assigned_workers collection
-    // this is wrong since if there are no assigned workers it means the admin wants to remove the assigned workers
-    // so we need to delete the assigned_workers collection if there are no assigned workers
-    // So we just need to check if assigned_workers is an empty array and if so delete the assigned_workers collection
-
-    // if (assigned_workers && assigned_workers.length === 0) {
-    //   console.log("Deleting assigned_workers collection...");
-    //   await assignedWorkersCollection.get().then((querySnapshot) => {
-    //     querySnapshot.forEach((doc) => {
-    //       doc.ref.delete();
-    //     });
-    //   });
-    //   console.log("Assigned_workers collection deleted.");
-    // }
-
-    // this seems obsolete since we're deleting the assigned_workers collection already
-
-    // Remove the plan from each old worker's plans collection if they are no longer assigned
     console.log(
       "Removing the plan from each old worker's plans collection if they are no longer assigned..."
     );
