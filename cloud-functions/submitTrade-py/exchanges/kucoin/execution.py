@@ -26,7 +26,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         # Reformatting symbol name for kucoin style
         symbol = reformat_symbol(data['payload']['symbol'])
-        
+
         side = data['payload']['side'].lower()
         leverage = data['payload']['leverage']
         entry = data['payload']['entry']
@@ -50,6 +50,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
             quantity_value = round(adjusted_margin / market_price, precision['quantity_precision'])
             quantity = int(quantity_value / precision['multiplier'])
 
+        # Order object for initial order
         initial_order = Order(symbol, order_type, side, entry if entry != 'market' else None, quantity, leverage, None,
                               None, None, None)
 
@@ -63,7 +64,6 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         tp_sl_side = "sell" if side == "buy" else "buy"
         stop_sl = "up" if side == "sell" else "down"
         stop_tp = "up" if side == "buy" else "down"
-
 
         # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
@@ -260,10 +260,11 @@ async def cancel_order(api_key, api_secret, api_passphrase, data):
         document_id = data['document_id']
         trade_type = data['trade_type']
 
+        # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
-
         symbol = trade_info["symbol"]
 
+        # Cancelling specific order based on trade_type (tp/sl)
         await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
 
         return
@@ -296,13 +297,14 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
 
             # Creating order object for selling whole order
             order = Order(symbol, "market", side, None, quantity, leverage, None, None, None, True)
-            
+
             # Executing sell order to stop trade
             await session.trade_order(order)
         else:
             # Cancelling existing limit order
             await session.cancel_order(trade_info['orderID'])
 
+        # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
         return
@@ -359,20 +361,25 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
             session.get_precisions(symbol)
         )
 
+        # Getting current position quantity to use for take-profit orders
         position_quantity = get_position_quantity(position, trade_info)
 
+        # Calculating new take-profits for replacing current ones
         new_take_profits = await calculate_tp_amounts(take_profits, position_quantity, precision)
 
         prepared_orders = []
 
+        # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
             tp_order = Order(symbol, "market", tp_side, tp_price, tp['tp_amount'], leverage, stop, "MP", tp_price,
                              True)
             prepared_orders.append(tp_order)
 
+        # Executing all orders in the orders array
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
+        # Arrays to store orders for order id filtering
         new_take_profits_with_ids = []
 
         tp_count = 0
@@ -418,7 +425,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         symbol = trade_info["symbol"]
         side = trade_info["side"]
         leverage = trade_info["leverage"]
-        
+
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "sell" if side == "buy" else "buy"
         stop = "up" if side == "sell" else "down"
@@ -427,7 +434,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
         sl_orders = [order for order in tp_sl_orders if order['trade_type'] == 'sl']
 
-        # Fetch the curre position and precisions
+        # Fetch the current position and precisions
         position, precision = await asyncio.gather(
             session.get_position(symbol),
             session.get_precisions(symbol)
@@ -445,23 +452,22 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         # Fetching the statuses of all take-profits for filtering active/inactive
         tps_data = await get_tps_status(session, tp_orders, trade_info)
 
-        # Using algo to resdistribute take-profits to match new quantity
+        # Using algo to redistribute take-profits to match new quantity
         take_profits = distribute_percentages(tps_data)
 
-        # Calcuting new take-profits for replacing current ones
+        # Calculating new take-profits for replacing current ones
         new_take_profits = await calculate_tp_amounts(take_profits, new_quantity, precision)
 
         # Cancelling all active tps/sls as well as old limit orders
         await session.cancel_all_orders(symbol)
 
-
         if executed:
             # Creating sell order object for selling partial quantity
             sell_order = Order(symbol, "market", side, None, quantity_to_sell, leverage, None, None, None, True)
-            
+
             # Executing sell order to decrease quantity
             await session.trade_order(sell_order)
-            
+
             # Updating new quantity in firestore
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
@@ -484,7 +490,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
             }
-            
+
             # Storing trade info in firestore
             await store_trade(traderId, trade_info)
 

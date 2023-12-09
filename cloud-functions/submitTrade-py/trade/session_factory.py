@@ -4,6 +4,7 @@ from exchanges.binance.api.session import BinanceSession
 from exchanges.kucoin.api.session import KucoinSession
 
 
+# Function for creating session for execution of trade data
 def create_session(exchange, api_key, api_secret, api_passphrase=None):
     if exchange == "kucoin":
         return KucoinSession(api_key, api_secret, api_passphrase)
