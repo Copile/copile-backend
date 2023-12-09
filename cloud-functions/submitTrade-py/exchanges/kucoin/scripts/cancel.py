@@ -8,7 +8,7 @@ async def send_cancel(session, symbol, trader_id, trade_id, document_id, trade_t
     try:
         order = await get_specific_order(trader_id, trade_id, document_id, trade_type)
 
-        await session.cancel_order(symbol, order['orderID'], None)
+        await session.cancel_order(order['orderID'])
         await delete_tp_sl_order(trader_id, trade_id, document_id, trade_type)
 
         return

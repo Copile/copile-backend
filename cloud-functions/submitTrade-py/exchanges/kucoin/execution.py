@@ -322,9 +322,7 @@ async def cancel_all_tps(api_key, api_secret, api_passphrase, data):
         tradeId = data['tradeId']
 
         # Fetching the current take-profit orders from firestore
-        tp_orders = await asyncio.gather(
-            get_tp_orders(traderId, tradeId)
-        )
+        tp_orders = await get_tp_orders(traderId, tradeId)
 
         # Cancelling all current take-profits order and deleting them from firestore
         await asyncio.gather(
@@ -354,7 +352,7 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
 
         # Preparing position sides for take-profits
         tp_side = "sell" if side == "buy" else "buy"
-        stop = "up" if side == "sell" else "down"
+        stop = "up" if side == "buy" else "down"
 
         position, precision = await asyncio.gather(
             session.get_position(symbol),
@@ -428,7 +426,8 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "sell" if side == "buy" else "buy"
-        stop = "up" if side == "sell" else "down"
+        stop_sl = "up" if side == "sell" else "down"
+        stop_tp = "up" if side == "buy" else "down"
 
         # Split tp_sl_orders into tp/sl orders
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
@@ -439,9 +438,11 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             session.get_position(symbol),
             session.get_precisions(symbol)
         )
+        position_size = position['currentQty'] if position['currentQty'] > 0 else position[
+                                                                                      'currentQty'] * (-1)
 
         # Variable for determining if trade executed or still limit
-        executed = True if float(position['positionAmt']) != 0 else False
+        executed = True if float(position_size) != 0 else False
 
         # Fetching the current position quantity for further use
         position_quantity = get_position_quantity(position, trade_info)
@@ -502,7 +503,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "market", tp_sl_side, tp_price, tp['tp_amount'], leverage, stop, "MP", tp_price,
+            tp_order = Order(symbol, "market", tp_sl_side, tp_price, tp['tp_amount'], leverage, stop_tp, "MP", tp_price,
                              True)
             prepared_orders.append(tp_order)
 
@@ -510,7 +511,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         for sl in sl_orders:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
-            sl_order = Order(symbol, "market", tp_sl_side, sl_price, sl['sl_amount'], leverage, stop, "MP", sl_price,
+            sl_order = Order(symbol, "market", tp_sl_side, sl_price, sl['sl_amount'], leverage, stop_sl, "MP", sl_price,
                              True)
             prepared_orders.append(sl_order)
 

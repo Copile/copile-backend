@@ -31,9 +31,8 @@ class KucoinFunctions:
 
     async def cancel_order(self, order_id):
         # https://www.kucoin.com/docs/rest/futures-trading/orders/cancel-futures-order-by-orderid
-        path = f"/api/v1/orders"
-        payload = {"orderId": order_id}
-        return await make_signed_request("DELETE", path, payload, self.api_key, self.api_secret, self.api_passphrase)
+        path = f"/api/v1/orders/{order_id}"
+        return await make_signed_request("DELETE", path, None, self.api_key, self.api_secret, self.api_passphrase)
 
     async def current_orders(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-list
