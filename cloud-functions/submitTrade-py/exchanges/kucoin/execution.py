@@ -445,6 +445,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         # Fetching the statuses of all take-profits for filtering active/inactive
         tps_data = await get_tps_status(session, tp_orders, trade_info)
 
+        # Using algo to resdistribute take-profits to match new quantity
         take_profits = distribute_percentages(tps_data)
 
         # Calcuting new take-profits for replacing current ones
@@ -464,10 +465,13 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             # Updating new quantity in firestore
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
+            # Creating new limit order object to replace old order
             order = Order(symbol, "limit", side, trade_info['entry'], new_quantity, leverage, None, None, None, False)
 
+            # Executing new limit order
             create_order = await session.trade_order(order)
 
+            # Preparing trade info for storing in firestore
             trade_info = {
                 "trade_id": tradeId,
                 "order_id": create_order["orderId"],
@@ -480,19 +484,23 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
             }
-
+            
+            # Storing trade info in firestore
             await store_trade(traderId, trade_info)
 
+        # Arrays to store orders for execution or order id filtering
         prepared_orders = []
         new_take_profits_with_ids = []
         stop_losses_with_ids = []
 
+        # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
             tp_order = Order(symbol, "market", tp_sl_side, tp_price, tp['tp_amount'], leverage, stop, "MP", tp_price,
                              True)
             prepared_orders.append(tp_order)
 
+        # Preparing/Adding stop-losses to orders array
         for sl in sl_orders:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
@@ -500,6 +508,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
                              True)
             prepared_orders.append(sl_order)
 
+        # Executing all orders in the orders array 
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
         # Assign orderIds to take profits and stop losses
@@ -529,6 +538,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             stop_losses_with_ids.append(sl_order_dict)
             sl_count += 1
 
+        # Storing take-profits and stop-losses in firestore
         tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
