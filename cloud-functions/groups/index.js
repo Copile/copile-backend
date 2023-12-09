@@ -673,6 +673,89 @@ const syncUser = async (data, planWorkers) => {
   }
 };
 
+app.post("/updateWorkerStats", async (req, res, next) => {
+  console.log("=====================================");
+
+  console.log("updateWorkerStats endpoint hit. Processing request...");
+  const { group_id, plan_id, worker_id } = req.query;
+  const { winrate, avg_pct, trade_count } = req.body;
+  console.log(`group_id: ${group_id}, plan_id: ${plan_id}, worker_id: ${worker_id}`);
+  console.log(`Request body: ${JSON.stringify(req.body)}`);
+
+  if (
+    !group_id ||
+    !plan_id ||
+    !worker_id ||
+    typeof group_id !== "string" ||
+    group_id.trim() === "" ||
+    typeof plan_id !== "string" ||
+    plan_id.trim() === "" ||
+    typeof worker_id !== "string" ||
+    worker_id.trim() === ""
+  ) {
+    console.log(
+      "Missing or invalid required field: group_id, plan_id or worker_id. Sending error response..."
+    );
+    return next(
+      new CustomError({
+        message: "Missing or invalid required field: group_id, plan_id or worker_id",
+        status: 400,
+        source: "updatePlan",
+      })
+    );
+  }
+
+  try {
+    console.log(`Fetching plan with id: ${plan_id} in group: ${group_id} from Firestore...`);
+    const planRef = db.collection("groups").doc(group_id).collection("plans").doc(plan_id);
+    const planSnapshot = await planRef.get();
+
+    if (!planSnapshot.exists) {
+      console.log(`Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`);
+      return next(
+        new CustomError({
+          message: "Plan not found",
+          status: 404,
+          source: "updatePlan",
+        })
+      );
+    }
+
+    console.log("Plan found...");
+
+    console.log("Fetching provided plans assigned workers from Firestore...");
+    const assignedWorkersCollection = planRef.collection("assigned_workers");
+    console.log("Fetching the provided worker from the assigned workers collection...");
+    const workerSnapshot = await assignedWorkersCollection.doc(worker_id).get();
+    const worker = workerSnapshot.data();
+
+    console.log("Updating worker stats...");
+    worker.stats = {
+      winrate,
+      avg_pct,
+      trade_count,
+    };
+    console.log(`Updated worker stats: ${JSON.stringify(worker)}`);
+
+    console.log("Updating worker in Firestore...");
+    await assignedWorkersCollection.doc(worker_id).update(worker);
+    console.log("Worker updated successfully.");
+
+    console.log("=====================================");
+
+    res.status(200).json({ message: `Worker: ${worker_id} stats updated successfully` });
+  } catch (error) {
+    console.log(`Failed to update plan: ${error.message}`);
+    return next(
+      new CustomError({
+        message: "Failed to update plan",
+        status: 500,
+        source: "updatePlan",
+      })
+    );
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Copile Groups API");
 });
