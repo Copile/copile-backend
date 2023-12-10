@@ -8,21 +8,25 @@ applyMiddleware(app);
 
 const WHOP_TOKEN = process.env.whopToken;
 
-const fetchMembershipsForPage = async (planId, page) => {
-  const url = `https://api.whop.com/api/v5/company/memberships?page=${page}`;
+const fetchMembershipsForPage = async (planId, page, statuses = []) => {
+  let url = `https://api.whop.com/api/v5/company/memberships?page=${page}&plan_id=${planId}`;
+  if (statuses.length > 0) {
+    url += `&statuses=${statuses.join(',')}`;
+  }
+
   const { data } = await axios.get(url, {
     headers: {
       Authorization: `Bearer ${WHOP_TOKEN}`,
     },
   });
 
-  return data.data.filter((membership) => membership.plan_id === planId);
+  return data.data;
 };
 
-const fetchAllMemberships = async (planId, totalPages) => {
+const fetchAllMemberships = async (planId, totalPages, statuses) => {
   let allMemberships = [];
   for (let page = 1; page <= totalPages; page++) {
-    const memberships = await fetchMembershipsForPage(planId, page);
+    const memberships = await fetchMembershipsForPage(planId, page, statuses);
     allMemberships = allMemberships.concat(memberships);
   }
   return allMemberships;
@@ -30,15 +34,15 @@ const fetchAllMemberships = async (planId, totalPages) => {
 
 app.get("/memberships/:planId", async (req, res) => {
   const planId = req.params.planId;
+  const statuses = req.query.statuses ? req.query.statuses.split(',') : [];
 
   try {
-    const firstPageData = await fetchMembershipsForPage(planId, 1);
+    const firstPageData = await fetchMembershipsForPage(planId, 1, statuses);
     const totalPages = firstPageData.pagination.total_pages;
 
-    const allMemberships =
-      totalPages > 1
-        ? await fetchAllMemberships(planId, totalPages)
-        : firstPageData;
+    const allMemberships = totalPages > 1
+      ? await fetchAllMemberships(planId, totalPages, statuses)
+      : firstPageData.data;
 
     res.json(allMemberships);
   } catch (error) {
@@ -46,6 +50,7 @@ app.get("/memberships/:planId", async (req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 });
+
 
 app.post("/new_membership", async (req, res) => {
   const { data } = req.body;
