@@ -2,18 +2,17 @@ const express = require("express");
 const router = express.Router();
 const { fetchItemsForPage, fetchAllItems } = require("./utils");
 
+// Route for fetching memberships
 router.get("/memberships/:planId", async (req, res) => {
   const planId = req.params.planId;
-  const statuses = req.query.statuses ? req.query.statuses.split(",") : [];
 
   try {
-    const firstPageData = await fetchItemsForPage(planId, 1, statuses);
+    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/company/memberships?page=1&plan_id=${planId}`);
     const totalPages = firstPageData.pagination.total_pages;
 
-    const allMemberships =
-      totalPages > 1
-        ? await fetchAllItems(planId, totalPages, statuses)
-        : firstPageData.data;
+    const allMemberships = totalPages > 1
+      ? await fetchAllItems('company/memberships', { type: 'plan', value: planId }, totalPages)
+      : firstPageData.data;
 
     res.json(allMemberships);
   } catch (error) {
@@ -22,17 +21,17 @@ router.get("/memberships/:planId", async (req, res) => {
   }
 });
 
+// Route for fetching payments
 router.get("/payments/:planId", async (req, res) => {
   const planId = req.params.planId;
 
   try {
-    const firstPageData = await fetchItemsForPage(planId, 1);
+    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/app/payments?page=1&plan_id=${planId}`);
     const totalPages = firstPageData.pagination.total_pages;
 
-    const allPayments =
-      totalPages > 1
-        ? await fetchAllItems(planId, totalPages)
-        : firstPageData.data;
+    const allPayments = totalPages > 1
+      ? await fetchAllItems('app/payments', { type: 'plan', value: planId }, totalPages)
+      : firstPageData.data;
 
     res.json(allPayments);
   } catch (error) {
@@ -40,6 +39,7 @@ router.get("/payments/:planId", async (req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 });
+
 
 router.post("/new_membership", async (req, res) => {
   const { data } = req.body;
