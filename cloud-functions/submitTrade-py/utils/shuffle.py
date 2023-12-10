@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def rearrange_tps(quantity, precision, tps_amount, min_qty):
     try:
         getcontext().prec = precision + 5  # set precision to avoid rounding errors

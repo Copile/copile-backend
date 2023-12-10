@@ -296,7 +296,8 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
             leverage = trade_info['leverage']
 
             # Creating order object for selling whole order
-            order = Order(symbol, "market", "sell" if side == "buy" else "buy", None, quantity, leverage, None, None, None, True)
+            order = Order(symbol, "market", "sell" if side == "buy" else "buy", None, quantity, leverage, None, None,
+                          None, True)
 
             # Executing sell order to stop trade
             await session.trade_order(order)

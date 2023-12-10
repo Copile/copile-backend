@@ -358,6 +358,7 @@ async def bulk_tp(api_key, api_secret, data):
         tp_side = "Buy" if trade_info['side'] == "Sell" else "Sell"
         trigger_direction = 2 if side == "Sell" else 1
 
+        # Fetch the current position and precisions
         position, precision = await asyncio.gather(
             session.get_position(symbol),
             session.get_precisions(symbol)
@@ -423,7 +424,6 @@ async def partial_close(api_key, api_secret, data):
             get_trade_info(traderId, tradeId),
             get_tp_sl_orders(traderId, tradeId)
         )
-
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 

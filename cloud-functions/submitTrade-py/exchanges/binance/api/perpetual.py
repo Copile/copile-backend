@@ -67,7 +67,7 @@ class BinanceFunctions:
         path = "/fapi/v1/ticker/price"
         payload = {"symbol": symbol}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
-        return response["price"]
+        return float(response["price"])
 
     async def get_precisions(self, symbol):
         # https://binance-docs.github.io/apidocs/futures/en/#exchange-information
