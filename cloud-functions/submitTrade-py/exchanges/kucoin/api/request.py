@@ -57,7 +57,6 @@ async def make_signed_request(method, path, payload, api_key, api_secret, api_pa
                 if response.status != 200:
                     raise Exception(f"Failed to send Kucoin API request to {path}: {await response.json()}")
                 response_json = await response.json()
-                print(response_json)
                 return response_json['data']
     except Exception as e:
         logger.error("An error occurred while sending request: %s", e, exc_info=True)
