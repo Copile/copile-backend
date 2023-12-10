@@ -11,6 +11,7 @@ const fetchItemsForPage = async (url) => {
   return data.data;
 };
 
+// adds all items from all pages to an array
 const fetchAllItems = async (endpoint, itemId, totalPages) => {
   let allItems = [];
   for (let page = 1; page <= totalPages; page++) {
