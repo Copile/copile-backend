@@ -26,11 +26,11 @@ router.get("/payments/:planId", async (req, res) => {
   const planId = req.params.planId;
 
   try {
-    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/app/payments?page=1&plan_id=${planId}`);
+    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/company/payments?page=1&plan_id=${planId}`);
     const totalPages = firstPageData.pagination.total_pages;
 
     const allPayments = totalPages > 1
-      ? await fetchAllItems('app/payments', { type: 'plan', value: planId }, totalPages)
+      ? await fetchAllItems('company/payments', { type: 'plan', value: planId }, totalPages)
       : firstPageData.data;
 
     res.json(allPayments);
