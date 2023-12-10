@@ -51,6 +51,43 @@ app.get("/memberships/:planId", async (req, res) => {
   }
 });
 
+const fetchPaymentsForPage = async (planId, page) => {
+  const url = `https://api.whop.com/api/v5/app/payments?page=${page}&plan_id=${planId}`;
+  const { data } = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${WHOP_TOKEN}`,
+    },
+  });
+
+  return data.data;
+};
+
+const fetchAllPayments = async (planId, totalPages) => {
+  let allPayments = [];
+  for (let page = 1; page <= totalPages; page++) {
+    const payments = await fetchPaymentsForPage(planId, page);
+    allPayments = allPayments.concat(payments);
+  }
+  return allPayments;
+};
+
+app.get("/payments/:planId", async (req, res) => {
+  const planId = req.params.planId;
+
+  try {
+    const firstPageData = await fetchPaymentsForPage(planId, 1);
+    const totalPages = firstPageData.pagination.total_pages;
+
+    const allPayments = totalPages > 1
+      ? await fetchAllPayments(planId, totalPages)
+      : firstPageData.data;
+
+    res.json(allPayments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
 
 app.post("/new_membership", async (req, res) => {
   const { data } = req.body;
