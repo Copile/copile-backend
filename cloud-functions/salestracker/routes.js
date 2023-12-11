@@ -2,18 +2,30 @@ const express = require("express");
 const router = express.Router();
 const { fetchItemsForPage, fetchAllItems } = require("./utils");
 
+// Function to create a filter for planId and statuses
+const createMembershipFilter = (planId, statuses) => {
+  return (item) =>
+    item.plan_id === planId &&
+    (statuses.length === 0 || statuses.includes(item.status));
+};
+
 // Route for fetching memberships
 router.get("/memberships/:planId", async (req, res) => {
   const planId = req.params.planId;
+  const statuses = req.query.statuses ? req.query.statuses.split(",") : [];
+  const filterFunction = createMembershipFilter(planId, statuses);
 
   try {
-    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/company/memberships?page=1&plan_id=${planId}`);
+    const firstPageData = await fetchItemsForPage(
+      `https://api.whop.com/api/v5/company/memberships?page=1`
+    );
     const totalPages = firstPageData.pagination.total_pages;
 
-    const allMemberships = totalPages > 1
-      ? await fetchAllItems('company/memberships', { type: 'plan', value: planId }, totalPages)
-      : firstPageData.data;
-
+    const allMemberships = await fetchAllItems(
+      "company/memberships",
+      filterFunction,
+      totalPages
+    );
     res.json(allMemberships);
   } catch (error) {
     console.error(error);
@@ -24,22 +36,25 @@ router.get("/memberships/:planId", async (req, res) => {
 // Route for fetching payments
 router.get("/payments/:planId", async (req, res) => {
   const planId = req.params.planId;
+  const filterByPlanId = (item) => item.plan_id === planId;
 
   try {
-    const firstPageData = await fetchItemsForPage(`https://api.whop.com/api/v5/company/payments?page=1&plan_id=${planId}`);
+    const firstPageData = await fetchItemsForPage(
+      `https://api.whop.com/api/v5/company/payments?page=1`
+    );
     const totalPages = firstPageData.pagination.total_pages;
 
-    const allPayments = totalPages > 1
-      ? await fetchAllItems('company/payments', { type: 'plan', value: planId }, totalPages)
-      : firstPageData.data;
-
+    const allPayments = await fetchAllItems(
+      "company/payments",
+      filterByPlanId,
+      totalPages
+    );
     res.json(allPayments);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error." });
   }
 });
-
 
 router.post("/new_membership", async (req, res) => {
   const { data } = req.body;
