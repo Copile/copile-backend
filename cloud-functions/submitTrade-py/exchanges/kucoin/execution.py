@@ -289,9 +289,9 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
         position = await session.get_position(symbol)
 
         # Getting current position quantity to use for cancel order
-        quantity = get_position_quantity(position, trade_info)
-
-        if quantity != 0:
+        quantity = position['currentQty'] if position['currentQty'] > 0 else position[
+                                                                                                'currentQty'] * (-1)
+        if float(quantity) != 0:
             side = trade_info['side']
             leverage = trade_info['leverage']
 

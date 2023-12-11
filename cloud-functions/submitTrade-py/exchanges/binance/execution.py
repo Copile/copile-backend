@@ -9,6 +9,7 @@ from .scripts.cancel import send_cancel
 from .scripts.settings import get_position_quantity
 from .scripts.distribution import calculate_tp_amounts
 from .scripts.order import get_tps_status
+from .scripts.margin_mode import switch_margin_mode
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ async def bulk_order(api_key, api_secret, data):
         margin_type = data['margin_type']
 
         symbol = data['payload']['symbol']
-        side = data['payload']['side'].capitalize()
+        side = data['payload']['side'].upper()
         leverage = data['payload']['leverage']
         entry = data['payload']['entry']
         take_profits = data['payload']['take_profits']
@@ -39,7 +40,7 @@ async def bulk_order(api_key, api_secret, data):
         precision, set_leverage, margin_mode = await asyncio.gather(
             session.get_precisions(symbol),
             session.set_leverage(symbol, leverage),
-            session.switch_margin_mode(symbol, margin_type)
+            switch_margin_mode(session, symbol, margin_type)
         )
 
         # Calculating quantity when the entry is either market or specific price
@@ -48,7 +49,7 @@ async def bulk_order(api_key, api_secret, data):
             (float(margin) * int(leverage) / await session.get_market(symbol)), precision["quantity_precision"])
 
         # Order object for initial order
-        initial_order = Order(symbol, order_type, side, entry, quantity, None, False)
+        initial_order = Order(symbol, order_type, side, entry if entry != 'market' else None, quantity, None, False)
 
         # Adding all orders to an array for execution
         prepared_orders = [initial_order]
@@ -274,11 +275,13 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Getting current position info
         position = await session.get_position(symbol)
 
-        if float(position['positionAmt']) != 0:
+        quantity = float(position['positionAmt'])
+
+        if quantity != 0:
             side = trade_info['side']
 
             # Creating order object for selling whole position
-            order = Order(symbol, "MARKET", "SELL" if side == "BUY" else "BUY", None, None, True)
+            order = Order(symbol, "MARKET", "SELL" if side == "BUY" else "BUY", None, None, None, True)
 
             # Executing sell order to stop trade
             await session.trade_order(order)
@@ -403,6 +406,7 @@ async def partial_close(api_key, api_secret, data):
         )
         symbol = trade_info["symbol"]
         side = trade_info["side"]
+        entry = trade_info["entry"] if trade_info["entry"] != "market" else session.get_market(symbol)
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "BUY" if side == "SELL" else "SELL"
@@ -448,7 +452,7 @@ async def partial_close(api_key, api_secret, data):
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
             # Creating new limit order object to replace old order
-            order = Order(symbol, "LIMIT", side, trade_info['entry'], new_quantity, None, False)
+            order = Order(symbol, "LIMIT", side, entry, new_quantity, None, False)
 
             # Executing new limit order
             create_order = await session.trade_order(order)
@@ -461,7 +465,7 @@ async def partial_close(api_key, api_secret, data):
                 "type": "Limit",
                 "side": side,
                 "quantity": new_quantity,
-                "entry": trade_info["entry"],
+                "entry": entry,
                 "leverage": trade_info["leverage"],
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]

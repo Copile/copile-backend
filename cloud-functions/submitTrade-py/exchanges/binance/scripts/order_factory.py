@@ -4,9 +4,9 @@ class Order:
         self.symbol = symbol
         self.type = order_type
         self.side = side
-        self.price = float(price)
+        self.price = float(price) if price is not None else None
         self.quantity = float(quantity)
-        self.stopPrice = float(stop_price)
+        self.stopPrice = float(stop_price) if stop_price is not None else None
         self.reduceOnly = reduce_only
 
     def remove_none_attributes(self):
