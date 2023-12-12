@@ -8,35 +8,35 @@ async def trade_execution(api_key, api_secret, api_passphrase, method, data):
     try:
 
         trade_execution_result = None
-        if method == 'bulkOrder':
+        if method == 'bulk_order':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.bulk_order(data)
-        elif method == 'sendSl':
+        elif method == 'send_sl':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.send_sl(data)
-        elif method == 'replaceSl':
+        elif method == 'replace_sl':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.replace_sl(data)
-        elif method == 'bulkTp':
+        elif method == 'bulk_tp':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.bulk_tp(data)
-        elif method == 'cancelOrder':
+        elif method == 'cancel_order':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.cancel_order(data)
-        elif method == 'cancelAllTps':
+        elif method == 'cancel_all_tps':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.cancel_all_tps(data)
-        elif method == 'cancelAllOrders':
+        elif method == 'cancel_all_orders':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.cancel_all_orders(data)
-        elif method == 'partialClose':
+        elif method == 'partial_close':
             exchange = data['trader_exchange']
             session = create_session(exchange, api_key, api_secret, api_passphrase)
             trade_execution_result = await session.partial_close(data)

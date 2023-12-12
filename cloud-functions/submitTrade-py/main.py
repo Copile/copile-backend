@@ -51,82 +51,82 @@ async def add_task_to_queue(type, payload):
     return
     
 @app.post('/submitSL')
-async def submit_sl(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
         # Check if trader exists
         if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
+            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
             
         data["traderId"] = traderId
         trader_exchange = data["trader_exchange"]
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "send_sl", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("submitSL", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Stop-loss submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancelOrder')
-async def cancel_order(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def cancel_order(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
         # Check if trader exists
         if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
+            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
             
         data["traderId"] = traderId
         trader_exchange = data["trader_exchange"]
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_order", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("cancelOrder", trade_data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Order cancel submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancelAllOrders')
-async def cancel_all_orders(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def cancel_all_orders(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
         # Check if trader exists
         if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
+            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
             
         data["traderId"] = traderId
         trader_exchange = data["trader_exchange"]
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_orders", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("cancelAllOrders", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'orders cancel submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancelAllTPs')
-async def cancel_all_tps(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
@@ -139,44 +139,44 @@ async def cancel_all_tps(data: dict, traderId: Optional[str] = Header(None), sta
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_tps", data)
         
         # Add the trade to the processing queue
         await add_task_to_queue("cancelAllTPs", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'orders cancel submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/bulkOrder')
-async def bulk_order(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
         # Check if trader exists
         if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
+            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
 
         data["traderId"] = traderId
         trader_exchange = data["trader_exchange"]
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulkOrder", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_order", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("bulkOrder", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Trade submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
 @app.post('/bulkTP')
-async def bulk_tp(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
@@ -187,17 +187,21 @@ async def bulk_tp(data: dict, traderId: Optional[str] = Header(None), status_cod
         data["traderId"] = traderId
         trader_exchange = data["trader_exchange"]
 
+        keys = await get_user_keys(traderId, trader_exchange)
+        
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_tp", data)
+
         # Add the trade to the processing queue
         await add_task_to_queue("bulkTP", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Trade submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/replaceTP')
-async def replace_tp(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
@@ -205,21 +209,24 @@ async def replace_tp(data: dict, traderId: Optional[str] = Header(None), status_
         if not exists:
             return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
             
-        trade_data = data
+        data["traderId"] = traderId
+        trader_exchange = data["trader_exchange"]
 
-        trade_data["traderId"] = traderId
+        keys = await get_user_keys(traderId, trader_exchange)
+        
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_tp", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("replaceTP", trade_data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Trade replacement submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
 @app.post('/replaceSL')
-async def replace_sl(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
@@ -232,19 +239,19 @@ async def replace_sl(data: dict, traderId: Optional[str] = Header(None), status_
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_sl", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("replaceSL", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Trade replacement submitted successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/partialClose')
-async def partial_close(data: dict, traderId: Optional[str] = Header(None), status_code=200):
+async def partial_close(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
         
@@ -257,12 +264,12 @@ async def partial_close(data: dict, traderId: Optional[str] = Header(None), stat
 
         keys = await get_user_keys(traderId, trader_exchange)
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replaceSl", data)
+        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "partial_close", data)
 
         # Add the trade to the processing queue
         await add_task_to_queue("partialClose", data)
 
-        return JSONResponse(status_code=200, content={"success": True, "message": 'Order part closed successfully.'})
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
         print(err)

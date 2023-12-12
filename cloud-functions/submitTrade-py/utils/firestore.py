@@ -1,21 +1,12 @@
-# from google.cloud import firestore
-import firebase_admin
-from firebase_admin import credentials, firestore, firestore_async
-#from .decryption import decryptData
-from pathlib import Path
+from google.cloud import firestore
+from .decryption import decrypt_data
 import time
 import asyncio
-import json
 import logging
-
-cred = credentials.Certificate(
-    '/Users/Me223/Desktop/Copile/copile-backend/cloud-functions/submitTrade-py/utils/serviceAccount.json')
-
-default_app = firebase_admin.initialize_app(cred)
 
 logger = logging.getLogger(__name__)
 
-db = firestore_async.client()
+db = db = firestore.AsyncClient()
 
 COLLECTION_TRADERS = "traders"
 COLLECTION_TRADES = "trades"
@@ -132,20 +123,20 @@ async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
         logger.error("An error occurred: %s", e, exc_info=True)
 
 
-# # Get user api keys for a specific exchange
-# async def get_user_keys(account_id, exchange):
-#     try:
-#         keys = db.collection(COLLECTION_TRADERS).document(account_id)
-#         exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-#         exchange_data['api_secret'] = await decryptData(account_id, exchange_data['api_secret'])
-#
-#         # Decrypt the api_passphrase if encrypted
-#         if 'api_passphrase' in exchange_data:
-#             exchange_data['api_passphrase'] = await decryptData(account_id, exchange_data['api_passphrase'])
-#
-#         return exchange_data
-#     except Exception as e:
-#         logger.error("An error occurred: %s", e, exc_info=True)
+# Get user api keys for a specific exchange
+async def get_user_keys(account_id, exchange):
+    try:
+        keys = db.collection(COLLECTION_TRADERS).document(account_id)
+        exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
+        exchange_data['api_secret'] = await decrypt_data(account_id, exchange_data['api_secret'])
+
+        # Decrypt the api_passphrase if encrypted
+        if 'api_passphrase' in exchange_data:
+            exchange_data['api_passphrase'] = await decrypt_data(account_id, exchange_data['api_passphrase'])
+
+        return exchange_data
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
 
 
 # Get user margin from a specific user and plan
