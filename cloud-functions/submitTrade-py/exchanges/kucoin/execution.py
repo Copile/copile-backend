@@ -3,6 +3,8 @@ import logging
 from .api.perpetual import KucoinFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, \
     get_tp_orders, delete_tp_sl_order
+from utils.message import message_replace_sl, message_send_sl, message_bulk_tp, message_bulk_order, \
+    message_cancel_order, message_cancel_all_tps, message_cancel_orders, message_partial_close
 from utils.partial import distribute_percentages
 from .scripts.order_factory import Order
 from .scripts.cancel import send_cancel
@@ -136,7 +138,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
-        return
+        return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -189,7 +191,7 @@ async def send_sl(api_key, api_secret, api_passphrase, data):
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
 
-        return
+        return message_send_sl(tradeId, payload)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -244,7 +246,7 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
 
-        return
+        return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -267,7 +269,7 @@ async def cancel_order(api_key, api_secret, api_passphrase, data):
         # Cancelling specific order based on trade_type (tp/sl)
         await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
 
-        return
+        return message_cancel_order(tradeId, document_id, trade_type)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -290,7 +292,7 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
 
         # Getting current position quantity to use for cancel order
         quantity = position['currentQty'] if position['currentQty'] > 0 else position[
-                                                                                                'currentQty'] * (-1)
+                                                                                 'currentQty'] * (-1)
         if float(quantity) != 0:
             side = trade_info['side']
             leverage = trade_info['leverage']
@@ -308,7 +310,7 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
-        return
+        return message_cancel_orders(tradeId)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -330,7 +332,7 @@ async def cancel_all_tps(api_key, api_secret, api_passphrase, data):
             *[session.cancel_order(order['orderID']) for order in tp_orders])
         await asyncio.gather(
             *[delete_tp_sl_order(traderId, tradeId, order['document_id'], "tp") for order in tp_orders])
-        return
+        return message_cancel_all_tps(tradeId, tp_orders)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -400,7 +402,7 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
 
         await asyncio.gather(*tp_promises)
 
-        return
+        return message_bulk_tp(tradeId, new_take_profits_with_ids)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
@@ -552,7 +554,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
-        return
+        return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
