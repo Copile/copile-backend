@@ -1,17 +1,16 @@
-# Use the official Node.js runtime as the base image
-FROM node:18
+FROM python:3.11-alpine
 
-# Set the working directory within the container
-WORKDIR /app
+ENV PYTHONUNBUFFERED True
 
-# Copy package.json and package-lock.json to the container
-COPY package*.json ./
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+COPY . ./
 
-# Install npm dependencies
-RUN npm install
+RUN pip install fastapi[all]
+RUN pip install uvicorn[standard] gunicorn
+RUN pip install google-cloud-firestore
+RUN pip install google-cloud-tasks
+RUN pip install google-cloud-kms
+RUN pip install aiohttp
 
-# Copy the function code to the container
-COPY . .
-
-# Specify the entry point for the function
-CMD ["node", "index.js"]
+CMD exec gunicorn --bind :$PORT --worker-class uvicorn.workers.UvicornWorker --workers 1 --timeout 0 main:app

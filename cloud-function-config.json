@@ -99,10 +99,10 @@
   },
   {
     "name": "submitTrade",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "submitTrade"
+    "runtime": "python311",
+    "memory": "1GB",
+    "region": "europe-west2",
+    "entry_point": "bulk_order"
   },
   {
     "name": "trader",
