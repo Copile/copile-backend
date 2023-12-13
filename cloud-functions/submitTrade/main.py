@@ -50,7 +50,7 @@ async def add_task_to_queue(type, payload):
     print("Created task {}".format(response.name))
     return
     
-@app.post('/submitSL')
+@app.post('/submit_sl')
 async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -100,7 +100,7 @@ async def cancel_order(data: dict, traderId: str = Header(None), status_code=200
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
-@app.post('/cancelAllOrders')
+@app.post('/cancel_all_orders')
 async def cancel_all_orders(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -125,7 +125,7 @@ async def cancel_all_orders(data: dict, traderId: str = Header(None), status_cod
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
-@app.post('/cancelAllTPs')
+@app.post('/cancel_all_tps')
 async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -150,7 +150,7 @@ async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=2
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
-@app.post('/bulkOrder')
+@app.post('/bulk_order')
 async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -175,7 +175,7 @@ async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
-@app.post('/bulkTP')
+@app.post('/bulk_tp')
 async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -200,7 +200,7 @@ async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
-@app.post('/replaceTP')
+@app.post('/replace_tp')
 async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -225,7 +225,7 @@ async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
-@app.post('/replaceSL')
+@app.post('/replace_sl')
 async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
@@ -250,7 +250,7 @@ async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
-@app.post('/partialClose')
+@app.post('/partial_close')
 async def partial_close(data: dict, traderId: str = Header(None), status_code=200):
     try:
         exists = await trader_check(traderId)
