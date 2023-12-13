@@ -6,7 +6,7 @@ import json
 import uuid
 import os
 import datetime
-from .utils.firestore import trader_check, get_user_keys
+from utils.firestore import trader_check, get_user_keys
 from trade.trade_execution import trade_execution
 
 app = FastAPI()
