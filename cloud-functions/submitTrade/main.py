@@ -167,7 +167,7 @@ async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_order", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("bulkOrder", data)
+        #await add_task_to_queue("bulkOrder", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
