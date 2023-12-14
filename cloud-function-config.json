@@ -102,7 +102,7 @@
     "runtime": "python311",
     "memory": "1GB",
     "region": "europe-west2",
-    "entry_point": "bulk_order"
+    "entry_point": "test"
   },
   {
     "name": "trader",

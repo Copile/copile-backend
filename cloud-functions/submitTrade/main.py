@@ -49,7 +49,11 @@ async def add_task_to_queue(type, payload):
     response = await client.create_task(request={"parent": parent, "task": task})
     print("Created task {}".format(response.name))
     return
-    
+
+@app.get('/test')
+async def test():
+    return {"message": "Hello World"}
+
 @app.post('/submit_sl')
 async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
     try:
