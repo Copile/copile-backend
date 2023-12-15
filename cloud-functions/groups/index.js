@@ -343,158 +343,65 @@ app.post("/updatePlan", async (req, res, next) => {
   }
 });
 
-// app.post("/updatePlan", async (req, res, next) => {
-//   console.log("=====================================");
+app.post("/deletGroupWorker", async (req, res, next) => {
+  console.log("deletGroupWorker endpoint hit. Processing request...");
 
-//   console.log("updatePlan endpoint hit. Processing request...");
-//   const { group_id, plan_id } = req.query;
-//   const {
-//     internal_notes,
-//     initial_price,
-//     trial_period_days,
-//     stock,
-//     unlimited_stock,
-//     referral_code,
-//     assigned_workers,
-//   } = req.body;
-//   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
-//   console.log(`Request body: ${JSON.stringify(req.body)}`);
+  const { data } = req.body;
+  const { organization, public_user_data } = data;
+  const { id: orgId } = organization;
+  const { user_id: userId } = public_user_data;
 
-//   if (
-//     !group_id ||
-//     !plan_id ||
-//     typeof group_id !== "string" ||
-//     group_id.trim() === "" ||
-//     typeof plan_id !== "string" ||
-//     plan_id.trim() === ""
-//   ) {
-//     console.log("Missing or invalid required field: group_id or plan_id. Sending error response...");
-//     return next(
-//       new CustomError({
-//         message: "Missing or invalid required field: group_id or plan_id",
-//         status: 400,
-//         source: "updatePlan",
-//       })
-//     );
-//   }
+  console.log(`orgId: ${orgId}, userId: ${userId}`);
 
-//   try {
-//     console.log(`Fetching plan with id: ${plan_id} in group: ${group_id} from Firestore...`);
-//     const planRef = db.collection("groups").doc(group_id).collection("plans").doc(plan_id);
-//     const planSnapshot = await planRef.get();
+  try {
+    // Fetch the group document
+    const groupDocRef = db.collection("groups").doc(orgId);
+    const groupDoc = await groupDocRef.get();
 
-//     if (!planSnapshot.exists) {
-//       console.log(`Plan with id: ${plan_id} in group: ${group_id} not found. Sending error response...`);
-//       return next(
-//         new CustomError({
-//           message: "Plan not found",
-//           status: 404,
-//           source: "updatePlan",
-//         })
-//       );
-//     }
+    if (!groupDoc.exists) {
+      console.log(`Group with id: ${orgId} not found.`);
+      return res.status(404).json({ message: "Group not found" });
+    }
 
-//     console.log("Plan found. Preparing to update...");
-//     const updatedPlan = {
-//       ...planSnapshot.data(),
-//       internal_notes,
-//       initial_price,
-//       trial_period_days,
-//       stock,
-//       unlimited_stock,
-//       referral_code,
-//     };
-//     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
+    // Delete the worker from the group's workers collection
+    await groupDocRef.collection("workers").doc(userId).delete();
+    console.log(`Worker ${userId} deleted from group ${orgId}.`);
 
-//     console.log("Fetching workers from Firestore...");
-//     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
-//     const assignedWorkersCollection = planRef.collection("assigned_workers");
+    // Fetch the plans in the group
+    const plansSnapshot = await groupDocRef.collection("plans").get();
+    const plans = plansSnapshot.docs.map((doc) => doc.data());
 
-//     // Fetch the old assigned workers before updating the plan
-//     const oldAssignedWorkersSnapshot = await assignedWorkersCollection.get();
-//     const oldAssignedWorkers = oldAssignedWorkersSnapshot.docs.map((doc) => doc.data());
+    // For each plan, delete the worker from the plan's assigned_workers collection
+    for (const plan of plans) {
+      const assignedWorkerDoc = await groupDocRef
+        .collection("plans")
+        .doc(plan.plan_id)
+        .collection("assigned_workers")
+        .doc(userId)
+        .get();
 
-//     console.log("Deleting old assigned workers...");
-//     await assignedWorkersCollection.get().then((querySnapshot) => {
-//       querySnapshot.forEach((doc) => {
-//         doc.ref.delete();
-//       });
-//     });
-//     console.log("Old assigned workers deleted.");
+      if (assignedWorkerDoc.exists) {
+        await assignedWorkerDoc.ref.delete();
+        console.log(`Worker ${userId} deleted from plan ${plan.plan_id}.`);
 
-//     console.log(
-//       "Removing the plan from each old worker's plans collection if they are no longer assigned..."
-//     );
-//     const tradersCollection = db.collection("traders");
-//     await Promise.all(
-//       oldAssignedWorkers.map((worker) => {
-//         if (!assigned_workers || !assigned_workers.includes(worker.id)) {
-//           console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
-//           return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
-//         }
-//       })
-//     );
-//     console.log("Plan removed from each old worker's plans collection if they are no longer assigned.");
+        // Call findAndSyncUsers function to synchronize the users
+        await findAndSyncUsers(orgId, plan.plan_id, plan.internal_notes);
+      }
+    }
 
-//     if (assigned_workers && assigned_workers.length > 0) {
-//       console.log("Assigning new workers to the plan...");
-//       const workerSnapshots = await Promise.all(
-//         assigned_workers.map((id) => workersCollection.doc(id).get())
-//       );
-
-//       console.log("Filtering out non-existing workers...");
-//       const existingWorkers = workerSnapshots
-//         .filter((snapshot) => snapshot.exists)
-//         .map((snapshot) => snapshot.data());
-
-//       console.log(`Existing workers: ${JSON.stringify(existingWorkers)}`);
-
-//       await Promise.all(
-//         existingWorkers.map((worker) => {
-//           console.log(`Assigning worker: ${JSON.stringify(worker)}`);
-//           return assignedWorkersCollection.doc(worker.id).set(worker);
-//         })
-//       );
-
-//       console.log("New workers assigned.");
-
-//       console.log("Updating the plan in each new worker's plans collection...");
-//       await Promise.all(
-//         existingWorkers.map((worker) => {
-//           console.log(`Updating plan for worker: ${JSON.stringify(worker)}`);
-//           return tradersCollection
-//             .doc(worker.id)
-//             .collection("plans")
-//             .doc(plan_id)
-//             .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
-//         })
-//       );
-//       console.log("Plan updated in each new worker's plans collection.");
-//     }
-
-//     console.log("Updating plan in Firestore...");
-//     await planRef.update(updatedPlan);
-//     console.log("Plan updated successfully.");
-
-//     // Sync the users
-//     console.log("Syncing users...");
-//     await findAndSyncUsers(group_id, plan_id, internal_notes);
-//     console.log("Users synced successfully.");
-
-//     console.log("=====================================");
-
-//     res.status(200).json({ message: "Plan updated successfully" });
-//   } catch (error) {
-//     console.log(`Failed to update plan: ${error.message}`);
-//     return next(
-//       new CustomError({
-//         message: "Failed to update plan",
-//         status: 500,
-//         source: "updatePlan",
-//       })
-//     );
-//   }
-// });
+    console.log("Worker deletion completed successfully.");
+    res.status(200).json({ message: "Worker deletion completed successfully" });
+  } catch (error) {
+    console.error("Error occurred while deleting worker: ", error);
+    return next(
+      new CustomError({
+        message: "Failed to delete worker",
+        status: 500,
+        source: "handleMembershipDeleted",
+      })
+    );
+  }
+});
 
 app.get("/getData", async (req, res, next) => {
   console.log("=====================================");
@@ -748,9 +655,9 @@ app.post("/updateWorkerStats", async (req, res, next) => {
     console.log(`Failed to update plan: ${error.message}`);
     return next(
       new CustomError({
-        message: "Failed to update plan",
+        message: "Failed to update worker stats",
         status: 500,
-        source: "updatePlan",
+        source: "updateWorkerStats",
       })
     );
   }
