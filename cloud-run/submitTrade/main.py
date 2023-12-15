@@ -121,7 +121,7 @@ async def cancel_all_orders(data: dict, traderId: str = Header(None), status_cod
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_orders", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("cancelAllOrders", data)
+        #await add_task_to_queue("cancelAllOrders", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -146,7 +146,7 @@ async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=2
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_tps", data)
         
         # Add the trade to the processing queue
-        await add_task_to_queue("cancelAllTPs", data)
+        #await add_task_to_queue("cancelAllTPs", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -196,7 +196,7 @@ async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_tp", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("bulkTP", data)
+        #await add_task_to_queue("bulkTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
