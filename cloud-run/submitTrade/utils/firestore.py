@@ -133,6 +133,8 @@ async def get_user_keys(account_id, exchange):
         # Decrypt the api_passphrase if encrypted
         if 'api_passphrase' in exchange_data:
             exchange_data['api_passphrase'] = await decrypt_data(account_id, exchange_data['api_passphrase'])
+        else:
+            exchange_data['api_passphrase'] = None
 
         return exchange_data
     except Exception as e:
