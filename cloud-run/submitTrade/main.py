@@ -71,7 +71,7 @@ async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "send_sl", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("submitSL", data)
+        #await add_task_to_queue("submitSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -96,7 +96,7 @@ async def cancel_order(data: dict, traderId: str = Header(None), status_code=200
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_order", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("cancelOrder", data)
+        #await add_task_to_queue("cancelOrder", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -221,7 +221,7 @@ async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_tp", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("replaceTP", data)
+        #await add_task_to_queue("replaceTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -246,7 +246,7 @@ async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_sl", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("replaceSL", data)
+        #await add_task_to_queue("replaceSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
@@ -271,7 +271,7 @@ async def partial_close(data: dict, traderId: str = Header(None), status_code=20
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "partial_close", data)
 
         # Add the trade to the processing queue
-        await add_task_to_queue("partialClose", data)
+        #await add_task_to_queue("partialClose", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
