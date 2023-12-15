@@ -1,7 +1,7 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
 const CustomError = require("./utils/error");
-
+const Webhook = require("svix").Webhook;
 const express = require("express");
 const applyMiddleware = require("./middleware");
 const app = express();
@@ -346,7 +346,24 @@ app.post("/updatePlan", async (req, res, next) => {
 app.post("/deletGroupWorker", async (req, res, next) => {
   console.log("deletGroupWorker endpoint hit. Processing request...");
 
-  const { data } = req.body;
+  let payload = JSON.stringify(req.body);
+  const wh = new Webhook(process.env.CLERK_WH_SECRET);
+
+  const headers_svix = {
+    "svix-id": String(req.get("svix-id")),
+    "svix-timestamp": String(req.get("svix-timestamp")),
+    "svix-signature": String(req.get("svix-signature")),
+  };
+
+  let data;
+  try {
+    data = wh.verify(payload, headers_svix);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({});
+    return; // Add this
+  }
+
   const { organization, public_user_data } = data;
   const { id: orgId } = organization;
   const { user_id: userId } = public_user_data;
