@@ -36,18 +36,6 @@ FIELD_SL_PERCENTAGE = "sl_percentage"
 FIELD_SL_AMOUNT = "sl_amount"
 
 
-# Function to check if trader exists
-async def trader_check(traderId):
-    try:
-        document_ref = db.collection(COLLECTION_TRADERS).document(traderId)
-        document_snapshot = await document_ref.get()
-
-        return document_snapshot.exists
-
-    except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
-
 # Store trade data in db
 async def store_trade(account_id, order_dict):
     try:

@@ -1,12 +1,18 @@
 import logging
-from trade.exchange_session import ExchangeSession
-from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tps, bulk_tp, partial_close, send_sl, \
-    cancel_order
+from ..execution.cancel_all_tps import cancel_all_tps
+from ..execution.cancel_all_orders import cancel_all_orders
+from ..execution.cancel_order import cancel_order
+from ..execution.bulk_order import bulk_order
+from ..execution.bulk_tp import bulk_tp
+from ..execution.partial_close import partial_close
+from ..execution.replace_sl import replace_sl
+from ..execution.send_sl import send_sl
+
 
 logger = logging.getLogger(__name__)
 
 
-class BingXSession(ExchangeSession):
+class BingXSession():
     """
     Represents a BingX exchange session.
     Extends ExchangeSession.
@@ -14,11 +20,13 @@ class BingXSession(ExchangeSession):
 
     def __init__(self, api_key, api_secret):
         """
-        Creates a BingXSession instance.
-        :param apiKey: API key for the BingX session.
-        :param apiSecret: API secret for the BingX session.
+        Create a new ExchangeSession instance.
+        
+        :param api_key: The API key for the session.
+        :param api_secret: The API secret for the session.
         """
-        super().__init__(api_key, api_secret)
+        self.api_key = api_key
+        self.api_secret = api_secret
 
     async def bulk_order(self, data):
         try:
