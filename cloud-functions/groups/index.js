@@ -38,37 +38,45 @@ app.post("/createPlan", async (req, res, next) => {
   console.log("=====================================");
   console.log("Creating a new plan...");
 
-  // Define the required fields for creating a new plan
-  const requiredFields = [
-    "group_id",
-    "base_currency",
-    "billing_period",
-    "initial_price",
-    "internal_notes",
-    "renewal_price",
-    "stock",
-    "trial_period_days",
-    "unlimited_stock",
-    "referral_code",
-  ];
+  // FIXME: Doesnt seem like this is necessary, we're doing exactly this on frontend.
+  // I guess just a double check?
 
-  // Check for any missing required fields in the request body
-  const missingFields = requiredFields.filter((field) => req.body[field] === undefined);
-  console.log("Missing fields:", missingFields);
+  // // Define the required fields for creating a new plan
+  // const requiredFields = [
+  //   { name: "Plan Name", value: req.body.internal_notes },
+  //   { name: "Unlimited Stock", value: req.body.unlimited_stock },
+  //   { name: "Referral Code", value: req.body.referral_code },
+  //   { name: "Plan Type", value: req.body.plan_type },
+  // ];
 
-  // If there are missing fields, return an error
-  if (missingFields.length) {
-    console.log("Error: Missing required fields");
-    return next(
-      new CustomError({
-        message: `Missing required fields: ${missingFields.join(", ")}`,
-        status: 400,
-        source: "createPlan",
-      })
-    );
-  }
+  // if (req.body.plan_type === "renewal") {
+  //   requiredFields.push(
+  //     { name: "Base Currency", value: req.body.base_currency },
+  //     { name: "Billing Period", value: req.body.billing_period },
+  //     { name: "Initial Price", value: req.body.initial_price },
+  //     { name: "Renewal Price", value: req.body.renewal_price },
+  //     { name: "Trial Period Days", value: req.body.trial_period_days }
+  //   );
+  // } else if (req.body.plan_type === "one_time") {
+  //   requiredFields.push({ name: "Expiration Days", value: req.body.expiration_days });
+  // }
+
+  // // Check for any missing required fields in the request body
+  // for (const field of requiredFields) {
+  //   if (!field.value) {
+  //     console.log(`${field.name} is missing. Sending error response... `);
+  //     return next(
+  //       new CustomError({
+  //         message: `${field.name} is missing`,
+  //         status: 400,
+  //         source: "createPlan",
+  //       })
+  //     );
+  //   }
+  // }
 
   // Create a new plan object with the request body and some default values
+
   const newPlan = {
     ...req.body,
     metadata: {
@@ -78,8 +86,6 @@ app.post("/createPlan", async (req, res, next) => {
     grace_period_days: 0,
     visibility: "hidden",
     allow_multiple_quantity: false,
-    one_per_user: true,
-    plan_type: "renewal",
     product_id: "prod_dhhu0FLQNLOKi",
     release_method: "buy_now",
   };
