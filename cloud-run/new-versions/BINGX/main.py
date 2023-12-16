@@ -6,6 +6,11 @@ from .bingx_api.api.session import BingXSession
 
 app = FastAPI()
 
+
+@app.get('/test')
+async def test():
+    return {"message": "Hello World"}
+
 @app.post('/submit_sl')
 async def submit_sl(data: dict, traderId: str = Header(None)):
     try:

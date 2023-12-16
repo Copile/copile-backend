@@ -4,6 +4,7 @@ from ..api.perpetual import BingXFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
 from utils.message import message_partial_close
 from utils.partial import distribute_percentages
+from utils.notification import send_notification
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
@@ -153,6 +154,16 @@ async def partial_close(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+
+        notification = {
+            "data": {
+                "value": percentage
+            },
+            "trade_id": tradeId,
+            "user_id": traderId
+        }
+
+        await send_notification(notification, "partial_close")
 
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 

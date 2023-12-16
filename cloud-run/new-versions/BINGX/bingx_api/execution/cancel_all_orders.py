@@ -1,6 +1,7 @@
 import logging
 from ..api.perpetual import BingXFunctions
 from utils.firestore import get_trade_info
+from utils.notification import send_notification
 from utils.message import message_cancel_orders
 from ..scripts.order_factory import Order
 
@@ -39,6 +40,13 @@ async def cancel_all_orders(api_key, api_secret, data):
 
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
+
+        notification = {
+            "trade_id": tradeId,
+            "user_id": traderId,
+        }
+
+        await send_notification(notification, "cancel_all_orders")
 
         return message_cancel_orders(tradeId)
 

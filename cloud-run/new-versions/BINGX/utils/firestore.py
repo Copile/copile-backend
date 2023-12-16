@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 db = db = firestore.AsyncClient()
 
-COLLECTION_TRADERS = "traders"
+COLLECTION_TRADERS = "users"
 COLLECTION_TRADES = "trades"
 COLLECTION_PLANS = "plans"
 COLLECTION_WORKERS = "workers"
