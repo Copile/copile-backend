@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import store_tp, get_trade_info
 from utils.message import message_bulk_tp
+from utils.notification import notification_bulk_tp
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
@@ -72,6 +73,8 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
         tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
 
         await asyncio.gather(*tp_promises)
+
+        await notification_bulk_tp(traderId, tradeId, new_take_profits)
 
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 

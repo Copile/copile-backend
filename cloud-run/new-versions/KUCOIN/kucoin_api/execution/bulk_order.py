@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
+from utils.notification import notification_bulk_order
 from ..scripts.order_factory import Order
 from ..scripts.settings import reformat_symbol
 from ..scripts.distribution import calculate_tp_amounts
@@ -131,6 +132,8 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+
+        await notification_bulk_order(traderId, tradeId, trade_info, new_take_profits, stop_losses)
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 

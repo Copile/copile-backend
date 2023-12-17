@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import store_sl, get_trade_info
 from utils.message import message_replace_sl
+from utils.notification import notification_replace_sl
 from ..scripts.order_factory import Order
 from ..scripts.cancel import send_cancel
 from ..scripts.settings import get_position_quantity
@@ -57,6 +58,8 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
 
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
+
+        await notification_replace_sl(traderId, tradeId, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
 
         return message_replace_sl(tradeId, document_id, payload)
 

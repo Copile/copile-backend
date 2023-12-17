@@ -2,6 +2,7 @@ import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import get_trade_info
 from utils.message import message_cancel_order
+from utils.notification import notification_cancel_order
 from ..scripts.cancel import send_cancel
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,8 @@ async def cancel_order(api_key, api_secret, api_passphrase, data):
 
         # Cancelling specific order based on trade_type (tp/sl)
         await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
+
+        await notification_cancel_order(traderId, tradeId, document_id)
 
         return message_cancel_order(tradeId, document_id, trade_type)
 

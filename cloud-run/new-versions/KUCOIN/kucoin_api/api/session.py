@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class KucoinSession():
     
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key, api_secret, api_passphrase):
         """
         Create a new KucoinSession instance.
         
@@ -22,7 +22,7 @@ class KucoinSession():
         """
         self.api_key = api_key
         self.api_secret = api_secret
-
+        self.api_passphrase = api_passphrase
 
     async def bulk_order(self, data):
         try:
