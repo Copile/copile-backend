@@ -2,7 +2,7 @@ import logging
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import get_trade_info
 from utils.message import message_cancel_orders
-from utils.notification import send_notification
+from utils.notification import notification_cancel_all_orders
 from ..scripts.order_factory import Order
 
 logger = logging.getLogger(__name__)
@@ -40,12 +40,7 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
-        notification = {
-            "trade_id": tradeId,
-            "user_id": traderId,
-        }
-
-        await send_notification(notification, "cancel_all_orders")
+        await notification_cancel_all_orders(traderId, tradeId)
 
         return message_cancel_orders(tradeId)
 
