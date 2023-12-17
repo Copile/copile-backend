@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import get_trade_info, get_tp_orders, delete_tp_sl_order
 from utils.message import message_cancel_all_tps
+from utils.notification import send_notification
 
 logger = logging.getLogger(__name__)
 

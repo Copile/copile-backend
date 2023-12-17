@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_sl, get_trade_info
 from utils.message import message_send_sl
+from utils.notification import send_notification
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 

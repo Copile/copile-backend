@@ -3,6 +3,7 @@ import logging
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
+from utils.notification import send_notification
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.margin_mode import switch_margin_mode
@@ -123,6 +124,18 @@ async def bulk_order(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+
+        notification = {
+            "data": {
+                "order": trade_info,
+                "take_profits": new_take_profits,
+                "stop_losses": stop_losses
+            },
+            "trade_id": tradeId,
+            "user_id": traderId
+        }
+
+        await send_notification(notification, "bulk_order")
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
