@@ -38,13 +38,9 @@ app.post("/createPlan", async (req, res, next) => {
   console.log("=====================================");
   console.log("Creating a new plan...");
 
-  // FIXME: Doesnt seem like this is necessary, we're doing exactly this on frontend.
-  // I guess just a double check?
-
   // Define the required fields for creating a new plan
   const requiredFields = [
     { name: "Plan Name", value: req.body.internal_notes },
-    { name: "Unlimited Stock", value: req.body.unlimited_stock },
     { name: "Referral Code", value: req.body.referral_code },
     { name: "Plan Type", value: req.body.plan_type },
   ];
@@ -57,8 +53,6 @@ app.post("/createPlan", async (req, res, next) => {
       { name: "Renewal Price", value: req.body.renewal_price },
       { name: "Trial Period Days", value: req.body.trial_period_days }
     );
-  } else if (req.body.plan_type === "one_time") {
-    requiredFields.push({ name: "Expiration Days", value: req.body.expiration_days });
   }
 
   // Check for any missing required fields in the request body
@@ -73,6 +67,18 @@ app.post("/createPlan", async (req, res, next) => {
         })
       );
     }
+  }
+
+  // Check for Unlimited Stock field separately as it is a boolean
+  if (req.body.unlimited_stock === undefined || req.body.unlimited_stock === null) {
+    console.log("Unlimited Stock is missing. Sending error response...");
+    return next(
+      new CustomError({
+        message: "Unlimited Stock is missing",
+        status: 400,
+        source: "createPlan",
+      })
+    );
   }
 
   // Create a new plan object with the request body and some default values
@@ -334,6 +340,8 @@ app.post("/updatePlan", async (req, res, next) => {
         return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
       })
     );
+
+    // FIXME: Also need to update the plan name for the workers that are still assigned
 
     console.log("Adding the plan to each new worker's plans collection...");
     await Promise.all(
