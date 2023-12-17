@@ -1,0 +1,47 @@
+import logging
+from ..api.perpetual import KucoinFunctions
+from utils.firestore import get_trade_info
+from utils.message import message_cancel_orders
+from ..scripts.order_factory import Order
+
+logger = logging.getLogger(__name__)
+
+async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
+    try:
+        # Creating session for kucoin api
+        session = KucoinFunctions(api_key, api_secret, api_passphrase)
+
+        traderId = data['traderId']
+        tradeId = data['tradeId']
+
+        # Fetching the trade info from firestore
+        trade_info = await get_trade_info(traderId, tradeId)
+        symbol = trade_info["symbol"]
+
+        # Getting current position info
+        position = await session.get_position(symbol)
+
+        # Getting current position quantity to use for cancel order
+        quantity = position['currentQty'] if position['currentQty'] > 0 else position[
+                                                                                 'currentQty'] * (-1)
+        if float(quantity) != 0:
+            side = trade_info['side']
+            leverage = trade_info['leverage']
+
+            # Creating order object for selling whole order
+            order = Order(symbol, "market", "sell" if side == "buy" else "buy", None, quantity, leverage, None, None,
+                          None, True)
+
+            # Executing sell order to stop trade
+            await session.trade_order(order)
+        else:
+            # Cancelling existing limit order
+            await session.cancel_order(trade_info['orderID'])
+
+        # Cancelling all active take-profits and stop-losses
+        await session.cancel_all_orders(symbol)
+
+        return message_cancel_orders(tradeId)
+
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)

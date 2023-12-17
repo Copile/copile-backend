@@ -1,0 +1,24 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+async def get_tps_status(session, tp_orders, trade_info):
+    try:
+        symbol = trade_info["symbol"]
+
+        open_orders = await session.current_orders(symbol=symbol)
+
+        tps_data = []
+        active_status = ["open", "active"]
+
+        for tp_order in tp_orders:
+            if "tp_number" in tp_order:
+                tp_order_id = tp_order["orderID"]
+                matching_open_orders = [open_order for open_order in open_orders if open_order["id"] == tp_order_id]
+                tp_order["tp_status"] = "active" if matching_open_orders and matching_open_orders[0][
+                    "status"] in active_status else "filled"
+                tps_data.append(tp_order)
+        return tps_data
+    except Exception as e:
+        logger.error("An error occurred: %s", e, exc_info=True)
