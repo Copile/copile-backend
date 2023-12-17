@@ -51,3 +51,69 @@ async def send_notification(payload, endpoint):
         return
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
+
+async def notification_bulk_order(trader_id, trade_id, trade_info, take_profits, stop_losses):
+    notification = {
+        "data": {
+            "order": trade_info,
+            "take_profits": take_profits,
+            "stop_losses": stop_losses
+        },
+        "trade_id": trade_id,
+        "user_id": trader_id
+    }
+    await send_notification(notification, "bulk_order")
+
+async def notification_bulk_tp(trader_id, trade_id, take_profits):
+    notification = {
+        "data": {
+            "take_profits": take_profits
+        },
+        "trade_id": trade_id,
+        "user_id": trader_id
+    }
+
+    await send_notification(notification, "bulk_tp")
+
+async def notification_cancel_all_orders(trader_id, trade_id):
+    notification = {
+        "trade_id": trade_id,
+        "user_id": trader_id,
+    }
+
+    await send_notification(notification, "cancel_all_orders")
+
+async def notification_cancel_order(trader_id, trade_id, document_id):
+    notification = {
+        "data": {
+            "document_id": document_id
+        },
+        "trade_id": trade_id,
+        "user_id": trader_id
+    }
+
+    await send_notification(notification, "cancel_order")
+
+async def notification_partial_close(trader_id, trade_id, percentage):
+    notification = {
+        "data": {
+            "value": percentage
+        },
+        "trade_id": trade_id,
+        "user_id": trader_id
+    }
+
+    await send_notification(notification, "partial_close")
+
+async def notification_replace_sl(trader_id, trade_id, sl_id, sl_value, sl_percentage):
+    notification = {
+        "data": {
+            "document_id": sl_id,
+            "sl_value": sl_value,
+            "sl_percentage": sl_percentage
+        },
+        "trade_id": trade_id,
+        "user_id": trader_id
+    }
+
+    await send_notification(notification, "replace_sl")

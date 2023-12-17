@@ -3,7 +3,7 @@ import asyncio
 from ..api.perpetual import BingXFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
-from utils.notification import send_notification
+from utils.notification import notification_bulk_order
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.settings import convert_symbol
@@ -135,17 +135,7 @@ async def bulk_order(api_key, api_secret, data):
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
-        notification = {
-            "data": {
-                "order": trade_info,
-                "take_profits": new_take_profits,
-                "stop_losses": stop_losses
-            },
-            "trade_id": tradeId,
-            "user_id": traderId
-        }
-
-        await send_notification(notification, "bulk_order")
+        await notification_bulk_order(traderId, tradeId, trade_info, new_take_profits, stop_losses)
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
