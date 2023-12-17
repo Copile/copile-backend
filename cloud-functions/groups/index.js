@@ -267,14 +267,14 @@ app.post("/updatePlan", async (req, res, next) => {
     // This is because the properties from the request body are spread after the properties from the existing plan.
     // The metadata property of the updatedPlan object is also created by spreading.
     // It first spreads the metadata from the existing plan and then adds or overwrites the plan_name property with the internal_notes from the request body.
-    // const updatedPlan = {
-    //   ...planSnapshot.data(), // Spread the existing plan data
-    //   ...req.body, // Spread the request body data
-    //   metadata: {
-    //     ...planSnapshot.data().metadata, // Spread the existing metadata
-    //     plan_name: req.body.internal_notes, // Add or overwrite the plan_name property
-    //   },
-    // };
+    const updatedPlan = {
+      ...planSnapshot.data(), // Spread the existing plan data
+      ...req.body, // Spread the request body data
+      metadata: {
+        ...planSnapshot.data().metadata, // Spread the existing metadata
+        plan_name: req.body.internal_notes, // Add or overwrite the plan_name property
+      },
+    };
 
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
