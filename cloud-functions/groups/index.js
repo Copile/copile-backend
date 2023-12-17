@@ -41,39 +41,39 @@ app.post("/createPlan", async (req, res, next) => {
   // FIXME: Doesnt seem like this is necessary, we're doing exactly this on frontend.
   // I guess just a double check?
 
-  // // Define the required fields for creating a new plan
-  // const requiredFields = [
-  //   { name: "Plan Name", value: req.body.internal_notes },
-  //   { name: "Unlimited Stock", value: req.body.unlimited_stock },
-  //   { name: "Referral Code", value: req.body.referral_code },
-  //   { name: "Plan Type", value: req.body.plan_type },
-  // ];
+  // Define the required fields for creating a new plan
+  const requiredFields = [
+    { name: "Plan Name", value: req.body.internal_notes },
+    { name: "Unlimited Stock", value: req.body.unlimited_stock },
+    { name: "Referral Code", value: req.body.referral_code },
+    { name: "Plan Type", value: req.body.plan_type },
+  ];
 
-  // if (req.body.plan_type === "renewal") {
-  //   requiredFields.push(
-  //     { name: "Base Currency", value: req.body.base_currency },
-  //     { name: "Billing Period", value: req.body.billing_period },
-  //     { name: "Initial Price", value: req.body.initial_price },
-  //     { name: "Renewal Price", value: req.body.renewal_price },
-  //     { name: "Trial Period Days", value: req.body.trial_period_days }
-  //   );
-  // } else if (req.body.plan_type === "one_time") {
-  //   requiredFields.push({ name: "Expiration Days", value: req.body.expiration_days });
-  // }
+  if (req.body.plan_type === "renewal") {
+    requiredFields.push(
+      { name: "Base Currency", value: req.body.base_currency },
+      { name: "Billing Period", value: req.body.billing_period },
+      { name: "Initial Price", value: req.body.initial_price },
+      { name: "Renewal Price", value: req.body.renewal_price },
+      { name: "Trial Period Days", value: req.body.trial_period_days }
+    );
+  } else if (req.body.plan_type === "one_time") {
+    requiredFields.push({ name: "Expiration Days", value: req.body.expiration_days });
+  }
 
-  // // Check for any missing required fields in the request body
-  // for (const field of requiredFields) {
-  //   if (!field.value) {
-  //     console.log(`${field.name} is missing. Sending error response... `);
-  //     return next(
-  //       new CustomError({
-  //         message: `${field.name} is missing`,
-  //         status: 400,
-  //         source: "createPlan",
-  //       })
-  //     );
-  //   }
-  // }
+  // Check for any missing required fields in the request body
+  for (const field of requiredFields) {
+    if (!field.value) {
+      console.log(`${field.name} is missing. Sending error response... `);
+      return next(
+        new CustomError({
+          message: `${field.name} is missing`,
+          status: 400,
+          source: "createPlan",
+        })
+      );
+    }
+  }
 
   // Create a new plan object with the request body and some default values
 
@@ -200,15 +200,15 @@ app.post("/updatePlan", async (req, res, next) => {
 
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  const {
-    internal_notes,
-    initial_price,
-    trial_period_days,
-    stock,
-    unlimited_stock,
-    referral_code,
-    assigned_workers,
-  } = req.body;
+  // const {
+  //   internal_notes,
+  //   initial_price,
+  //   trial_period_days,
+  //   stock,
+  //   unlimited_stock,
+  //   referral_code,
+  //   assigned_workers,
+  // } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -247,15 +247,35 @@ app.post("/updatePlan", async (req, res, next) => {
     }
 
     console.log("Plan found. Preparing to update...");
+    // const updatedPlan = {
+    //   ...planSnapshot.data(),
+    //   internal_notes,
+    //   metadata: {
+    //     ...planSnapshot.data().metadata,
+    //     plan_name: internal_notes,
+    //   },
+    //   initial_price,
+    //   trial_period_days,
+    //   stock,
+    //   unlimited_stock,
+    //   referral_code,
+    // };
+
+    // The updatedPlan object is created by spreading the existing plan data and the request body data.
+    // This means that all properties of the existing plan and the request body will be copied into the updatedPlan object.
+    // If there are any properties with the same name in both the existing plan and the request body, the value from the request body will be used.
+    // This is because the properties from the request body are spread after the properties from the existing plan.
+    // The metadata property of the updatedPlan object is also created by spreading.
+    // It first spreads the metadata from the existing plan and then adds or overwrites the plan_name property with the internal_notes from the request body.
     const updatedPlan = {
-      ...planSnapshot.data(),
-      internal_notes,
-      initial_price,
-      trial_period_days,
-      stock,
-      unlimited_stock,
-      referral_code,
+      ...planSnapshot.data(), // Spread the existing plan data
+      ...req.body, // Spread the request body data
+      metadata: {
+        ...planSnapshot.data().metadata, // Spread the existing metadata
+        plan_name: req.body.internal_notes, // Add or overwrite the plan_name property
+      },
     };
+
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
     console.log("Fetching provided groups global workers from Firestore...");
@@ -269,6 +289,10 @@ app.post("/updatePlan", async (req, res, next) => {
     console.log(`Current assigned workers: ${JSON.stringify(currentAssignedWorkers)}`);
 
     console.log("Identifying the workers that need to be added and removed...");
+    // We need to identify which workers need to be added to the plan and which need to be removed.
+    // To do this, we compare the list of workers currently assigned to the plan (currentAssignedWorkers) with the list of workers that should be assigned (assigned_workers).
+    // Any workers that are in the assigned_workers list but not in the currentAssignedWorkers list are new and need to be added.
+    // Any workers that are in the currentAssignedWorkers list but not in the assigned_workers list are no longer needed and should be removed.
     const workersToAdd = assigned_workers.filter(
       (id) => !currentAssignedWorkers.some((worker) => worker.id === id)
     );
