@@ -3,7 +3,7 @@ import logging
 from ..api.perpetual import BybitFunctions
 from utils.firestore import store_sl, get_trade_info
 from utils.message import message_replace_sl
-from utils.notification import send_notification
+from utils.notification import notification_replace_sl
 from ..scripts.order_factory import Order
 from ..scripts.cancel import send_cancel
 from ..scripts.settings import get_position_quantity
@@ -60,17 +60,7 @@ async def replace_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
 
-        notification = {
-            "data": {
-                "document_id": payload['sl_id'],
-                "sl_value": payload['sl_value'],
-                "sl_percentage": payload['sl_percentage']
-            },
-            "trade_id": tradeId,
-            "user_id": traderId
-        }
-
-        await send_notification(notification, "replace_sl")
+        await notification_replace_sl(traderId, tradeId, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
 
         return message_replace_sl(tradeId, document_id, payload)
 
