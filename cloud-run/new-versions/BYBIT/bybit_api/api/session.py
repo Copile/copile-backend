@@ -1,24 +1,27 @@
 import logging
-from trade.exchange_session import ExchangeSession
-from ..execution import bulk_order, cancel_all_orders, replace_sl, cancel_all_tps, bulk_tp, partial_close, send_sl, \
-    cancel_order
+from ..execution.bulk_order import bulk_order
+from ..execution.bulk_tp import bulk_tp
+from ..execution.cancel_all_orders import cancel_all_orders
+from ..execution.cancel_all_tps import cancel_all_tps
+from ..execution.cancel_order import cancel_order
+from ..execution.replace_sl import replace_sl
+from ..execution.send_sl import send_sl
+from ..execution.partial_close import partial_close
 
 logger = logging.getLogger(__name__)
 
 
-class BybitSession(ExchangeSession):
-    """
-    Represents a Bybit exchange session.
-    Extends ExchangeSession.
-    """
+class BybitSession():
 
     def __init__(self, api_key, api_secret):
         """
-        Creates a BybitSession instance.
-        :param apiKey: API key for the Bybit session.
-        :param apiSecret: API secret for the Bybit session.
+        Create a new BybitSession instance.
+        
+        :param api_key: The API key for the session.
+        :param api_secret: The API secret for the session.
         """
-        super().__init__(api_key, api_secret)
+        self.api_key = api_key
+        self.api_secret = api_secret
 
     async def bulk_order(self, data):
         try:

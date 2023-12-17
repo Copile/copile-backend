@@ -1,10 +1,9 @@
 import asyncio
 import logging
-from ..api.perpetual import BybitFunctions
+from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
 from utils.message import message_partial_close
 from utils.partial import distribute_percentages
-from utils.notification import send_notification
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
@@ -14,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 async def partial_close(api_key, api_secret, data):
     try:
-        # Creating session for bybit api
-        session = BybitFunctions(api_key, api_secret)
+        # Creating session for binance api
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
@@ -28,11 +27,10 @@ async def partial_close(api_key, api_secret, data):
         )
         symbol = trade_info["symbol"]
         side = trade_info["side"]
+        entry = trade_info["entry"] if trade_info["entry"] != "market" else session.get_market(symbol)
 
         # Preparing position sides for take-profits and stop-losses
-        tp_sl_side = "Sell" if side == "Buy" else "Buy"
-        tp_trigger_direction = 2 if side == "Sell" else 1
-        sl_trigger_direction = 1 if side == "Sell" else 2
+        tp_sl_side = "BUY" if side == "SELL" else "SELL"
 
         # Split tp_sl_orders into tp/sl orders
         tp_orders = [order for order in tp_sl_orders if order['trade_type'] == 'tp']
@@ -45,9 +43,8 @@ async def partial_close(api_key, api_secret, data):
         )
 
         # Variable for determining if trade executed or still limit
-        executed = True if float(position['size']) != 0 else False
+        executed = True if float(position['positionAmt']) != 0 else False
 
-        # Fetching the current position quantity for further use
         position_quantity = get_position_quantity(position, trade_info)
 
         quantity_to_sell = round(position_quantity * float(percentage), precision["quantity_precision"])
@@ -67,9 +64,7 @@ async def partial_close(api_key, api_secret, data):
 
         if executed:
             # Creating sell order object for selling partial quantity
-            sell_order = Order(symbol, "Market", tp_sl_side, None, quantity_to_sell, None,
-                               None, None, True,
-                               False)
+            sell_order = Order(symbol, "MARKET", tp_sl_side, None, quantity_to_sell, None, True)
 
             # Executing sell order to decrease quantity
             await session.trade_order(sell_order)
@@ -78,7 +73,7 @@ async def partial_close(api_key, api_secret, data):
             await update_trade_quantity(traderId, tradeId, new_quantity)
         else:
             # Creating new limit order object to replace old order
-            order = Order(symbol, "Limit", side, trade_info['entry'], new_quantity, None, None, None, False, False)
+            order = Order(symbol, "LIMIT", side, entry, new_quantity, None, False)
 
             # Executing new limit order
             create_order = await session.trade_order(order)
@@ -91,7 +86,7 @@ async def partial_close(api_key, api_secret, data):
                 "type": "Limit",
                 "side": side,
                 "quantity": new_quantity,
-                "entry": trade_info["entry"],
+                "entry": entry,
                 "leverage": trade_info["leverage"],
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
@@ -108,17 +103,14 @@ async def partial_close(api_key, api_secret, data):
         # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
-                             "MarkPrice", True, True)
+            tp_order = Order(symbol, "TAKE_PROFIT_MARKET", tp_sl_side, None, tp['tp_amount'], tp_price, True)
             prepared_orders.append(tp_order)
 
         # Preparing/Adding stop-losses to orders array
         for sl in sl_orders:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
-            sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']),
-                                    precision["quantity_precision"])
-            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
-                             "MarkPrice", True, True)
+            sl['sl_amount'] = round(float(new_quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
+            sl_order = Order(symbol, "STOP_MARKET", tp_sl_side, None, sl['sl_amount'], sl_price, True)
             prepared_orders.append(sl_order)
 
         # Executing all orders in the orders array
@@ -156,16 +148,6 @@ async def partial_close(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
-
-        notification = {
-            "data": {
-                "value": percentage
-            },
-            "trade_id": tradeId,
-            "user_id": traderId
-        }
-
-        await send_notification(notification, "partial_close")
 
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 

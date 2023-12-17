@@ -1,54 +1,50 @@
 import asyncio
 import logging
-from ..api.perpetual import BybitFunctions
+from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
-from utils.notification import send_notification
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
+from ..scripts.margin_mode import switch_margin_mode
 
 logger = logging.getLogger(__name__)
 
 async def bulk_order(api_key, api_secret, data):
     try:
-        # Creating session for bybit api
-        session = BybitFunctions(api_key, api_secret)
+        # Creating session for binance api
+        session = BinanceFunctions(api_key, api_secret)
 
         traderId = data['traderId']
         tradeId = data['tradeId']
         margin = data['margin']
         trader_exchange = data['trader_exchange']
-        margin_type = "ISOLATED-MARGIN" if data['margin_type'] == "ISOLATED" else "REGULAR_MARGIN"
+        margin_type = data['margin_type']
 
         symbol = data['payload']['symbol']
-        side = data['payload']['side']
+        side = data['payload']['side'].upper()
         leverage = data['payload']['leverage']
         entry = data['payload']['entry']
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
 
         # Order type of initial order
-        order_type = "Limit" if entry != "market" else "Market"
+        order_type = "LIMIT" if entry != "market" else "MARKET"
 
         # Fetching precision for specific symbol
-        # Setting leverage for trade as well as position mode and margin mode (ISOLATED, CROSSED)
-        precision, set_leverage, position_mode, margin_mode = await asyncio.gather(
+        # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
+        precision, set_leverage, margin_mode = await asyncio.gather(
             session.get_precisions(symbol),
             session.set_leverage(symbol, leverage),
-            session.switch_position_mode(symbol, 0),
-            session.switch_margin_mode(margin_type)
+            switch_margin_mode(session, symbol, margin_type)
         )
-
-        # Fetching market price of symbol
-        market_price = float(await session.get_market(symbol))
 
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
                          precision["quantity_precision"]) if entry != "market" else round(
-            (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
+            (float(margin) * int(leverage) / await session.get_market(symbol)), precision["quantity_precision"])
 
         # Order object for initial order
-        initial_order = Order(symbol, order_type, side, entry, quantity, None, None, None, False, False)
+        initial_order = Order(symbol, order_type, side, entry if entry != 'market' else None, quantity, None, False)
 
         # Adding all orders to an array for execution
         prepared_orders = [initial_order]
@@ -57,23 +53,19 @@ async def bulk_order(api_key, api_secret, data):
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
 
         # Preparing position sides for take-profits and stop-losses
-        tp_sl_side = "Sell" if side == "Buy" else "Buy"
-        tp_trigger_direction = 2 if side == "Sell" else 1
-        sl_trigger_direction = 1 if side == "Sell" else 2
+        tp_sl_side = "SELL" if side == "BUY" else "BUY"
 
         # Preparing/Adding take-profits to orders array
         for tp in new_take_profits:
             tp_price = round(float(tp['tp_value']), precision["price_precision"])
-            tp_order = Order(symbol, "Limit", tp_sl_side, tp_price, tp['tp_amount'], tp_trigger_direction, tp_price,
-                             "MarkPrice", True, True)
+            tp_order = Order(symbol, "TAKE_PROFIT_MARKET", tp_sl_side, None, tp['tp_amount'], tp_price, True)
             prepared_orders.append(tp_order)
 
         # Preparing/Adding stop-losses to orders array
         for sl in stop_losses:
             sl_price = round(float(sl['sl_value']), precision["price_precision"])
             sl['sl_amount'] = round(float(quantity) * float(sl['sl_percentage']), precision["quantity_precision"])
-            sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
-                             "MarkPrice", True, True)
+            sl_order = Order(symbol, "STOP_MARKET", tp_sl_side, None, sl['sl_amount'], sl_price, True)
             prepared_orders.append(sl_order)
 
         # Executing all orders in the orders array
@@ -131,18 +123,6 @@ async def bulk_order(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
-
-        notification = {
-            "data": {
-                "order": trade_info,
-                "take_profits": new_take_profits,
-                "stop_losses": stop_losses
-            },
-            "trade_id": tradeId,
-            "user_id": traderId
-        }
-
-        await send_notification(notification, "bulk_order")
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 

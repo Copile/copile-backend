@@ -1,22 +1,21 @@
 import logging
-from ..execution.cancel_all_tps import cancel_all_tps
-from ..execution.cancel_all_orders import cancel_all_orders
-from ..execution.cancel_order import cancel_order
 from ..execution.bulk_order import bulk_order
 from ..execution.bulk_tp import bulk_tp
-from ..execution.partial_close import partial_close
+from ..execution.cancel_all_orders import cancel_all_orders
+from ..execution.cancel_all_tps import cancel_all_tps
+from ..execution.cancel_order import cancel_order
 from ..execution.replace_sl import replace_sl
 from ..execution.send_sl import send_sl
-
+from ..execution.partial_close import partial_close
 
 logger = logging.getLogger(__name__)
 
 
-class BingXSession():
-
+class BinanceSession():
+    
     def __init__(self, api_key, api_secret):
         """
-        Create a new BingxSession instance.
+        Create a new BinanceSession instance.
         
         :param api_key: The API key for the session.
         :param api_secret: The API secret for the session.
