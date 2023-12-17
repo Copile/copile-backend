@@ -165,9 +165,7 @@ app.post("/createPlan", async (req, res, next) => {
       console.log("Existing workers:", existingWorkers);
 
       // Assign the workers to the plan in Firestore
-      await Promise.all(
-        existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker))
-      );
+      await Promise.all(existingWorkers.map((worker) => assignedWorkersCollection.doc(worker.id).set(worker)));
       console.log("Workers assigned to groups plan in firestore");
 
       console.log("Adding plan to workers own plans collection...");
@@ -203,18 +201,8 @@ app.post("/createPlan", async (req, res, next) => {
 
 app.post("/updatePlan", async (req, res, next) => {
   console.log("=====================================");
-
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  // const {
-  //   internal_notes,
-  //   initial_price,
-  //   trial_period_days,
-  //   stock,
-  //   unlimited_stock,
-  //   referral_code,
-  //   assigned_workers,
-  // } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -251,28 +239,16 @@ app.post("/updatePlan", async (req, res, next) => {
         })
       );
     }
-
     console.log("Plan found. Preparing to update...");
-    // const updatedPlan = {
-    //   ...planSnapshot.data(),
-    //   internal_notes,
-    //   metadata: {
-    //     ...planSnapshot.data().metadata,
-    //     plan_name: internal_notes,
-    //   },
-    //   initial_price,
-    //   trial_period_days,
-    //   stock,
-    //   unlimited_stock,
-    //   referral_code,
-    // };
 
-    // The updatedPlan object is created by spreading the existing plan data and the request body data.
-    // This means that all properties of the existing plan and the request body will be copied into the updatedPlan object.
-    // If there are any properties with the same name in both the existing plan and the request body, the value from the request body will be used.
-    // This is because the properties from the request body are spread after the properties from the existing plan.
-    // The metadata property of the updatedPlan object is also created by spreading.
-    // It first spreads the metadata from the existing plan and then adds or overwrites the plan_name property with the internal_notes from the request body.
+    /**
+     * @description The updatedPlan object is created by spreading the existing plan data and the request body data.
+     * This means that all properties of the existing plan and the request body will be copied into the updatedPlan object.
+     * If there are any properties with the same name in both the existing plan and the request body, the value from the request body will be used.
+     * This is because the properties from the request body are spread after the properties from the existing plan.
+     * The metadata property of the updatedPlan object is also created by spreading.
+     * It first spreads the metadata from the existing plan and then adds or overwrites the plan_name property with the internal_notes from the request body.
+     */
     const updatedPlan = {
       ...planSnapshot.data(), // Spread the existing plan data
       ...req.body, // Spread the request body data
@@ -281,12 +257,11 @@ app.post("/updatePlan", async (req, res, next) => {
         plan_name: req.body.internal_notes, // Add or overwrite the plan_name property
       },
     };
-
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
+    // =========== FETCHING DATA ===========
     console.log("Fetching provided groups global workers from Firestore...");
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
-
     const assignedWorkersCollection = planRef.collection("assigned_workers");
 
     console.log("Fetching the current assigned workers before updating the plan...");
@@ -294,20 +269,69 @@ app.post("/updatePlan", async (req, res, next) => {
     const currentAssignedWorkers = currentAssignedWorkersSnapshot.docs.map((doc) => doc.data());
     console.log(`Current assigned workers: ${JSON.stringify(currentAssignedWorkers)}`);
 
+    // =========== IDENTIFYING WORKERS ===========
+    /**
+     * @description Identifies which workers need to be added to the plan and which need to be removed.
+     * Compares the list of workers currently assigned to the plan (currentAssignedWorkers) with the list of workers that should be assigned (assigned_workers).
+     * Any workers that are in the assigned_workers list but not in the currentAssignedWorkers list are new and need to be added.
+     * Any workers that are in the currentAssignedWorkers list but not in the assigned_workers list are no longer needed and should be removed.
+     */
     console.log("Identifying the workers that need to be added and removed...");
-    // We need to identify which workers need to be added to the plan and which need to be removed.
-    // To do this, we compare the list of workers currently assigned to the plan (currentAssignedWorkers) with the list of workers that should be assigned (assigned_workers).
-    // Any workers that are in the assigned_workers list but not in the currentAssignedWorkers list are new and need to be added.
-    // Any workers that are in the currentAssignedWorkers list but not in the assigned_workers list are no longer needed and should be removed.
     const workersToAdd = req.body.assigned_workers.filter(
       (id) => !currentAssignedWorkers.some((worker) => worker.id === id)
     );
+    console.log(`Workers to add: ${JSON.stringify(workersToAdd)}`);
+
     const workersToRemove = currentAssignedWorkers.filter(
       (worker) => !req.body.assigned_workers.includes(worker.id)
     );
-    console.log(`Workers to add: ${JSON.stringify(workersToAdd)}`);
     console.log(`Workers to remove: ${JSON.stringify(workersToRemove)}`);
 
+    /*
+     * =====================================================================
+     * ========================= ACTION SEPERATION =========================
+     * =====================================================================
+     */
+
+    // =========== DELETING WORKERSTOREMOVE ===========
+    console.log("Removing the workers that are no longer assigned...");
+    for (const worker of workersToRemove) {
+      console.log(`Removing worker: ${JSON.stringify(worker)}`);
+      await assignedWorkersCollection.doc(worker.id).delete();
+    }
+
+    // =========== REMOVING PLAN FROM EACH WORKERSTOREMOVE PLANS COLLECTION ===========
+    console.log("Removing the plan from each old worker's plans collection if they are no longer assigned...");
+    const tradersCollection = db.collection("traders");
+    await Promise.all(
+      workersToRemove.map((worker) => {
+        console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+        return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
+      })
+    );
+
+    // =========== UPDATING PLAN NAME FOR WORKERS THAT ARE STILL ASSIGNED ===========
+    console.log("Checking if the plan name needs to be updated for the workers that are still assigned...");
+    /**
+     * @description Once we've removed the workers that are no longer assigned, we can first remove
+     * the plan name for the workers that are still assigned
+     */
+    const currentPlanData = planSnapshot.data();
+    if (req.body.internal_notes && currentPlanData.internal_notes !== req.body.internal_notes) {
+      console.log("Updating the plan name for each worker that is still assigned...");
+
+      // Update the plan name in each worker's plan document
+      await Promise.all(
+        currentAssignedWorkers.map((workerId) => {
+          const workerPlanRef = tradersCollection.doc(workerId).collection("plans").doc(plan_id);
+          return workerPlanRef.update({ plan_name: req.body.internal_notes });
+        })
+      );
+
+      console.log("Assigned workers' plan documents updated with new plan name.");
+    }
+
+    // =========== ADDING WORKERSTOADD ===========
     console.log("Adding the new workers...");
     for (const id of workersToAdd) {
       const workerSnapshot = await workersCollection.doc(id).get();
@@ -319,30 +343,13 @@ app.post("/updatePlan", async (req, res, next) => {
           avg_pct: 0,
           trade_count: 0,
         };
+
         console.log(`Adding worker: ${JSON.stringify(worker)}`);
         await assignedWorkersCollection.doc(worker.id).set(worker);
       }
     }
 
-    console.log("Removing the workers that are no longer assigned...");
-    for (const worker of workersToRemove) {
-      console.log(`Removing worker: ${JSON.stringify(worker)}`);
-      await assignedWorkersCollection.doc(worker.id).delete();
-    }
-
-    console.log(
-      "Removing the plan from each old worker's plans collection if they are no longer assigned..."
-    );
-    const tradersCollection = db.collection("traders");
-    await Promise.all(
-      workersToRemove.map((worker) => {
-        console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
-        return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
-      })
-    );
-
-    // FIXME: Also need to update the plan name for the workers that are still assigned
-
+    // =========== ADDING PLAN TO EACH WORKERSTOREMOVE PLANS COLLECTION ===========
     console.log("Adding the plan to each new worker's plans collection...");
     await Promise.all(
       workersToAdd.map(async (id) => {
@@ -359,17 +366,17 @@ app.post("/updatePlan", async (req, res, next) => {
       })
     );
 
+    // =========== UPDATING PLAN IN FIRESTORE ===========
     console.log("Updating plan in Firestore...");
     await planRef.update(updatedPlan);
     console.log("Plan updated successfully.");
 
-    // Sync the users
+    // =========== SYNCING USERS ===========
     console.log("Syncing users...");
     await findAndSyncUsers(group_id, plan_id, req.body.internal_notes);
     console.log("Users synced successfully.");
 
     console.log("=====================================");
-
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
     console.log(`Failed to update plan: ${error.message}`);
@@ -629,10 +636,7 @@ const syncUser = async (data, planWorkers) => {
 
     return { success: true };
   } catch (error) {
-    console.error(
-      `Error in syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`,
-      error
-    );
+    console.error(`Error in syncUser for userId: ${userId}, planId: ${planId}, and groupId: ${groupId}`, error);
     return { success: false, error: error.message };
   }
 };
@@ -657,9 +661,7 @@ app.post("/updateWorkerStats", async (req, res, next) => {
     typeof worker_id !== "string" ||
     worker_id.trim() === ""
   ) {
-    console.log(
-      "Missing or invalid required field: group_id, plan_id or worker_id. Sending error response..."
-    );
+    console.log("Missing or invalid required field: group_id, plan_id or worker_id. Sending error response...");
     return next(
       new CustomError({
         message: "Missing or invalid required field: group_id, plan_id or worker_id",
