@@ -49,9 +49,9 @@ app.post("/createPlan", async (req, res, next) => {
     requiredFields.push(
       { name: "Base Currency", value: req.body.base_currency },
       { name: "Billing Period", value: req.body.billing_period },
-      { name: "Initial Price", value: req.body.initial_price },
-      { name: "Renewal Price", value: req.body.renewal_price },
-      { name: "Trial Period Days", value: req.body.trial_period_days }
+      // { name: "Initial Price", value: req.body.initial_price },
+      { name: "Renewal Price", value: req.body.renewal_price }
+      // { name: "Trial Period Days", value: req.body.trial_period_days }
     );
   }
 
