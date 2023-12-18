@@ -198,6 +198,7 @@ app.post("/deleteGroupWorker", async (req, res, next) => {
     const plansSnapshot = await groupDocRef.collection("plans").get();
     const plans = plansSnapshot.docs.map((doc) => doc.data());
 
+    // FIXME: The user sync doesnt seem to be working
     // For each plan, delete the worker from the plan's assigned_workers collection
     for (const plan of plans) {
       const assignedWorkerDoc = await groupDocRef
@@ -212,6 +213,7 @@ app.post("/deleteGroupWorker", async (req, res, next) => {
         console.log(`Worker ${userId} deleted from plan ${plan.plan_id}.`);
 
         // Call findAndSyncUsers function to synchronize the users
+        // FIXME: Not defined in here, thats why we put it in the other file - allahu akbar
         await findAndSyncUsers(orgId, plan.plan_id, plan.internal_notes);
       }
     }
