@@ -128,22 +128,11 @@ async def get_user_keys(account_id, exchange):
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
 
-
-# Get user margin from a specific user and plan
-async def get_user_margin(account_id, plan_id):
-    try:
-        plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
-        margin = (await plan.get()).to_dict()["margin"]
-        return margin
-    except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
-
 # get user plans from firestore with account_id and exchange
-async def get_user_plan(account_id, plan_id, trader_id):
+async def get_user_plan(account_id, plan_id, worker_id):
     try:
         plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(
-            plan_id).collection(COLLECTION_WORKERS).document(trader_id)
+            plan_id).collection(COLLECTION_WORKERS).document(worker_id)
         plan_object = (await plan.get()).to_dict()
         return plan_object
     except Exception as e:
