@@ -43,6 +43,19 @@ class BybitFunctions:
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
         return response['list']
 
+    async def get_account_info(self):
+        # https://bybit-exchange.github.io/docs/v5/account/account-info
+        path = "/v5/account/info"
+        return await make_signed_request("GET", path, None, self.api_key, self.api_secret)
+
+    async def get_balance(self):
+        # https://bybit-exchange.github.io/docs/v5/account/wallet-balance
+        path = "/v5/account/wallet-balance"
+        account_type = "CONTRACT" if await self.get_account_info ["result"]["unifiedMarginStatus"] == 1 else "UNIFIED"
+        payload = {"accountType": account_type, "coin": "USDT"}
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return response['list'][0]['coin'][0]['equity']
+
     async def cancel_all_orders(self, symbol):
         # https://bybit-exchange.github.io/docs/v5/order/cancel-all
         path = "/v5/order/cancel-all"

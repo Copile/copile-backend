@@ -613,14 +613,11 @@ app.post("/bulkOrder", async (req, res) => {
         // Initialize the trade data for the user
         let currentTradeData = {
           trade_id: tradeId,
-          trader_id: traderId,
+          worker_id: traderId,
           account_id: userId,
           payload: payload,
-          exchange: "",
-          plan_id: plans[0], // FIXME: this is obsolete because of the new structure, we dont need to use the plan to find the preferred exchange anymore. Not sure about margin stuff tho.
-          // old code:
-          // const planId = plans[0];
-          // const preferredExchangeDoc = firestore.collection("users").doc(userId).collection("plans").doc(planId);
+          exchange: preferredExchange,
+          plan_id: plans[0],
           user_type: "users",
         };
 
