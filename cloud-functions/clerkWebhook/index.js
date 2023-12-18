@@ -113,37 +113,40 @@ app.post("/addWorkerToGroup", async (req, res) => {
         email = email || traderDoc.data()?.trader_email || "Unknown";
         console.log("Fetched Name: ", name);
         console.log("Fetched Email: ", email);
+        if (attempts >= maxAttempts) {
+          console.log("Max attempts reached. Using default values.");
+        }
+        // Move the worker addition inside the interval to ensure it waits for the data fetch
+        try {
+          await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
+            id: organizationMembership.data.public_user_data.user_id,
+            email: organizationMembership.data.public_user_data.identifier,
+            name: name,
+          });
+          console.log("Worker added to group");
+          res.status(200).send("Worker added to group");
+        } catch (error) {
+          console.error("Error adding worker to group", error);
+          res.status(500).send("Error adding worker to group");
+          return;
+        }
       }
     }, 2000);
-
-    // const traderDoc = await firestore
-    //   .collection("traders")
-    //   .doc(organizationMembership.data.public_user_data.user_id)
-    //   .get();
-    // if (traderDoc.exists) {
-    //   name = name || traderDoc.data().trader_name;
-    //   email = email || traderDoc.data().trader_email;
-    //   console.log("Fetched Name: ", name);
-    //   console.log("Fetched Email: ", email);
-    // } else {
-    //   console.error("Unable to add a backup name or email to worker in preparation for adding to group");
-    //   name = name || "Unknown";
-    //   email = email || "Unknown";
-    // }
-  }
-
-  try {
-    await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
-      id: organizationMembership.data.public_user_data.user_id,
-      email: organizationMembership.data.public_user_data.identifier,
-      name: name,
-    });
-    console.log("Worker added to group");
-    res.status(200).send("Worker added to group");
-  } catch (error) {
-    console.error("Error adding worker to group", error);
-    res.status(500).send("Error adding worker to group");
-    return;
+  } else {
+    // If name and email are already available, add the worker immediately
+    try {
+      await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
+        id: organizationMembership.data.public_user_data.user_id,
+        email: organizationMembership.data.public_user_data.identifier,
+        name: name,
+      });
+      console.log("Worker added to group");
+      res.status(200).send("Worker added to group");
+    } catch (error) {
+      console.error("Error adding worker to group", error);
+      res.status(500).send("Error adding worker to group");
+      return;
+    }
   }
 });
 
