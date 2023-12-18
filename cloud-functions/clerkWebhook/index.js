@@ -122,4 +122,81 @@ app.post("/addWorkerToGroup", async (req, res) => {
   }
 });
 
+app.post("/deletGroupWorker", async (req, res, next) => {
+  console.log("deletGroupWorker endpoint hit. Processing request...");
+
+  let payload = JSON.stringify(req.body);
+  const wh = new Webhook(process.env.DELETE_ORG_WORKER_SECRET);
+
+  const headers_svix = {
+    "svix-id": String(req.get("svix-id")),
+    "svix-timestamp": String(req.get("svix-timestamp")),
+    "svix-signature": String(req.get("svix-signature")),
+  };
+
+  let data;
+  try {
+    data = wh.verify(payload, headers_svix);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({});
+    return; // Add this
+  }
+
+  const { organization, public_user_data } = data;
+  const { id: orgId } = organization;
+  const { user_id: userId } = public_user_data;
+
+  console.log(`orgId: ${orgId}, userId: ${userId}`);
+
+  try {
+    // Fetch the group document
+    const groupDocRef = db.collection("groups").doc(orgId);
+    const groupDoc = await groupDocRef.get();
+
+    if (!groupDoc.exists) {
+      console.log(`Group with id: ${orgId} not found.`);
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Delete the worker from the group's workers collection
+    await groupDocRef.collection("workers").doc(userId).delete();
+    console.log(`Worker ${userId} deleted from group ${orgId}.`);
+
+    // Fetch the plans in the group
+    const plansSnapshot = await groupDocRef.collection("plans").get();
+    const plans = plansSnapshot.docs.map((doc) => doc.data());
+
+    // For each plan, delete the worker from the plan's assigned_workers collection
+    for (const plan of plans) {
+      const assignedWorkerDoc = await groupDocRef
+        .collection("plans")
+        .doc(plan.plan_id)
+        .collection("assigned_workers")
+        .doc(userId)
+        .get();
+
+      if (assignedWorkerDoc.exists) {
+        await assignedWorkerDoc.ref.delete();
+        console.log(`Worker ${userId} deleted from plan ${plan.plan_id}.`);
+
+        // Call findAndSyncUsers function to synchronize the users
+        await findAndSyncUsers(orgId, plan.plan_id, plan.internal_notes);
+      }
+    }
+
+    console.log("Worker deletion completed successfully.");
+    res.status(200).json({ message: "Worker deletion completed successfully" });
+  } catch (error) {
+    console.error("Error occurred while deleting worker: ", error);
+    return next(
+      new CustomError({
+        message: "Failed to delete worker",
+        status: 500,
+        source: "handleMembershipDeleted",
+      })
+    );
+  }
+});
+
 exports.clerkWebhook = app;
