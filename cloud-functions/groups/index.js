@@ -549,6 +549,10 @@ const syncUser = async (data, planWorkers) => {
     for (const worker of planWorkers) {
       // If the worker is not in the user's plan, add it
       if (!userPlanWorkers.some((userPlanWorker) => userPlanWorker.id === worker.id)) {
+        // FIXME: within the worker data there is sensitive info such as email
+        // we need to make a new object with only the data we need
+        // and then add that to the userPlanWorkersRef
+
         // Initialize worker data
         worker.enabled = false; // Initialize as disabled
         worker.margin = "x"; // Initialize as "x"

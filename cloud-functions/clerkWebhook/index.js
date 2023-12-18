@@ -89,6 +89,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
   let email = organizationMembership.data.public_user_data.identifier;
   console.log("Initial Name: ", name);
 
+  // FIXME: Not working as expected. Need to figure out why.
   if (!name || !email) {
     // Fetch the username and email from the traders collection if first_name or identifier is not provided
 
@@ -158,17 +159,20 @@ app.post("/deleteGroupWorker", async (req, res, next) => {
     "svix-signature": String(req.get("svix-signature")),
   };
 
-  let data;
+  let verifiedPayload;
   try {
-    data = wh.verify(payload, headers_svix);
+    verifiedPayload = wh.verify(payload, headers_svix);
   } catch (err) {
     console.log(err);
     res.status(400).json({});
     return; // Add this
   }
 
-  const { organization, public_user_data } = data;
+  // Destructuring the verified payload for cleaner and more readable code
+  const { organization, public_user_data } = verifiedPayload.data;
+  // Extracting organization id from the organization object and renaming it to orgId
   const { id: orgId } = organization;
+  // Extracting user_id from the public_user_data object and renaming it to userId
   const { user_id: userId } = public_user_data;
 
   console.log(`orgId: ${orgId}, userId: ${userId}`);
