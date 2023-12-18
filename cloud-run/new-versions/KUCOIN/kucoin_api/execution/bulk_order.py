@@ -4,6 +4,7 @@ from ..api.perpetual import KucoinFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
+from utils.margin import get_margin
 from ..scripts.order_factory import Order
 from ..scripts.settings import reformat_symbol
 from ..scripts.distribution import calculate_tp_amounts
@@ -17,7 +18,9 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
-        margin = data['margin']
+        plan_id = data['plan_id']
+        worker_id = data['worker_id']
+        margin = await get_margin(session, traderId, plan_id, worker_id)
         trader_exchange = data['trader_exchange']
         # margin_type = "ISOLATED-MARGIN" if data['margin_type'] == "ISOLATED" else "REGULAR_MARGIN"
 

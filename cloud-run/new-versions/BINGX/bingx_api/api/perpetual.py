@@ -20,6 +20,12 @@ class BingXFunctions:
         payload = {"batchOrders": orders}
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
 
+    async def get_balance(self):
+        path = "/openApi/swap/v2/user/balance"
+        payload = None
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        return float(response['balance']['availableMargin'])
+
     async def close_all_positions(self):
         path = "/openApi/swap/v2/trade/closeAllPositions"
         payload = {}

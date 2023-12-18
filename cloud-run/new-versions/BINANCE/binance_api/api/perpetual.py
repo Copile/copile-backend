@@ -28,6 +28,15 @@ class BinanceFunctions:
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
         return response[0]
 
+    async def get_balance(self):
+        # https://binance-docs.github.io/apidocs/futures/en/#futures-account-balance-v2-user_data
+        path = "/fapi/v2/balance"
+        response = await make_signed_request("GET", path, None, self.api_key, self.api_secret)
+        for account in response:
+            if account['asset'] == "USDT":
+                balance = account['availableBalance']
+                return balance
+
     async def cancel_all_orders(self, symbol):
         # https://binance-docs.github.io/apidocs/futures/en/#cancel-all-open-orders-trade
         path = "/fapi/v1/allOpenOrders"

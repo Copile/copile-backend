@@ -23,6 +23,14 @@ class KucoinFunctions:
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret, self.api_passphrase)
         return response
 
+    async def get_balance(self):
+        # https://www.kucoin.com/docs/rest/funding/funding-overview/get-account-detail-margin
+        path = "/api/v1/margin/account"
+        response = await make_signed_request("GET", path, None, self.api_key, self.api_secret)
+        for account in response['accounts']:
+            if account['currency'] == "USDT":
+                return account['availableBalance']
+
     async def cancel_all_orders(self, symbol):
         # https://docs.kucoin.com/#cancel-all-orders
         path = "/api/v1/stopOrders"

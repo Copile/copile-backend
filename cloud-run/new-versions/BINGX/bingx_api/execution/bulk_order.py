@@ -4,6 +4,7 @@ from ..api.perpetual import BingXFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
+from utils.margin import get_margin
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.settings import convert_symbol
@@ -18,7 +19,9 @@ async def bulk_order(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
-        margin = data['margin']
+        plan_id = data['plan_id']
+        worker_id = data['worker_id']
+        margin = await get_margin(session, traderId, plan_id, worker_id)
         trader_exchange = data['trader_exchange']
         margin_type = data['margin_type']
 
