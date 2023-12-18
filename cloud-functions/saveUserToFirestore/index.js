@@ -33,10 +33,10 @@ app.post("/saveUserToFirestore", async (req, res) => {
   const tradersRef = firestore.collection("traders");
 
   try {
-    const email =
-      user.data.email_addresses.find((email) => email.id === user.data.primary_email_address_id) ||
-      user.data.email_addresses[0] ||
-      "unknown";
+    const primaryEmail = user.data.email_addresses.find(
+      (email) => email.id === user.data.primary_email_address_id
+    );
+    const email = primaryEmail.email_address || email_addresses[0].email_address || "unknown";
 
     await tradersRef.doc(user.data.id).set({
       trader_id: user.data.id,
