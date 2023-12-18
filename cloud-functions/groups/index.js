@@ -35,7 +35,7 @@ const axios = require("axios");
  */
 app.post("/createPlan", async (req, res, next) => {
   // Log the start of the plan creation process
-  console.log("=====================================");
+  console.log("====== STARTING PLAN CREATION ======");
   console.log("Creating a new plan...");
 
   // Define the required fields for creating a new plan
@@ -183,7 +183,7 @@ app.post("/createPlan", async (req, res, next) => {
       console.log("Plan added to workers own plans collection");
     }
 
-    console.log("=====================================");
+    console.log("====== FINISHED CREATING PLAN ======");
     // Send a success response
     res.status(200).json({ message: "Plan created successfully" });
   } catch (error) {
@@ -200,7 +200,7 @@ app.post("/createPlan", async (req, res, next) => {
 });
 
 app.post("/updatePlan", async (req, res, next) => {
-  console.log("=====================================");
+  console.log("======= STARTING PLAN UPDATE =======");
   console.log("updatePlan endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
@@ -292,79 +292,92 @@ app.post("/updatePlan", async (req, res, next) => {
      * ========================= ACTION SEPERATION =========================
      * =====================================================================
      */
+    const tradersCollection = db.collection("traders");
 
-    // =========== DELETING WORKERSTOREMOVE ===========
-    console.log("Removing the workers that are no longer assigned...");
-    for (const worker of workersToRemove) {
-      console.log(`Removing worker: ${JSON.stringify(worker)}`);
-      await assignedWorkersCollection.doc(worker.id).delete();
+    if (workersToRemove.length > 0) {
+      // =========== DELETING WORKERSTOREMOVE ===========
+      console.log("Deleting the workers to remove...");
+      for (const worker of workersToRemove) {
+        console.log(`Removing worker: ${JSON.stringify(worker)}`);
+        await assignedWorkersCollection.doc(worker.id).delete();
+      }
+
+      // =========== REMOVING PLAN FROM EACH WORKERSTOREMOVE PLANS COLLECTION ===========
+      console.log("Removing the plan from each workers to remove plans collection...");
+      await Promise.all(
+        workersToRemove.map((worker) => {
+          console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
+          return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
+        })
+      );
+    } else {
+      console.log(
+        "No workers to remove, skipping deleting workers from the groups > plans > assigned_workers collection and removing the plan from each workers plans collection"
+      );
     }
 
-    // =========== REMOVING PLAN FROM EACH WORKERSTOREMOVE PLANS COLLECTION ===========
-    console.log("Removing the plan from each old worker's plans collection if they are no longer assigned...");
-    const tradersCollection = db.collection("traders");
-    await Promise.all(
-      workersToRemove.map((worker) => {
-        console.log(`Removing plan for worker: ${JSON.stringify(worker)}`);
-        return tradersCollection.doc(worker.id).collection("plans").doc(plan_id).delete();
-      })
-    );
-
     // =========== UPDATING PLAN NAME FOR WORKERS THAT ARE STILL ASSIGNED ===========
-    console.log("Checking if the plan name needs to be updated for the workers that are still assigned...");
     /**
      * @description Once we've removed the workers that are no longer assigned, we can first remove
      * the plan name for the workers that are still assigned
      */
     const currentPlanData = planSnapshot.data();
     if (req.body.internal_notes && currentPlanData.internal_notes !== req.body.internal_notes) {
-      console.log("Updating the plan name for each worker that is still assigned...");
+      console.log("Plan name changed, updating the plan name for each worker that is still assigned...");
 
       // Update the plan name in each worker's plan document
       await Promise.all(
-        currentAssignedWorkers.map((workerId) => {
-          const workerPlanRef = tradersCollection.doc(workerId).collection("plans").doc(plan_id);
+        currentAssignedWorkers.map((worker) => {
+          const workerPlanRef = tradersCollection.doc(worker.id).collection("plans").doc(plan_id);
           return workerPlanRef.update({ plan_name: req.body.internal_notes });
         })
       );
 
-      console.log("Assigned workers' plan documents updated with new plan name.");
+      console.log("Plan name updated for each worker that is still assigned.");
     }
 
-    // =========== ADDING WORKERSTOADD ===========
-    console.log("Adding the new workers...");
-    for (const id of workersToAdd) {
-      const workerSnapshot = await workersCollection.doc(id).get();
-      if (workerSnapshot.exists) {
-        const worker = workerSnapshot.data();
-        // Adding default stats to each worker
-        worker.stats = {
-          winrate: 0,
-          avg_pct: 0,
-          trade_count: 0,
-        };
+    if (workersToAdd.length > 0) {
+      // =========== ADDING WORKERSTOADD ===========
+      console.log("Adding the new workers...");
+      await Promise.all(
+        workersToAdd.map(async (id) => {
+          const workerSnapshot = await workersCollection.doc(id).get();
+          if (workerSnapshot.exists) {
+            const worker = workerSnapshot.data();
+            // Adding default stats to each worker
+            worker.stats = {
+              winrate: 0,
+              avg_pct: 0,
+              trade_count: 0,
+            };
 
-        console.log(`Adding worker: ${JSON.stringify(worker)}`);
-        await assignedWorkersCollection.doc(worker.id).set(worker);
-      }
+            console.log(`Adding worker: ${JSON.stringify(worker)}`);
+            return assignedWorkersCollection.doc(worker.id).set(worker);
+          }
+        })
+      );
+
+      // =========== ADDING PLAN TO EACH WORKERSTOADD PLANS COLLECTION ===========
+      console.log("Adding the plan to each new worker's plans collection...");
+      await Promise.all(
+        workersToAdd.map(async (id) => {
+          const workerSnapshot = await workersCollection.doc(id).get();
+          if (workerSnapshot.exists) {
+            const worker = workerSnapshot.data();
+            console.log(`Adding plan for worker: ${JSON.stringify(worker)}`);
+            return tradersCollection
+              .doc(worker.id)
+              .collection("plans")
+              .doc(plan_id)
+              .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
+          }
+        })
+      );
+    } else {
+      console.log(
+        "No new workers to add, skipping adding workers to the groups > plans > assigned_workers collection and adding the plan to each workers plans collection"
+      );
     }
-
-    // =========== ADDING PLAN TO EACH WORKERSTOREMOVE PLANS COLLECTION ===========
-    console.log("Adding the plan to each new worker's plans collection...");
-    await Promise.all(
-      workersToAdd.map(async (id) => {
-        const workerSnapshot = await workersCollection.doc(id).get();
-        if (workerSnapshot.exists) {
-          const worker = workerSnapshot.data();
-          console.log(`Adding plan for worker: ${JSON.stringify(worker)}`);
-          return tradersCollection
-            .doc(worker.id)
-            .collection("plans")
-            .doc(plan_id)
-            .set({ plan_id: plan_id, plan_name: updatedPlan.internal_notes });
-        }
-      })
-    );
 
     // =========== UPDATING PLAN IN FIRESTORE ===========
     console.log("Updating plan in Firestore...");
@@ -376,7 +389,7 @@ app.post("/updatePlan", async (req, res, next) => {
     await findAndSyncUsers(group_id, plan_id, req.body.internal_notes);
     console.log("Users synced successfully.");
 
-    console.log("=====================================");
+    console.log("======= FINISHED UPDATING PLAN =======");
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
     console.log(`Failed to update plan: ${error.message}`);
@@ -468,7 +481,7 @@ app.post("/deletGroupWorker", async (req, res, next) => {
 });
 
 app.get("/getData", async (req, res, next) => {
-  console.log("=====================================");
+  console.log("====== STARTING GET DATA ======");
 
   console.log("getData endpoint hit. Processing request...");
   const { group_id } = req.query;
@@ -514,7 +527,7 @@ app.get("/getData", async (req, res, next) => {
     }
 
     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
-    console.log("=====================================");
+    console.log("====== FINISHED GET DATA ======");
     res.status(200).json(plans);
   } catch (error) {
     console.error("Error occurred while fetching plans and workers: ", error);
@@ -529,7 +542,7 @@ app.get("/getData", async (req, res, next) => {
 });
 
 async function findAndSyncUsers(groupId, planId, planName) {
-  console.log("-------------------------------------");
+  console.log("--- STARTING FIND AND SYNC USERS ---");
 
   console.log(`Starting findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`);
   try {
@@ -579,7 +592,8 @@ async function findAndSyncUsers(groupId, planId, planName) {
       // Wait 1s before doing next membership just incase it blows up
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    console.log("-------------------------------------");
+
+    console.log("--- FINISHED FIND AND SYNC USERS ---");
   } catch (error) {
     console.error(`Error in findAndSyncUsers for groupId: ${groupId} and planId: ${planId}`, error);
   }
