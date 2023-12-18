@@ -33,9 +33,15 @@ app.post("/saveUserToFirestore", async (req, res) => {
   const tradersRef = firestore.collection("traders");
 
   try {
+    const email =
+      user.data.email_addresses.find((email) => email.id === user.data.primary_email_address_id) ||
+      user.data.email_addresses[0] ||
+      "unknown";
+
     await tradersRef.doc(user.data.id).set({
       trader_id: user.data.id,
       trader_name: user.data.username,
+      trader_email: email,
       // Add any other user data you want to save to Firestore
     });
     const keycreation = await createUserKey(user.data.id);

@@ -97,7 +97,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
       .get();
     if (traderDoc.exists) {
       name = name || traderDoc.data().trader_name;
-      email = email || traderDoc.data().email;
+      email = email || traderDoc.data().trader_email;
       console.log("Fetched Name: ", name);
       console.log("Fetched Email: ", email);
     } else {
