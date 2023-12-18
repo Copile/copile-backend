@@ -91,20 +91,44 @@ app.post("/addWorkerToGroup", async (req, res) => {
 
   if (!name || !email) {
     // Fetch the username and email from the traders collection if first_name or identifier is not provided
-    const traderDoc = await firestore
-      .collection("traders")
-      .doc(organizationMembership.data.public_user_data.user_id)
-      .get();
-    if (traderDoc.exists) {
-      name = name || traderDoc.data().trader_name;
-      email = email || traderDoc.data().trader_email;
-      console.log("Fetched Name: ", name);
-      console.log("Fetched Email: ", email);
-    } else {
-      console.error("Unable to add a backup name or email to worker in preparation for adding to group");
-      name = name || "Unknown";
-      email = email || "Unknown";
-    }
+
+    // The issue is, the user.created webhook may not resolve before the organizationMember.created webhook hits this endpoint
+    // meaning if we try and get data from where the user.created is setting it, it may not be there yet.
+    // So we need to wait for the user.created webhook to resolve before we can get the data from the traders collection, but we can't know when its done.
+    // So we need to set a timeout and keep checking until the data is there. If it takes too long, we will just use a default value.
+    // This is not ideal but it is the only way to do it.
+    // We will set a timer of 2 seconds to check if the data is available. If it's not available after 6 seconds, we will give up and use default values.
+    let attempts = 0;
+    const maxAttempts = 3;
+    const checkDataInterval = setInterval(async () => {
+      attempts++;
+      const traderDoc = await firestore
+        .collection("traders")
+        .doc(organizationMembership.data.public_user_data.user_id)
+        .get();
+      if (traderDoc.exists || attempts >= maxAttempts) {
+        clearInterval(checkDataInterval);
+        name = name || traderDoc.data()?.trader_name || "Unknown";
+        email = email || traderDoc.data()?.trader_email || "Unknown";
+        console.log("Fetched Name: ", name);
+        console.log("Fetched Email: ", email);
+      }
+    }, 2000);
+
+    // const traderDoc = await firestore
+    //   .collection("traders")
+    //   .doc(organizationMembership.data.public_user_data.user_id)
+    //   .get();
+    // if (traderDoc.exists) {
+    //   name = name || traderDoc.data().trader_name;
+    //   email = email || traderDoc.data().trader_email;
+    //   console.log("Fetched Name: ", name);
+    //   console.log("Fetched Email: ", email);
+    // } else {
+    //   console.error("Unable to add a backup name or email to worker in preparation for adding to group");
+    //   name = name || "Unknown";
+    //   email = email || "Unknown";
+    // }
   }
 
   try {
@@ -122,7 +146,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
   }
 });
 
-app.post("/deletGroupWorker", async (req, res, next) => {
+app.post("/deleteGroupWorker", async (req, res, next) => {
   console.log("deletGroupWorker endpoint hit. Processing request...");
 
   let payload = JSON.stringify(req.body);
