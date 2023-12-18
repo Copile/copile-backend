@@ -120,7 +120,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
         try {
           await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
             id: organizationMembership.data.public_user_data.user_id,
-            email: organizationMembership.data.public_user_data.identifier,
+            email: email,
             name: name,
           });
           console.log("Worker added to group");
@@ -137,7 +137,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
     try {
       await workersRef.doc(organizationMembership.data.public_user_data.user_id).set({
         id: organizationMembership.data.public_user_data.user_id,
-        email: organizationMembership.data.public_user_data.identifier,
+        email: email,
         name: name,
       });
       console.log("Worker added to group");
