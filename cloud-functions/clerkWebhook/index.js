@@ -182,7 +182,7 @@ app.post("/deleteGroupWorker", async (req, res, next) => {
 
   try {
     // Fetch the group document
-    const groupDocRef = db.collection("groups").doc(orgId);
+    const groupDocRef = firestore.collection("groups").doc(orgId);
     const groupDoc = await groupDocRef.get();
 
     if (!groupDoc.exists) {
