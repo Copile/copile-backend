@@ -2,6 +2,7 @@ const Webhook = require("svix").Webhook;
 const express = require("express");
 const applyMiddleware = require("./middleware");
 const bodyParser = require("body-parser");
+const { findAndSyncUsers } = require("./utils");
 const app = express();
 applyMiddleware(app);
 
