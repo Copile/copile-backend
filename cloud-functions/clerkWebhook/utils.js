@@ -116,4 +116,4 @@ const syncUser = async (data, planWorkers) => {
   }
 };
 
-export { findAndSyncUsers };
+module.exports = { findAndSyncUsers };
