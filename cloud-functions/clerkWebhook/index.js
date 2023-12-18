@@ -101,7 +101,7 @@ app.post("/addWorkerToGroup", async (req, res) => {
     // This is not ideal but it is the only way to do it.
     // We will set a timer of 2 seconds to check if the data is available. If it's not available after 6 seconds, we will give up and use default values.
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5;
     const checkDataInterval = setInterval(async () => {
       attempts++;
       const traderDoc = await firestore
