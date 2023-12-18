@@ -539,6 +539,10 @@ const syncUser = async (data, planWorkers) => {
       return { success: false, error: "User's plan not found" };
     }
 
+    // Update the plan name in the user's plan
+    await userPlanDocRef.update({ plan_name: planName });
+    console.log(`Updated plan name to ${planName} in user's plan with id: ${planId} for userId: ${userId}`);
+
     // Get the workers in the user's plan
     const userPlanWorkersRef = userPlanDocRef.collection("workers");
     const userPlanWorkersSnapshot = await userPlanWorkersRef.get();
