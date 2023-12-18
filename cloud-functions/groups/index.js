@@ -329,6 +329,8 @@ app.post("/updatePlan", async (req, res, next) => {
       await Promise.all(
         currentAssignedWorkers.map((worker) => {
           const workerPlanRef = tradersCollection.doc(worker.id).collection("plans").doc(plan_id);
+
+          console.log(`Updating plan name for worker: ${worker.id}`);
           return workerPlanRef.update({ plan_name: req.body.internal_notes });
         })
       );
