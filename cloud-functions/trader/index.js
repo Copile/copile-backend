@@ -230,32 +230,33 @@ app.post("/updateExchange", async (req, res) => {
         console.log(`updateFields after kucoin check: ${JSON.stringify(updateFields)}`);
       }
 
-      if (!read_only) {
-        // call the apiKey validation endpoint
-        console.log("Calling apiKey validation endpoint");
-        const apiKeyValidationResponse = await axios.post(
-          `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
-          { api_key, api_secret, api_passphrase },
-          {
-            headers: {
-              traderId,
-            },
-          }
-        );
-        console.log(`apiKeyValidationResponse: ${JSON.stringify(apiKeyValidationResponse.data)}`);
+      // FIXME: Validation not working, temporarily disabled.
+      // if (!read_only) {
+      //   // call the apiKey validation endpoint
+      //   console.log("Calling apiKey validation endpoint");
+      //   const apiKeyValidationResponse = await axios.post(
+      //     `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
+      //     { api_key, api_secret, api_passphrase },
+      //     {
+      //       headers: {
+      //         traderId,
+      //       },
+      //     }
+      //   );
+      //   console.log(`apiKeyValidationResponse: ${JSON.stringify(apiKeyValidationResponse.data)}`);
 
-        // rn only this endpoint returns 200 if the api credentials are valid
-        // TODO: more specific error codes to distinguish between invalid credentials and other errors
-        // TODO: give user info about excess permissions and expiration date
-        if (apiKeyValidationResponse.data.success === false) {
-          console.log("API key validation failed");
-          return res.status(500).json({
-            success: false,
-            code: apiKeyValidationResponse.data.code,
-            message: apiKeyValidationResponse.data.message,
-          });
-        }
-      }
+      //   // rn only this endpoint returns 200 if the api credentials are valid
+      //   // TODO: more specific error codes to distinguish between invalid credentials and other errors
+      //   // TODO: give user info about excess permissions and expiration date
+      //   if (apiKeyValidationResponse.data.success === false) {
+      //     console.log("API key validation failed");
+      //     return res.status(500).json({
+      //       success: false,
+      //       code: apiKeyValidationResponse.data.code,
+      //       message: apiKeyValidationResponse.data.message,
+      //     });
+      //   }
+      // }
 
       userRef
         .update(updateFields)
