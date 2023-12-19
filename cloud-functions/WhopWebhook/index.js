@@ -125,7 +125,6 @@ app.post("/createLicense", async (req, res) => {
       worker.option = "x"; // Initialize as "x"
       worker.preferred_exchange = "x"; // Initialize as "x"
       worker.plan_id = plan_id;
-      worker.plan_name = plan_name;
 
       // Create a new plan document in the plans subcollection
       const userPlanRef = await userRef.collection("plans").doc(plan_id);
