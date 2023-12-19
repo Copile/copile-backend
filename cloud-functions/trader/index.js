@@ -186,17 +186,26 @@ app.get("/:traderID/sales", async (req, res) => {
 });
 
 app.post("/updateExchange", async (req, res) => {
+  console.log("updateExchange endpoint hit");
   const traderId = req.get("traderId");
+  console.log(`traderId: ${traderId}`);
   const request_exchange = req.body.exchange;
+  console.log(`request_exchange: ${request_exchange}`);
   const exchange = request_exchange.toLowerCase();
+  console.log(`exchange: ${exchange}`);
   const read_only = req.body.is_monitor;
+  console.log(`read_only: ${read_only}`);
   const api_key = req.body.api_key;
+  console.log(`api_key: ${api_key}`);
   const api_secret = req.body.api_secret;
+  console.log(`api_secret: ${api_secret}`);
   const api_passphrase = req.body.api_passphrase;
+  console.log(`api_passphrase: ${api_passphrase}`);
   const userRef = db.collection("traders").doc(traderId);
 
   // check if api_passphrase is required
   if (exchange === "kucoin" && !api_passphrase) {
+    console.log(`api_passphrase is required for ${exchange} exchange`);
     res.status(400).json({
       success: false,
       error: `api_passphrase is required for ${exchange} exchange`,
@@ -204,20 +213,26 @@ app.post("/updateExchange", async (req, res) => {
   } else {
     try {
       const keyField = read_only ? "read_only_api_key" : "api_key"; // determine the key field based on read_only
+      console.log(`keyField: ${keyField}`);
       const secretField = read_only ? "read_only_api_secret" : "api_secret"; // determine the secret field based on read_only
+      console.log(`secretField: ${secretField}`);
       const passphraseField = read_only ? "read_only_api_passphrase" : "api_passphrase"; // determine the passphrase field based on read_only
+      console.log(`passphraseField: ${passphraseField}`);
 
       const updateFields = {
         [`exchanges.${exchange}.${keyField}`]: api_key,
         [`exchanges.${exchange}.${secretField}`]: api_secret,
       };
+      console.log(`updateFields: ${JSON.stringify(updateFields)}`);
 
       if (exchange === "kucoin") {
         updateFields[`exchanges.${exchange}.${passphraseField}`] = api_passphrase;
+        console.log(`updateFields after kucoin check: ${JSON.stringify(updateFields)}`);
       }
 
       if (!read_only) {
         // call the apiKey validation endpoint
+        console.log("Calling apiKey validation endpoint");
         const apiKeyValidationResponse = await axios.post(
           `https://europe-west2-copile.cloudfunctions.net/apiKeys/validate/${exchange}`,
           { api_key, api_secret, api_passphrase },
@@ -227,12 +242,14 @@ app.post("/updateExchange", async (req, res) => {
             },
           }
         );
+        console.log(`apiKeyValidationResponse: ${JSON.stringify(apiKeyValidationResponse.data)}`);
 
         // rn only this endpoint returns 200 if the api credentials are valid
         // TODO: more specific error codes to distinguish between invalid credentials and other errors
         // TODO: give user info about excess permissions and expiration date
         if (apiKeyValidationResponse.data.success === false) {
-          return res.status(200).json({
+          console.log("API key validation failed");
+          return res.status(500).json({
             success: false,
             code: apiKeyValidationResponse.data.code,
             message: apiKeyValidationResponse.data.message,
@@ -267,20 +284,25 @@ app.post("/updateExchange", async (req, res) => {
 });
 
 app.post("/updateMonitorStatus", async (req, res) => {
+  console.log("updateMonitorStatus endpoint hit");
   const traderId = req.get("traderId");
+  console.log(`traderId: ${traderId}`);
   const { isMonitorEnabled } = req.body;
+  console.log(`isMonitorEnabled: ${isMonitorEnabled}`);
 
   try {
     const traderRef = db.collection("traders").doc(traderId);
+    console.log(`traderRef: ${traderRef}`);
     const traderDocumentSnapshot = await traderRef.get();
+    console.log(`traderDocumentSnapshot: ${traderDocumentSnapshot}`);
 
     if (!traderDocumentSnapshot.exists) {
+      console.log("Trader not found");
       res.status(404).json({ success: false, error: "Trader not found" });
       return;
     }
 
     await traderRef.update({ is_monitor_enabled: isMonitorEnabled });
-
     console.log(`Monitor status updated successfully - ${traderId}!`);
     res.status(200).json({
       success: true,
@@ -319,12 +341,7 @@ app.get("/account", async (req, res) => {
         existingApis[exchange] = false;
       }
 
-      if (
-        read_only_api_key &&
-        read_only_api_key !== "x" &&
-        read_only_api_secret &&
-        read_only_api_secret !== "x"
-      ) {
+      if (read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x") {
         existingReadOnlyApis[exchange] = true;
       } else {
         existingReadOnlyApis[exchange] = false;
