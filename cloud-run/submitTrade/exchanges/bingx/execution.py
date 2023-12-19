@@ -39,7 +39,7 @@ async def bulk_order(api_key, api_secret, data):
         order_type = "LIMIT" if entry != "market" else "MARKET"
 
         # Order side for inital order
-        order_side = "LONG" if side == "Buy" else "SHORT"
+        order_side = "LONG" if side == "BUY" else "SHORT"
 
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
@@ -65,7 +65,7 @@ async def bulk_order(api_key, api_secret, data):
         new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
 
         # Preparing position sides for take-profits and stop-losses
-        tp_sl_position_side = "LONG" if side == "Buy" else "SHORT"
+        tp_sl_position_side = "LONG" if side == "BUY" else "SHORT"
         tp_sl_side = "SELL" if side == "BUY" else "BUY"
 
         # Preparing/Adding take-profits to orders array
