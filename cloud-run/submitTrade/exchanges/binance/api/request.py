@@ -29,7 +29,6 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
     params['signature'] = signature
 
     url = f"{api_config['protocol']}://{api_config['host']}{path}?{urlencode(params)}"
-    print(url)
     headers = {
         "X-MBX-APIKEY": api_key,
     }
@@ -40,5 +39,4 @@ async def make_signed_request(method, path, payload, api_key, api_secret):
             if response.status != 200:
                 raise Exception(f"Failed to send Binance API request to {path}: {response.reason}")
             data = await response.json()
-            print(data)
             return data

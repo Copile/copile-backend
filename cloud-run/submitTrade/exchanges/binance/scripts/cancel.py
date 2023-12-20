@@ -1,8 +1,5 @@
 from utils.firestore import get_specific_order, delete_tp_sl_order
-import logging
-
-logger = logging.getLogger(__name__)
-
+from logs.error_logger import log_error
 
 async def send_cancel(session, symbol, trader_id, trade_id, document_id, trade_type):
     try:
@@ -13,4 +10,5 @@ async def send_cancel(session, symbol, trader_id, trade_id, document_id, trade_t
 
         return
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(trader_id, e)
+        raise e
