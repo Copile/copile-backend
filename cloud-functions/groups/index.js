@@ -301,6 +301,7 @@ app.post("/updatePlan", async (req, res, next) => {
      * If we first fetch the data and then update the whop plan, it reduces the chances of having to revert the plan update in Firestore, in case
      * the fetch failed.
      */
+    console.log("Updating plan in Whop...");
     const whopUpdateData = {
       internal_notes: req.body.internal_notes,
       trial_period_days: req.body.trial_period_days,
@@ -311,11 +312,13 @@ app.post("/updatePlan", async (req, res, next) => {
         plan_name: req.body.internal_notes,
       },
     };
-    await axios.post(`https://api.whop.com/api/v2/plans/${plan_id}`, whopUpdateData, {
+    const whopResponse = await axios.post(`https://api.whop.com/api/v2/plans/${plan_id}`, whopUpdateData, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
+
+    console.log("Whop plan updated successfully:", whopResponse.data);
 
     // =========== DELETING WORKERSTOREMOVE ===========
     if (workersToRemove.length > 0) {
