@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Header, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from google.cloud import tasks_v2
 from google.protobuf import duration_pb2, timestamp_pb2

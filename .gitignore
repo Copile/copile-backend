@@ -9,7 +9,6 @@ yarn-error.log*
 .pnp.js
 
 # Logs
-logs
 *.log
 
 # Runtime data

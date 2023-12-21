@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 api_config = {
-    "host": "api-testnet.bybit.com",
+    "host": "api.bybit.com",
     "protocol": "https"
 }
 

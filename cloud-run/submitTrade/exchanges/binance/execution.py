@@ -1,20 +1,17 @@
 import asyncio
-import logging
 from .api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders, \
     get_tp_orders, delete_tp_sl_order
 from utils.message import message_replace_sl, message_send_sl, message_bulk_tp, message_bulk_order, \
     message_cancel_order, message_cancel_all_tps, message_cancel_orders, message_partial_close
 from utils.partial import distribute_percentages
+from logs.error_logger import log_error
 from .scripts.order_factory import Order
 from .scripts.cancel import send_cancel
 from .scripts.settings import get_position_quantity
 from .scripts.distribution import calculate_tp_amounts
 from .scripts.order import get_tps_status
 from .scripts.margin_mode import switch_margin_mode
-
-logger = logging.getLogger(__name__)
-
 
 async def bulk_order(api_key, api_secret, data):
     try:
@@ -57,7 +54,7 @@ async def bulk_order(api_key, api_secret, data):
         prepared_orders = [initial_order]
 
         # Calculating new take-profits for trade
-        new_take_profits = await calculate_tp_amounts(take_profits, quantity, precision)
+        new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "SELL" if side == "BUY" else "BUY"
@@ -134,8 +131,8 @@ async def bulk_order(api_key, api_secret, data):
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def send_sl(api_key, api_secret, data):
     try:
@@ -184,8 +181,8 @@ async def send_sl(api_key, api_secret, data):
         return message_send_sl(tradeId, payload)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def replace_sl(api_key, api_secret, data):
     try:
@@ -236,8 +233,8 @@ async def replace_sl(api_key, api_secret, data):
         return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def cancel_order(api_key, api_secret, data):
     try:
@@ -259,8 +256,8 @@ async def cancel_order(api_key, api_secret, data):
         return message_cancel_order(tradeId, document_id, trade_type)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def cancel_all_orders(api_key, api_secret, data):
     try:
@@ -297,8 +294,8 @@ async def cancel_all_orders(api_key, api_secret, data):
         return message_cancel_orders(tradeId)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def cancel_all_tps(api_key, api_secret, data):
     try:
@@ -323,8 +320,8 @@ async def cancel_all_tps(api_key, api_secret, data):
         return message_cancel_all_tps(tradeId, tp_orders)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def bulk_tp(api_key, api_secret, data):
     try:
@@ -352,7 +349,7 @@ async def bulk_tp(api_key, api_secret, data):
         position_quantity = get_position_quantity(position, trade_info)
 
         # Calculating new take-profits for replacing current ones
-        new_take_profits = await calculate_tp_amounts(take_profits, position_quantity, precision)
+        new_take_profits = calculate_tp_amounts(take_profits, position_quantity, precision)
 
         prepared_orders = []
 
@@ -390,8 +387,8 @@ async def bulk_tp(api_key, api_secret, data):
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
-
+        log_error(data['traderId'], e)
+        raise e
 
 async def partial_close(api_key, api_secret, data):
     try:
@@ -439,7 +436,7 @@ async def partial_close(api_key, api_secret, data):
         take_profits = distribute_percentages(tps_data)
 
         # Calculating new take-profits for replacing current ones
-        new_take_profits = await calculate_tp_amounts(take_profits, new_quantity, precision)
+        new_take_profits = calculate_tp_amounts(take_profits, new_quantity, precision)
 
         # Cancelling all active tps/sls as well as old limit orders
         await session.cancel_all_orders(symbol)
@@ -534,4 +531,5 @@ async def partial_close(api_key, api_secret, data):
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(data['traderId'], e)
+        raise e
