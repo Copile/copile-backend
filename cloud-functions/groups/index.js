@@ -427,9 +427,21 @@ app.get("/getData", async (req, res, next) => {
     const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
 
     const plans = [];
+    const whopRequests = []; // Array to hold promises for Whop API requests
+
     for (let planDoc of plansSnapshot.docs) {
       let planData = planDoc.data();
+
       if (planData.plan_id && typeof planData.plan_id === "string" && planData.plan_id.trim() !== "") {
+        // Add a promise to fetch data from the Whop API to the array
+        whopRequests.push(
+          axios.get(`https://api.whop.com/v2/plans/${planData.plan_id}`, {
+            headers: {
+              Authorization: `Bearer ${WHOP_TOKEN}`,
+            },
+          })
+        );
+
         const workersSnapshot = await db
           .collection("groups")
           .doc(group_id)
@@ -450,6 +462,13 @@ app.get("/getData", async (req, res, next) => {
       }
     }
 
+    // Wait for all Whop API requests to complete and update the plans with the fetched data
+    const whopResponses = await Promise.all(whopRequests);
+    whopResponses.forEach((response, index) => {
+      // Replace the stock info in the plan with the data from the Whop API
+      plans[index].stock = response.data.stock;
+    });
+
     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
     console.log("====== FINISHED GET DATA ======");
     res.status(200).json(plans);
@@ -464,6 +483,68 @@ app.get("/getData", async (req, res, next) => {
     );
   }
 });
+
+// app.get("/getData", async (req, res, next) => {
+//   console.log("====== STARTING GET DATA ======");
+
+//   console.log("getData endpoint hit. Processing request...");
+//   const { group_id } = req.query;
+//   console.log(`group_id: ${group_id}`);
+
+//   if (!group_id || typeof group_id !== "string" || group_id.trim() === "") {
+//     console.log("Missing or invalid required field: group_id. Sending error response...");
+//     return next(
+//       new CustomError({
+//         message: "Missing or invalid required field: group_id",
+//         status: 400,
+//         source: "getData",
+//       })
+//     );
+//   }
+
+//   try {
+//     console.log(`Fetching plans and workers for group_id: ${group_id} from Firestore...`);
+//     const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
+
+//     const plans = [];
+//     for (let planDoc of plansSnapshot.docs) {
+//       let planData = planDoc.data();
+
+//       if (planData.plan_id && typeof planData.plan_id === "string" && planData.plan_id.trim() !== "") {
+//         const workersSnapshot = await db
+//           .collection("groups")
+//           .doc(group_id)
+//           .collection("plans")
+//           .doc(planData.plan_id)
+//           .collection("assigned_workers")
+//           .get();
+//         let workers = [];
+//         workersSnapshot.forEach((doc) => {
+//           workers.push(doc.data());
+//         });
+//         planData.assigned_workers = workers;
+//         plans.push(planData);
+//       } else {
+//         console.log(
+//           `Plan document with id: ${planDoc.id} in group: ${group_id} is missing a valid plan_id. Skipping...`
+//         );
+//       }
+//     }
+
+//     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
+//     console.log("====== FINISHED GET DATA ======");
+//     res.status(200).json(plans);
+//   } catch (error) {
+//     console.error("Error occurred while fetching plans and workers: ", error);
+//     return next(
+//       new CustomError({
+//         message: "Failed to get data",
+//         status: 500,
+//         source: "getData",
+//       })
+//     );
+//   }
+// });
 
 async function findAndSyncUsers(groupId, planId, planName) {
   console.log("--- STARTING FIND AND SYNC USERS ---");
