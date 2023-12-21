@@ -13,6 +13,22 @@ const db = new Firestore();
  */
 async function fetchLatestTradeDoc(traderId, symbol, exchange, side) {
   try {
+    // Convert 'side' based on 'exchange'
+    switch (exchange) {
+      case 'bingx':
+      case 'binance':
+        side = side.toUpperCase();
+        break;
+      case 'bybit':
+      case 'testnet':
+        side = side.charAt(0).toUpperCase() + side.slice(1).toLowerCase();
+        break;
+      case 'kucoin':
+        side = side.toLowerCase();
+        break;
+      // No default case needed as other exchanges don't modify 'side'
+    }
+
     const tradeQuerySnapshot = await db
       .collection("traders")
       .doc(traderId)
