@@ -306,12 +306,16 @@ app.post("/updatePlan", async (req, res, next) => {
       internal_notes: req.body.internal_notes,
       trial_period_days: req.body.trial_period_days,
       unlimited_stock: req.body.unlimited_stock,
-      stock: req.body.stock,
       metadata: {
         group_id: req.body.group_id,
         plan_name: req.body.internal_notes,
       },
     };
+
+    if (!req.body.unlimited_stock) {
+      whopUpdateData.stock = req.body.stock;
+    }
+
     const whopResponse = await axios.post(`https://api.whop.com/api/v2/plans/${plan_id}`, whopUpdateData, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
