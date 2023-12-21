@@ -420,7 +420,7 @@ app.post("/updatePlan", async (req, res, next) => {
     console.log("======= FINISHED UPDATING PLAN =======");
     res.status(200).json({ message: "Plan updated successfully" });
   } catch (error) {
-    console.log(`Failed to update plan: ${error.message}`);
+    console.log(`Failed to update plan: ${error}`);
     return next(
       new CustomError({
         message: "Failed to update plan",
