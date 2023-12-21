@@ -99,13 +99,13 @@ app.post("/createPlan", async (req, res, next) => {
 
   // Temporarily delete group id before hitting whop. We'll add it back before saving to firestore
   delete newPlan.group_id;
-  console.log("Deleted group id from new plan");
+  console.log("Deleted group id from new plan before hitting whop");
 
   delete newPlan.workers;
-  console.log("Deleted workers from new plan");
+  console.log("Deleted workers from new plan before hitting whop");
 
   delete newPlan.referral_code;
-  console.log("Deleted referral_code from new plan");
+  console.log("Deleted referral_code from new plan before hitting whop");
 
   try {
     console.log("New plan before hitting whop:", newPlan);
@@ -116,6 +116,11 @@ app.post("/createPlan", async (req, res, next) => {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
+
+    delete newPlan.stock;
+    console.log(
+      "Deleted stock from new plan before saving to firestore as it is unreliable to store as a constant."
+    );
 
     // Extract the group id and worker ids from the request body and reassign them to variables
     const { group_id, workers: worker_ids } = req.body;
@@ -131,6 +136,7 @@ app.post("/createPlan", async (req, res, next) => {
     console.log("Direct link:", direct_link);
 
     // Add the group id, plan id, direct link, and referral code back to the plan object
+    console.log("Adding group id, plan id, direct link, and referral code back to the plan object...");
     newPlan.group_id = group_id;
     newPlan.plan_id = plan_id;
     newPlan.direct_link = direct_link;
@@ -258,6 +264,9 @@ app.post("/updatePlan", async (req, res, next) => {
     };
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
+    console.log("Deleting stock from updated plan to avoid saving dynamic stock data to firestore.");
+    delete updatedPlan.stock;
+
     // =========== FETCHING DATA ===========
     console.log("Fetching provided groups global workers from Firestore...");
     const workersCollection = db.collection("groups").doc(group_id).collection("workers");
@@ -316,13 +325,14 @@ app.post("/updatePlan", async (req, res, next) => {
       whopUpdateData.stock = req.body.stock;
     }
 
+    console.log("Whop update data:", whopUpdateData);
     const whopResponse = await axios.post(`https://api.whop.com/api/v2/plans/${plan_id}`, whopUpdateData, {
       headers: {
         Authorization: `Bearer ${WHOP_TOKEN}`,
       },
     });
 
-    console.log("Whop plan updated successfully:", whopResponse.data);
+    console.log("Whop plan updated successfully");
 
     // =========== DELETING WORKERSTOREMOVE ===========
     if (workersToRemove.length > 0) {
@@ -515,6 +525,8 @@ app.get("/getData", async (req, res, next) => {
        */
       if (!response.data.unlimited_stock) {
         plans[index].stock = response.data.stock;
+      } else {
+        plans[index].stock = null;
       }
     });
 
