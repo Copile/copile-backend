@@ -250,7 +250,7 @@ app.post("/updatePlan", async (req, res, next) => {
      */
     const updatedPlan = {
       ...planSnapshot.data(), // Spread the existing plan data
-      ...req.body, // Spread the request body data
+      ...req.body, // Spread the request body data. This will overwrite any existing properties from planSnapshot with the same name
       metadata: {
         ...planSnapshot.data().metadata, // Spread the existing metadata
         plan_name: req.body.internal_notes, // Add or overwrite the plan_name property
@@ -286,15 +286,39 @@ app.post("/updatePlan", async (req, res, next) => {
     );
     console.log(`Workers to remove: ${JSON.stringify(workersToRemove)}`);
 
+    const tradersCollection = db.collection("traders");
     /*
      * =====================================================================
      * ========================= ACTION SEPERATION =========================
      * =====================================================================
      */
-    const tradersCollection = db.collection("traders");
 
+    // =========== UPDATING PLAN IN WHOP ===========
+    /**
+     * @description Once we've fetched all the data we need, we will first update the plan in Whop.
+     * This is because if we update the plan in Firestore first, and then the plan update fails in Whop,
+     * we will have to revert the plan update in Firestore as well.
+     * If we first fetch the data and then update the whop plan, it reduces the chances of having to revert the plan update in Firestore, in case
+     * the fetch failed.
+     */
+    const whopUpdateData = {
+      internal_notes: req.body.internal_notes,
+      trial_period_days: req.body.trial_period_days,
+      unlimited_stock: req.body.unlimited_stock,
+      stock: req.body.stock,
+      metadata: {
+        group_id: req.body.group_id,
+        plan_name: req.body.internal_notes,
+      },
+    };
+    await axios.post(`https://api.whop.com/api/v2/plans/${plan_id}`, whopUpdateData, {
+      headers: {
+        Authorization: `Bearer ${WHOP_TOKEN}`,
+      },
+    });
+
+    // =========== DELETING WORKERSTOREMOVE ===========
     if (workersToRemove.length > 0) {
-      // =========== DELETING WORKERSTOREMOVE ===========
       console.log("Deleting the workers to remove...");
       for (const worker of workersToRemove) {
         console.log(`Removing worker: ${JSON.stringify(worker)}`);
@@ -462,11 +486,29 @@ app.get("/getData", async (req, res, next) => {
       }
     }
 
-    // Wait for all Whop API requests to complete and update the plans with the fetched data
+    /**
+     * @description This operation is necessary because when we fetch the data, we're getting a majority of it from Firestore.
+     * We need to do this because we need the assigned workers data. However, for attributes like stock, which are updated by
+     * external forces such as users purchasing the plan, and not from the main source updating it themselves, we have to fetch
+     * the plan data from Whop and replace the stock. We could indeed just pass the entire plan data that we get from Whop
+     * instead of using what's in Firestore, but we'd still need to do the Firestore operations anyway because we need that
+     * assigned trader data. This operation can be refactored in the future for optimization such as storing the
+     * assigned_workers data in the plans metadata.
+     */
     const whopResponses = await Promise.all(whopRequests);
     whopResponses.forEach((response, index) => {
       // Replace the stock info in the plan with the data from the Whop API
-      plans[index].stock = response.data.stock;
+
+      /**
+       * @description Updates the stock info in the plan with the data from the Whop API.
+       * If the 'unlimited_stock' property is false, then the stock can be updated.
+       * This check is necessary because the Whop API responds with stock as "0" if 'unlimited_stock' is true,
+       * which would interfere with the frontend. The frontend assumes that when stock is null, it is unlimited,
+       * and when stock is a number, it is limited.
+       */
+      if (!response.data.unlimited_stock) {
+        plans[index].stock = response.data.stock;
+      }
     });
 
     console.log(`Successfully fetched ${plans.length} plans. Sending response...`);
