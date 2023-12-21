@@ -1,6 +1,6 @@
 const ExchangeSession = require("../exchangeSession");
 const CustomError = require("../../utils/error");
-const { getTestnetBalance: getBybitAPIPerms } = require("./apiPerms");
+const { getTestnetBalance } = require("./balance");
 
 /**
  * Represents an exchange session for the testnet.
@@ -23,7 +23,7 @@ class BybitSession extends ExchangeSession {
    */
   async getBalance() {
     try {
-      return await getBybitAPIPerms(this.apiKey, this.apiSecret);
+      return await getTestnetBalance(this.apiKey, this.apiSecret);
     } catch (e) {
       if (e instanceof CustomError) {
         throw e;
