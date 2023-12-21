@@ -264,7 +264,7 @@ app.post("/updatePlan", async (req, res, next) => {
     };
     console.log(`Updated plan data: ${JSON.stringify(updatedPlan)}`);
 
-    conosle.log("Deleting stock from updated plan to avoid saving dynamic stock data to firestore.");
+    console.log("Deleting stock from updated plan to avoid saving dynamic stock data to firestore.");
     delete updatedPlan.stock;
 
     // =========== FETCHING DATA ===========
