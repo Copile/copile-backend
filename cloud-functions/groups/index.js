@@ -315,8 +315,9 @@ app.post("/updatePlan", async (req, res, next) => {
       internal_notes: req.body.internal_notes,
       trial_period_days: req.body.trial_period_days,
       unlimited_stock: req.body.unlimited_stock,
+      initial_price: req.body.initial_price,
       metadata: {
-        group_id: req.body.group_id,
+        group_id: group_id,
         plan_name: req.body.internal_notes,
       },
     };
