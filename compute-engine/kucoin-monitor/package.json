@@ -4,7 +4,7 @@
     "description": "GCP Compute Engine",
     "main": "connection.js",
     "scripts": {
-        "start": "node connection.js"
+        "start": "node connecjs"
     },
     "keywords": [],
     "author": "",
