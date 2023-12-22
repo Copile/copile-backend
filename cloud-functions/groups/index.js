@@ -313,14 +313,28 @@ app.post("/updatePlan", async (req, res, next) => {
     console.log("Updating plan in Whop...");
     const whopUpdateData = {
       internal_notes: req.body.internal_notes,
-      trial_period_days: req.body.trial_period_days,
-      unlimited_stock: req.body.unlimited_stock,
-      initial_price: req.body.initial_price,
       metadata: {
         group_id: group_id,
         plan_name: req.body.internal_notes,
       },
     };
+
+    if (req.body.trial_period_days) {
+      whopUpdateData.trial_period_days = req.body.trial_period_days;
+    }
+
+    /**
+     * @description We're doing checks to see if the values
+     * exists before adding it to whopUpdateData.
+     * This is because Whop will fail to update the plan if the values are null.
+     */
+    if (req.body.unlimited_stock) {
+      whopUpdateData.unlimited_stock = req.body.unlimited_stock;
+    }
+
+    if (req.body.initial_price) {
+      whopUpdateData.initial_price = req.body.initial_price;
+    }
 
     if (!req.body.unlimited_stock) {
       whopUpdateData.stock = req.body.stock;
