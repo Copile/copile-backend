@@ -15,11 +15,11 @@ async def bulk_order(api_key, api_secret, data):
         # Creating session for bybit api
         session = BybitFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         plan_id = data['plan_id']
         worker_id = data['worker_id']
-        margin = await get_margin(session, traderId, plan_id, worker_id)
+        margin = await get_margin(session, user_id, plan_id, worker_id)
         trader_exchange = data['trader_exchange']
         margin_type = "ISOLATED-MARGIN" if data['margin_type'] == "ISOLATED" else "REGULAR_MARGIN"
 
@@ -127,15 +127,15 @@ async def bulk_order(api_key, api_secret, data):
         }
 
         # Storing trade info in firestore
-        await store_trade(traderId, trade_info)
+        await store_trade(user_id, trade_info)
 
         # Storing take-profits and stop-losses in firestore
-        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
-        sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
+        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(user_id, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
-        await notification_bulk_order(traderId, tradeId, trade_info, new_take_profits, stop_losses)
+        await notification_bulk_order(user_id, tradeId, trade_info, new_take_profits, stop_losses)
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 

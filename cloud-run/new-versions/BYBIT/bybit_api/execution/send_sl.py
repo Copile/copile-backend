@@ -13,13 +13,13 @@ async def send_sl(api_key, api_secret, data):
         # Creating session for bybit api
         session = BybitFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         document_id = data['sl_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
+        trade_info = await get_trade_info(user_id, tradeId)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -54,7 +54,7 @@ async def send_sl(api_key, api_secret, data):
         payload['sl_document_id'] = document_id
 
         # Storing stop-loss in firestore
-        await store_sl(traderId, payload)
+        await store_sl(user_id, payload)
 
         return message_send_sl(tradeId, payload)
 

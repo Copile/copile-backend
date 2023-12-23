@@ -11,20 +11,20 @@ async def cancel_all_tps(api_key, api_secret, data):
         # Creating session for bingx api
         session = BingXFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
 
         # Fetching the trade info and current take-profit orders from firestore
         trade_info, tp_orders = await asyncio.gather(
-            get_trade_info(traderId, tradeId),
-            get_tp_orders(traderId, tradeId)
+            get_trade_info(user_id, tradeId),
+            get_tp_orders(user_id, tradeId)
         )
 
         # Cancelling all current take-profits order and deleting them from firestore
         await asyncio.gather(
             *[session.cancel_order(trade_info["symbol"], order['orderID'], None) for order in tp_orders])
         await asyncio.gather(
-            *[delete_tp_sl_order(traderId, tradeId, order['document_id'], "tp") for order in tp_orders])
+            *[delete_tp_sl_order(user_id, tradeId, order['document_id'], "tp") for order in tp_orders])
         return message_cancel_all_tps(tradeId, tp_orders)
 
     except Exception as e:

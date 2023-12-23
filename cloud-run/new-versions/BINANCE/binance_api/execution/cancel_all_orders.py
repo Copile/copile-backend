@@ -13,11 +13,11 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Creating session for binance api
         session = BinanceFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
+        trade_info = await get_trade_info(user_id, tradeId)
         symbol = trade_info["symbol"]
 
         # Getting current position info
@@ -40,7 +40,7 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
-        await notification_cancel_all_orders(traderId, tradeId)
+        await notification_cancel_all_orders(user_id, tradeId)
 
         return message_cancel_orders(tradeId)
 

@@ -17,14 +17,14 @@ async def partial_close(api_key, api_secret, data):
         # Creating session for bybit api
         session = BybitFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         percentage = data['percentage']
 
         # Fetching the trade info and current take-profits/stop-losses from firestore
         trade_info, tp_sl_orders = await asyncio.gather(
-            get_trade_info(traderId, tradeId),
-            get_tp_sl_orders(traderId, tradeId)
+            get_trade_info(user_id, tradeId),
+            get_tp_sl_orders(user_id, tradeId)
         )
         symbol = trade_info["symbol"]
         side = trade_info["side"]
@@ -75,7 +75,7 @@ async def partial_close(api_key, api_secret, data):
             await session.trade_order(sell_order)
 
             # Updating new quantity in firestore
-            await update_trade_quantity(traderId, tradeId, new_quantity)
+            await update_trade_quantity(user_id, tradeId, new_quantity)
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "Limit", side, trade_info['entry'], new_quantity, None, None, None, False, False)
@@ -98,7 +98,7 @@ async def partial_close(api_key, api_secret, data):
             }
 
             # Storing trade info in firestore
-            await store_trade(traderId, trade_info)
+            await store_trade(user_id, trade_info)
 
         # Arrays to store orders for execution or order id filtering
         prepared_orders = []
@@ -152,12 +152,12 @@ async def partial_close(api_key, api_secret, data):
             sl_count += 1
 
         # Storing take-profits and stop-losses in firestore
-        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
-        sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
+        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(user_id, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
         
-        await notification_partial_close(traderId, tradeId, percentage)
+        await notification_partial_close(user_id, tradeId, percentage)
 
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 

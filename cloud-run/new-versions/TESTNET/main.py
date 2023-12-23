@@ -23,9 +23,9 @@ async def send_sl(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -34,7 +34,7 @@ async def send_sl(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in send_sl: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in send_sl: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -42,9 +42,9 @@ async def send_sl(data: dict):
 async def cancel_order(data: dict):
     try:
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -53,7 +53,7 @@ async def cancel_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in cancel_order: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in cancel_order: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -61,9 +61,9 @@ async def cancel_order(data: dict):
 async def cancel_all_orders(data: dict):
     try:
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -72,7 +72,7 @@ async def cancel_all_orders(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in cancel_all_orders: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in cancel_all_orders: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -81,9 +81,9 @@ async def cancel_all_tps(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -92,7 +92,7 @@ async def cancel_all_tps(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in cancel_all_tps: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in cancel_all_tps: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -101,9 +101,9 @@ async def bulk_order(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -112,7 +112,7 @@ async def bulk_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in bulk_order: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in bulk_order: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -121,9 +121,9 @@ async def bulk_tp(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -132,7 +132,7 @@ async def bulk_tp(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in bulk_tp: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in bulk_tp: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -141,9 +141,9 @@ async def replace_sl(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -153,7 +153,7 @@ async def replace_sl(data: dict):
 
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in replace_sl: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in replace_sl: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -162,9 +162,9 @@ async def partial_close(data: dict):
     try:
 
         exchange = data["exchange"]
-        traderId = data['trader_id']
+        user_id = data['user_id']
 
-        keys = await get_user_keys(traderId, exchange)
+        keys = await get_user_keys(user_id, exchange)
 
         session = BybitSession(keys['api_key'], keys['api_secret'])
 
@@ -173,7 +173,7 @@ async def partial_close(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {traderId} in partial_close: %s", e, exc_info=True)
+        logger.error(f"An error occurred for {user_id} in partial_close: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

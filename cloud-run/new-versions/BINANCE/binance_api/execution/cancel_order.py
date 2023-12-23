@@ -12,27 +12,27 @@ async def cancel_order(api_key, api_secret, data):
         # Creating session for binance api
         session = BinanceFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         document_id = data['document_id']
         trade_type = data['trade_type']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
+        trade_info = await get_trade_info(user_id, tradeId)
         symbol = trade_info["symbol"]
 
         # Cancelling specific order based on trade_type (tp/sl)
-        await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
+        await send_cancel(session, symbol, user_id, tradeId, document_id, trade_type)
 
         notification = {
             "data": {
                 "document_id": document_id
             },
             "trade_id": tradeId,
-            "user_id": traderId
+            "user_id": user_id
         }
 
-        await notification_cancel_order(traderId, tradeId, document_id)
+        await notification_cancel_order(user_id, tradeId, document_id)
 
         return message_cancel_order(tradeId, document_id, trade_type)
 

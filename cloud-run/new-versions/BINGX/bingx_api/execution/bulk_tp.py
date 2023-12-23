@@ -15,12 +15,12 @@ async def bulk_tp(api_key, api_secret, data):
         # Creating session for bingx api
         session = BingXFunctions(api_key, api_secret)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
+        trade_info = await get_trade_info(user_id, tradeId)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -70,11 +70,11 @@ async def bulk_tp(api_key, api_secret, data):
             tp_count += 1
 
         # Store take profits in firestore
-        tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
+        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
 
         await asyncio.gather(*tp_promises)
 
-        await notification_bulk_tp(traderId, tradeId, new_take_profits)
+        await notification_bulk_tp(user_id, tradeId, new_take_profits)
 
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 

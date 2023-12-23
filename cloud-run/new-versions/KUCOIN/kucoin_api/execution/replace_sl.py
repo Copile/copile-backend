@@ -15,13 +15,13 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
         # Creating session for kucoin api
         session = KucoinFunctions(api_key, api_secret, api_passphrase)
 
-        traderId = data['traderId']
+        user_id = data['user_id']
         tradeId = data['tradeId']
         document_id = data['document_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
+        trade_info = await get_trade_info(user_id, tradeId)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
         leverage = trade_info["leverage"]
@@ -35,7 +35,7 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
         precision, position, cancel = await asyncio.gather(
             session.get_precisions(symbol),
             session.get_position(symbol),
-            send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
+            send_cancel(session, user_id, tradeId, document_id, "sl")
         )
 
         # Getting current position quantity to use for stop-loss order
@@ -57,9 +57,9 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
         payload['sl_document_id'] = document_id
 
         # Storing stop-loss in firestore
-        await store_sl(traderId, payload)
+        await store_sl(user_id, payload)
 
-        await notification_replace_sl(traderId, tradeId, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
+        await notification_replace_sl(user_id, tradeId, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
 
         return message_replace_sl(tradeId, document_id, payload)
 
