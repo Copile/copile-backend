@@ -14,10 +14,10 @@ async def cancel_all_orders(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
-        tradeId = data['tradeId']
+        trade_id = data['trade_id']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, tradeId)
+        trade_info = await get_trade_info(user_id, trade_id)
         symbol = trade_info["symbol"]
 
         # Getting current position info
@@ -41,9 +41,9 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
-        await notification_cancel_all_orders(user_id, tradeId)
+        await notification_cancel_all_orders(user_id, trade_id)
 
-        return message_cancel_orders(tradeId)
+        return message_cancel_orders(trade_id)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

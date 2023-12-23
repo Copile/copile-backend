@@ -16,11 +16,11 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
         session = KucoinFunctions(api_key, api_secret, api_passphrase)
 
         user_id = data['user_id']
-        tradeId = data['tradeId']
+        trade_id = data['trade_id']
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, tradeId)
+        trade_info = await get_trade_info(user_id, trade_id)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
         leverage = trade_info["leverage"]
@@ -65,7 +65,7 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
             tp_order_dict['tp_percentage'] = new_take_profits[tp_count]['tp_percentage']
             tp_order_dict['tp_value'] = new_take_profits[tp_count]['tp_value']
             tp_order_dict['tp_amount'] = new_take_profits[tp_count]['tp_amount']
-            tp_order_dict['trade_id'] = tradeId
+            tp_order_dict['trade_id'] = trade_id
             new_take_profits_with_ids.append(tp_order_dict)
             tp_count += 1
 
@@ -74,9 +74,9 @@ async def bulk_tp(api_key, api_secret, api_passphrase, data):
 
         await asyncio.gather(*tp_promises)
 
-        await notification_bulk_tp(user_id, tradeId, new_take_profits)
+        await notification_bulk_tp(user_id, trade_id, new_take_profits)
 
-        return message_bulk_tp(tradeId, new_take_profits_with_ids)
+        return message_bulk_tp(trade_id, new_take_profits_with_ids)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

@@ -17,12 +17,12 @@ async def replace_sl(api_key, api_secret, data):
         session = BinanceFunctions(api_key, api_secret)
 
         user_id = data['user_id']
-        tradeId = data['tradeId']
+        trade_id = data['trade_id']
         document_id = data['document_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, tradeId)
+        trade_info = await get_trade_info(user_id, trade_id)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -34,7 +34,7 @@ async def replace_sl(api_key, api_secret, data):
         precision, position, cancel = await asyncio.gather(
             session.get_precisions(symbol),
             session.get_position(symbol),
-            send_cancel(session, symbol, user_id, tradeId, document_id, "sl")
+            send_cancel(session, symbol, user_id, trade_id, document_id, "sl")
         )
 
         # Getting current position quantity to use for stop-loss order
@@ -49,7 +49,7 @@ async def replace_sl(api_key, api_secret, data):
         create_order = await session.trade_order(order)
 
         # Preparing payload for storing in firestore
-        payload['trade_id'] = tradeId
+        payload['trade_id'] = trade_id
         payload["sl_amount"] = position_quantity
         payload["order_id"] = create_order["orderId"]
         payload['sl_document_id'] = document_id
@@ -57,9 +57,9 @@ async def replace_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(user_id, payload)
 
-        await notification_replace_sl(user_id, tradeId, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
+        await notification_replace_sl(user_id, trade_id, payload['sl_document_id'], payload['sl_value'], payload['sl_percentage'])
 
-        return message_replace_sl(tradeId, document_id, payload)
+        return message_replace_sl(trade_id, document_id, payload)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

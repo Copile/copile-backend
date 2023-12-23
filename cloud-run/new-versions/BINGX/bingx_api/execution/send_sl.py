@@ -14,12 +14,12 @@ async def send_sl(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
-        tradeId = data['tradeId']
+        trade_id = data['trade_id']
         document_id = data['sl_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, tradeId)
+        trade_info = await get_trade_info(user_id, trade_id)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -45,7 +45,7 @@ async def send_sl(api_key, api_secret, data):
         create_order = await session.trade_order(order)
 
         # Preparing payload for storing in firestore
-        payload['trade_id'] = tradeId
+        payload['trade_id'] = trade_id
         payload["sl_amount"] = position_quantity
         payload["order_id"] = create_order["order"]["orderId"]
         payload['sl_document_id'] = document_id
@@ -53,7 +53,7 @@ async def send_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(user_id, payload)
 
-        return message_send_sl(tradeId, payload)
+        return message_send_sl(trade_id, payload)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)

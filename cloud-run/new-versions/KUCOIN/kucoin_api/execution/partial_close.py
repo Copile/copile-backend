@@ -19,13 +19,13 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         session = KucoinFunctions(api_key, api_secret, api_passphrase)
 
         user_id = data['user_id']
-        tradeId = data['tradeId']
+        trade_id = data['trade_id']
         percentage = data['percentage']
 
         # Fetching the trade info and current take-profits/stop-losses from firestore
         trade_info, tp_sl_orders = await asyncio.gather(
-            get_trade_info(user_id, tradeId),
-            get_tp_sl_orders(user_id, tradeId)
+            get_trade_info(user_id, trade_id),
+            get_tp_sl_orders(user_id, trade_id)
         )
 
         symbol = trade_info["symbol"]
@@ -78,7 +78,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             await session.trade_order(sell_order)
 
             # Updating new quantity in firestore
-            await update_trade_quantity(user_id, tradeId, new_quantity)
+            await update_trade_quantity(user_id, trade_id, new_quantity)
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "limit", side, trade_info['entry'], new_quantity, leverage, None, None, None, False)
@@ -88,7 +88,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
 
             # Preparing trade info for storing in firestore
             trade_info = {
-                "trade_id": tradeId,
+                "trade_id": trade_id,
                 "order_id": create_order["orderId"],
                 "symbol": symbol,
                 "type": "Limit",
@@ -136,7 +136,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             tp_order_dict['tp_percentage'] = new_take_profits[tp_count]['tp_percentage']
             tp_order_dict['tp_value'] = new_take_profits[tp_count]['tp_value']
             tp_order_dict['tp_amount'] = new_take_profits[tp_count]['tp_amount']
-            tp_order_dict['trade_id'] = tradeId
+            tp_order_dict['trade_id'] = trade_id
             new_take_profits_with_ids.append(tp_order_dict)
             tp_count += 1
 
@@ -149,7 +149,7 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             sl_order_dict['sl_percentage'] = sl_orders[sl_count]['sl_percentage']
             sl_order_dict['sl_value'] = sl_orders[sl_count]['sl_value']
             sl_order_dict['sl_amount'] = sl_orders[sl_count]['sl_amount']
-            sl_order_dict['trade_id'] = tradeId
+            sl_order_dict['trade_id'] = trade_id
             stop_losses_with_ids.append(sl_order_dict)
             sl_count += 1
 
@@ -159,9 +159,9 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
-        await notification_partial_close(user_id, tradeId, percentage)
+        await notification_partial_close(user_id, trade_id, percentage)
 
-        return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
+        return message_partial_close(trade_id, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
         logger.error("An error occurred: %s", e, exc_info=True)
