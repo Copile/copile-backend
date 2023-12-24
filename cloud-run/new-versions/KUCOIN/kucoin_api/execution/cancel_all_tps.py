@@ -1,10 +1,8 @@
 import asyncio
-import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import get_tp_orders, delete_tp_sl_order
 from utils.message import message_cancel_all_tps
-
-logger = logging.getLogger(__name__)
+from logs.error_logger import log_error
 
 async def cancel_all_tps(api_key, api_secret, api_passphrase, data):
     try:
@@ -25,4 +23,5 @@ async def cancel_all_tps(api_key, api_secret, api_passphrase, data):
         return message_cancel_all_tps(trade_id, tp_orders)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

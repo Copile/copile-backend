@@ -1,16 +1,13 @@
-import logging
 import asyncio
 from ..api.perpetual import BingXFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
 from utils.margin import get_margin
+from logs.error_logger import log_error
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.settings import convert_symbol
-
-logger = logging.getLogger(__name__)
-
 
 async def bulk_order(api_key, api_secret, data):
     try:
@@ -145,4 +142,5 @@ async def bulk_order(api_key, api_secret, data):
         return message_bulk_order(trade_id, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

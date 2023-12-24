@@ -1,11 +1,9 @@
-import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import get_trade_info
 from utils.message import message_cancel_orders
 from utils.notification import notification_cancel_all_orders
+from logs.error_logger import log_error
 from ..scripts.order_factory import Order
-
-logger = logging.getLogger(__name__)
 
 async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
     try:
@@ -47,4 +45,5 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
         return message_cancel_orders(trade_id)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

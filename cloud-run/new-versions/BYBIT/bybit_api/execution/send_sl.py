@@ -1,12 +1,10 @@
 import asyncio
-import logging
 from ..api.perpetual import BybitFunctions
 from utils.firestore import store_sl, get_trade_info
 from utils.message import message_send_sl
+from logs.error_logger import log_error
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
-
-logger = logging.getLogger(__name__)
 
 async def send_sl(api_key, api_secret, data):
     try:
@@ -59,4 +57,5 @@ async def send_sl(api_key, api_secret, data):
         return message_send_sl(trade_id, payload)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

@@ -5,7 +5,7 @@ import hmac
 import json
 
 api_config = {
-    "host": "api.bybit.com",
+    "host": "api-testnet.bybit.com",
     "protocol": "https"
 }
 

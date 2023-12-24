@@ -2,7 +2,7 @@ from exchanges.bingx.api.session import BingXSession
 from exchanges.bybit.api.session import BybitSession
 from exchanges.binance.api.session import BinanceSession
 from exchanges.kucoin.api.session import KucoinSession
-
+from exchanges.testnet.api.session import TestnetSession
 
 # Function for creating session for execution of trade data
 def create_session(exchange, api_key, api_secret, api_passphrase=None):
@@ -17,7 +17,7 @@ def create_session(exchange, api_key, api_secret, api_passphrase=None):
     elif exchange == "bybit":
         return BybitSession(api_key, api_secret)
     elif exchange == "testnet":
-        # return TestnetSession(api_key, api_secret)
+        return TestnetSession(api_key, api_secret)
         pass
     else:
         return

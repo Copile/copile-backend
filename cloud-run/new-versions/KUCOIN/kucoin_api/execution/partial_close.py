@@ -1,17 +1,14 @@
 import asyncio
-import logging
 from ..api.perpetual import KucoinFunctions
 from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
 from utils.message import message_partial_close
 from utils.partial import distribute_percentages
 from utils.notification import notification_partial_close
+from logs.error_logger import log_error
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.order import get_tps_status
-
-logger = logging.getLogger(__name__)
-
 
 async def partial_close(api_key, api_secret, api_passphrase, data):
     try:
@@ -164,4 +161,5 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
         return message_partial_close(trade_id, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

@@ -3,9 +3,8 @@ from ..api.perpetual import BingXFunctions
 from utils.firestore import get_trade_info
 from utils.message import message_cancel_order
 from utils.notification import notification_cancel_order
+from logs.error_logger import log_error
 from ..scripts.cancel import send_cancel
-
-logger = logging.getLogger(__name__)
 
 async def cancel_order(api_key, api_secret, data):
     try:
@@ -29,4 +28,5 @@ async def cancel_order(api_key, api_secret, data):
         return message_cancel_order(trade_id, document_id, trade_type)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e
