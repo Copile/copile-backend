@@ -1,5 +1,5 @@
 import traceback
-from logger_config import get_custom_logger
+from .logger_config import get_custom_logger
 
 # Get a custom logger
 logger = get_custom_logger("cloudLogger")
