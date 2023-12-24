@@ -110,7 +110,7 @@ class BybitFunctions:
         path = "/v5/market/tickers"
         payload = {'category': category, "symbol": symbol}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
-        return response['list'][0]['markPrice']
+        return float(response['list'][0]['markPrice'])
 
     async def get_precisions(self, symbol):
         # https://bybit-exchange.github.io/docs/v5/market/instrument

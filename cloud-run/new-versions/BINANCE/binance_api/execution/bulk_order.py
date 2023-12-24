@@ -1,15 +1,13 @@
 import asyncio
-import logging
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
 from utils.margin import get_margin
+from logs.error_logger import log_error
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
 from ..scripts.margin_mode import switch_margin_mode
-
-logger = logging.getLogger(__name__)
 
 async def bulk_order(api_key, api_secret, data):
     try:
@@ -36,16 +34,18 @@ async def bulk_order(api_key, api_secret, data):
 
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
-        precision, set_leverage, margin_mode = await asyncio.gather(
+        # Fetching current market price
+        precision, set_leverage, margin_mode, market_price = await asyncio.gather(
             session.get_precisions(symbol),
             session.set_leverage(symbol, leverage),
-            switch_margin_mode(session, symbol, margin_type)
+            switch_margin_mode(session, symbol, margin_type),
+            session.get_market(symbol)
         )
 
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
                          precision["quantity_precision"]) if entry != "market" else round(
-            (float(margin) * int(leverage) / await session.get_market(symbol)), precision["quantity_precision"])
+            (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
 
         # Order object for initial order
         initial_order = Order(symbol, order_type, side, entry if entry != 'market' else None, quantity, None, False)
@@ -113,7 +113,7 @@ async def bulk_order(api_key, api_secret, data):
             "type": order_type,
             "side": side,
             "quantity": quantity,
-            "entry": entry,
+            "entry": entry if entry != 'market' else market_price,
             "leverage": leverage,
             "margin": margin,
             "exchange": trader_exchange
@@ -133,4 +133,5 @@ async def bulk_order(api_key, api_secret, data):
         return message_bulk_order(trade_id, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, trade_id, e)
+        raise e

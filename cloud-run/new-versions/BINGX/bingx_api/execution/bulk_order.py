@@ -42,16 +42,18 @@ async def bulk_order(api_key, api_secret, data):
 
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
-        precision, margin_mode, set_leverage = await asyncio.gather(
+        # Fetching current market price
+        precision, margin_mode, set_leverage, market_price = await asyncio.gather(
             session.get_precisions(symbol),
             session.switch_margin_mode(symbol, margin_type),
-            session.set_leverage(symbol, side, leverage)
+            session.set_leverage(symbol, side, leverage),
+            session.get_market(symbol)
         )
 
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
                          precision["quantity_precision"]) if entry != "market" else round(
-            (float(margin) * int(leverage) / float(await session.get_market(symbol))), precision["quantity_precision"])
+            (float(margin) * int(leverage) / market_price), precision["quantity_precision"])
 
         # Order object for initial order
         initial_order = Order(symbol, order_type, side, None if entry == "market" else entry, quantity,
@@ -123,7 +125,7 @@ async def bulk_order(api_key, api_secret, data):
             "type": order_type,
             "side": side,
             "quantity": quantity,
-            "entry": entry,
+            "entry": entry if entry != 'market' else market_price,
             "leverage": leverage,
             "margin": margin,
             "exchange": trader_exchange

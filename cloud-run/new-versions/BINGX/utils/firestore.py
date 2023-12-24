@@ -1,10 +1,8 @@
 from google.cloud import firestore
 from .decryption import decrypt_data
+from logs.error_logger import log_error
 import time
 import asyncio
-import logging
-
-logger = logging.getLogger(__name__)
 
 db = db = firestore.AsyncClient()
 
@@ -55,7 +53,8 @@ async def store_trade(account_id, order_dict):
             FIELD_CREATED_AT: int(time.time())
         })
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, order_dict['trade_id'], e)
+        raise e
 
 
 # Store take profit data in db
@@ -72,22 +71,26 @@ async def store_tp(account_id, tp_dict):
             FIELD_TP_AMOUNT: tp_dict["tp_amount"]
         })
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, tp_dict['trade_id'], e)
+        raise e
 
 
 # Store stop loss data in db
 async def store_sl(account_id, sl_dict):
-    sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-        sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
-    await sl_doc_ref.set({
-        FIELD_ORDER_ID: str(sl_dict["order_id"]),
-        FIELD_EXECUTED: "1",
-        FIELD_SL_PERCENTAGE: sl_dict["sl_percentage"],
-        FIELD_SL_NUMBER: sl_dict["sl_number"],
-        FIELD_SL_VALUE: sl_dict["sl_value"],
-        FIELD_SL_AMOUNT: sl_dict['sl_amount']
-    })
-
+    try:
+        sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
+        await sl_doc_ref.set({
+            FIELD_ORDER_ID: str(sl_dict["order_id"]),
+            FIELD_EXECUTED: "1",
+            FIELD_SL_PERCENTAGE: sl_dict["sl_percentage"],
+            FIELD_SL_NUMBER: sl_dict["sl_number"],
+            FIELD_SL_VALUE: sl_dict["sl_value"],
+            FIELD_SL_AMOUNT: sl_dict['sl_amount']
+        })
+    except Exception as e:
+        log_error(account_id, sl_dict['trade_id'], e)
+        raise e
 
 # Delete single order from db
 async def delete_order(account_id, trade_id):
@@ -95,7 +98,8 @@ async def delete_order(account_id, trade_id):
         await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
             trade_id).delete()
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Delete single take profit or stop loss from db
@@ -108,7 +112,8 @@ async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
             await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
                 trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Get user api keys for a specific exchange
@@ -126,17 +131,31 @@ async def get_user_keys(account_id, exchange):
 
         return exchange_data
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, None, e)
+        raise e
+
+
+# Get user margin from a specific user and plan
+async def get_user_margin(account_id, plan_id):
+    try:
+        plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(plan_id)
+        margin = (await plan.get()).to_dict()["margin"]
+        return margin
+    except Exception as e:
+        log_error(account_id, None, e)
+        raise e
+
 
 # get user plans from firestore with account_id and exchange
-async def get_user_plan(account_id, plan_id, worker_id):
+async def get_user_plan(account_id, plan_id, trader_id):
     try:
         plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(
-            plan_id).collection(COLLECTION_WORKERS).document(worker_id)
+            plan_id).collection(COLLECTION_WORKERS).document(trader_id)
         plan_object = (await plan.get()).to_dict()
         return plan_object
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, None, e)
+        raise e
 
 
 # Get trade related info for a specific tradeId
@@ -148,7 +167,8 @@ async def get_trade_info(account_id, trade_id):
                 trade_id).get()).to_dict()
         return trade_info
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Get specific tp/sl order document
@@ -170,7 +190,8 @@ async def get_specific_order(account_id, trade_id, document_id, trade_type):
         else:
             return None
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Get take profit or stop loss info
@@ -187,7 +208,8 @@ async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
                     trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
         return tp_sl_info
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Check executed status of a specific order
@@ -205,7 +227,8 @@ async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
             executed_info = None
         return executed_info
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Update quantity field for a specific order
@@ -217,7 +240,8 @@ async def update_trade_quantity(account_id, trade_id, new_quantity):
         await trade_ref.update({'quantity': new_quantity})
         return f"Trade quantity successfully updated to {new_quantity}"
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Change executed status of take profit or stop loss
@@ -234,7 +258,8 @@ async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_
                 FIELD_EXECUTED: str(status)
             })
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Async function to get all take profit orders for a trade
@@ -255,7 +280,8 @@ async def get_tp_orders(account_id, trade_id):
 
         return tp_orders
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e
 
 
 # Get take profit and stop loss orders from firestore with account_id and trade_id
@@ -286,4 +312,5 @@ async def get_tp_sl_orders(account_id, trade_id):
 
         return tp_sl_orders
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(account_id, trade_id, e)
+        raise e

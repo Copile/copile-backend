@@ -1,11 +1,9 @@
-import logging
+from logs.error_logger import log_error
 from .firestore import get_user_plan
 
-logger = logging.getLogger(__name__)
-
-async def get_margin(session, trader_id, plan_id, worker_id):
+async def get_margin(session, user_id, plan_id, worker_id):
     try:
-        plan_object = await get_user_plan(trader_id, plan_id, worker_id)
+        plan_object = await get_user_plan(user_id, plan_id, worker_id)
         if plan_object["option"] == "percent":
                     balance = await session.get_balance()
                     margin = round(balance * float(plan_object["percentage"]), 1)
@@ -15,4 +13,5 @@ async def get_margin(session, trader_id, plan_id, worker_id):
         else:
             return "No margin found!"
     except Exception as e:
-        logger.error("An error occurred: %s", e, exc_info=True)
+        log_error(user_id, plan_id, e)
+        raise e

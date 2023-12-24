@@ -38,6 +38,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         # Fetching precision for specific symbol
         precision = await session.get_precisions(symbol)
 
+        market_price = 0
         if entry != "market":
             # Calculate quantity when a specific price is provided
             adjusted_margin = float(margin) * int(leverage)
@@ -121,7 +122,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
             "type": order_type,
             "side": side,
             "quantity": quantity,
-            "entry": entry,
+            "entry": entry if entry != 'market' else market_price,
             "leverage": leverage,
             "margin": margin,
             "exchange": trader_exchange

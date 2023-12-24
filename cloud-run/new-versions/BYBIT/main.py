@@ -1,18 +1,10 @@
 import os
-import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from utils.firestore import get_user_keys
 from .bybit_api.api.session import BybitSession
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s [%(levelname)s]: %(message)s'
-)
-
 app = FastAPI()
-
-logger = logging.getLogger(__name__)
 
 @app.get('/test')
 async def test():
@@ -34,7 +26,6 @@ async def send_sl(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in send_sl: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -53,7 +44,6 @@ async def cancel_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in cancel_order: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -72,7 +62,6 @@ async def cancel_all_orders(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in cancel_all_orders: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -92,7 +81,6 @@ async def cancel_all_tps(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in cancel_all_tps: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -112,7 +100,6 @@ async def bulk_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in bulk_order: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -132,7 +119,6 @@ async def bulk_tp(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in bulk_tp: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -153,7 +139,6 @@ async def replace_sl(data: dict):
 
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in replace_sl: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -173,7 +158,6 @@ async def partial_close(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in partial_close: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
