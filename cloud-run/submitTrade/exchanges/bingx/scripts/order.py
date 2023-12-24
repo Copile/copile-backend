@@ -10,7 +10,7 @@ async def get_tps_status(session, tp_orders, trade_info):
     for tp_order in tp_orders:
         tp_order_id = tp_order["orderID"]
         matching_open_orders = [open_order for open_order in open_orders if
-                                str(open_order["orderId"]) == tp_order_id]
+                                open_order["orderId"] == tp_order_id]
         tp_order["tp_status"] = "active" if matching_open_orders and matching_open_orders[0][
             "status"] in active_status else "filled"
         tps_data.append(tp_order)

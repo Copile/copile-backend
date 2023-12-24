@@ -35,15 +35,14 @@ async def bulk_order(api_key, api_secret, data):
 
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as position mode and margin mode (ISOLATED, CROSSED)
-        precision, set_leverage, position_mode, margin_mode = await asyncio.gather(
+        # Fetching current market price
+        precision, set_leverage, position_mode, margin_mode, market_price = await asyncio.gather(
             session.get_precisions(symbol),
             session.set_leverage(symbol, leverage),
             session.switch_position_mode(symbol, 0),
-            session.switch_margin_mode(margin_type)
+            session.switch_margin_mode(margin_type),
+            session.get_market(symbol)
         )
-
-        # Fetching market price of symbol
-        market_price = float(await session.get_market(symbol))
 
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
@@ -120,7 +119,7 @@ async def bulk_order(api_key, api_secret, data):
             "type": order_type,
             "side": side,
             "quantity": quantity,
-            "entry": entry,
+            "entry": entry if entry != 'market' else market_price,
             "leverage": leverage,
             "margin": margin,
             "exchange": trader_exchange
@@ -138,7 +137,7 @@ async def bulk_order(api_key, api_secret, data):
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def send_sl(api_key, api_secret, data):
@@ -192,7 +191,7 @@ async def send_sl(api_key, api_secret, data):
         return message_send_sl(tradeId, payload)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def replace_sl(api_key, api_secret, data):
@@ -248,7 +247,7 @@ async def replace_sl(api_key, api_secret, data):
         return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def cancel_order(api_key, api_secret, data):
@@ -311,7 +310,7 @@ async def cancel_all_orders(api_key, api_secret, data):
         return message_cancel_orders(tradeId)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def cancel_all_tps(api_key, api_secret, data):
@@ -336,7 +335,7 @@ async def cancel_all_tps(api_key, api_secret, data):
         return message_cancel_all_tps(tradeId, tp_orders)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def bulk_tp(api_key, api_secret, data):
@@ -406,7 +405,7 @@ async def bulk_tp(api_key, api_secret, data):
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e
 
 async def partial_close(api_key, api_secret, data):
@@ -557,5 +556,5 @@ async def partial_close(api_key, api_secret, data):
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(data['traderId'], e)
+        log_error(traderId, tradeId, e)
         raise e

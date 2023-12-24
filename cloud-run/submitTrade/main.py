@@ -55,7 +55,7 @@ async def test():
     return {"message": "Hello World"}
 
 @app.post('/submit_sl')
-async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
+async def submit_sl(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -76,11 +76,10 @@ async def submit_sl(data: dict, traderId: str = Header(None), status_code=200):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancelOrder')
-async def cancel_order(data: dict, traderId: str = Header(None), status_code=200):
+async def cancel_order(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -101,11 +100,10 @@ async def cancel_order(data: dict, traderId: str = Header(None), status_code=200
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancel_all_orders')
-async def cancel_all_orders(data: dict, traderId: str = Header(None), status_code=200):
+async def cancel_all_orders(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -126,11 +124,10 @@ async def cancel_all_orders(data: dict, traderId: str = Header(None), status_cod
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/cancel_all_tps')
-async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=200):
+async def cancel_all_tps(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -151,11 +148,10 @@ async def cancel_all_tps(data: dict, traderId: str = Header(None), status_code=2
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/bulk_order')
-async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
+async def bulk_order(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -176,11 +172,10 @@ async def bulk_order(data: dict, traderId: str = Header(None), status_code=200):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
 @app.post('/bulk_tp')
-async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
+async def bulk_tp(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -201,11 +196,10 @@ async def bulk_tp(data: dict, traderId: str = Header(None), status_code=200):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/replace_tp')
-async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
+async def replace_tp(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -226,11 +220,10 @@ async def replace_tp(data: dict, traderId: str = Header(None), status_code=200):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
 
 @app.post('/replace_sl')
-async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
+async def replace_sl(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -251,11 +244,10 @@ async def replace_sl(data: dict, traderId: str = Header(None), status_code=200):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 @app.post('/partial_close')
-async def partial_close(data: dict, traderId: str = Header(None), status_code=200):
+async def partial_close(data: dict, traderId: str = Header(None)):
     try:
         exists = await trader_check(traderId)
         
@@ -276,7 +268,6 @@ async def partial_close(data: dict, traderId: str = Header(None), status_code=20
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as err:
         # Log the error and return an error response
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     
 if __name__ == '__main__':

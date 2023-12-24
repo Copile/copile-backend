@@ -10,5 +10,5 @@ async def send_cancel(session, trader_id, trade_id, document_id, trade_type):
 
         return
     except Exception as e:
-        log_error(trader_id, e)
+        log_error(trader_id, trade_id, e)
         raise e

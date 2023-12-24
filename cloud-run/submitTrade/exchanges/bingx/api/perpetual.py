@@ -101,7 +101,7 @@ class BingXFunctions:
         path = "/openApi/swap/v2/quote/ticker"
         payload = {'symbol': symbol}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
-        return response['lastPrice']
+        return float(response['lastPrice'])
 
     async def get_precisions(self, symbol):
         path = "/openApi/swap/v2/quote/contracts"
