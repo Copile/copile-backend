@@ -2,7 +2,7 @@ const ExchangeSession = require("../exchangeSession");
 const CustomError = require("../../utils/error");
 const { getTestnetBalance } = require("./balance");
 const { getTestnetPositions } = require("./positions");
-const { getTestnetOrders } = require("./orders");
+const { getTestnetOrders, getTestnetOrderStatuses } = require("./orders");
 
 /**
  * Represents an exchange session for the testnet.
@@ -16,6 +16,28 @@ class BybitSession extends ExchangeSession {
    */
   constructor(apiKey, apiSecret) {
     super(apiKey, apiSecret);
+  }
+
+  /**
+   * Fetch order statuses for a given trader ID.
+   * @async
+   * @param {string} traderId - The unique ID of the trader.
+   * @returns {Promise<Array<Object>>} An array of order status data objects.
+   * @throws {CustomError} Throws a custom error if operation fails.
+   */
+  async getOrderStatuses(traderId) {
+    try {
+      return await getTestnetOrderStatuses(this.apiKey, this.apiSecret, traderId);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch testnet order statuses: ${error.message}`,
+        status: 500,
+        source: "getOrderStatuses",
+      });
+    }
   }
 
   /**
