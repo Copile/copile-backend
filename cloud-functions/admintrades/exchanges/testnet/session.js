@@ -15,6 +15,29 @@ class BybitSession extends ExchangeSession {
   constructor(apiKey, apiSecret) {
     super(apiKey, apiSecret);
   }
+
+  /**
+   * Fetch positions for a given trader ID.
+   * @async
+   * @param {string} userId - The unique ID of the trader.
+   * @returns {Promise<Array<Object>>} An array of position data objects.
+   * @throws {CustomError} Throws a custom error if operation fails.
+   */
+  async getPositions(userId) {
+    try {
+      return await getTestnetPositions(this.apiKey, this.apiSecret, userId);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new CustomError({
+        message: `Failed to fetch testnet positions: ${error.message}`,
+        status: 500,
+        source: "getPositions",
+      });
+    }
+  }
+
   /**
    * Fetch the balance for a given trader ID.
    * @async
