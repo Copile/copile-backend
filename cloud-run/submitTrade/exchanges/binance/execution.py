@@ -6,6 +6,7 @@ from utils.message import message_replace_sl, message_send_sl, message_bulk_tp, 
     message_cancel_order, message_cancel_all_tps, message_cancel_orders, message_partial_close
 from utils.partial import distribute_percentages
 from logs.error_logger import log_error
+from logs.info_logger import LogInfo
 from .scripts.order_factory import Order
 from .scripts.cancel import send_cancel
 from .scripts.settings import get_position_quantity
@@ -31,9 +32,15 @@ async def bulk_order(api_key, api_secret, data):
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
 
+        # Creating logger for info
+        logger = LogInfo(traderId, tradeId)
+
+        logger.info(f"Starting bulk order with data: {data}")
+
         # Order type of initial order
         order_type = "LIMIT" if entry != "market" else "MARKET"
 
+        logger.info(f"Getting precision for {symbol}, setting leverage to {leverage}, switching margin mode to {margin_type} and getting market price")
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
         # Fetching current market price
@@ -55,6 +62,7 @@ async def bulk_order(api_key, api_secret, data):
         # Adding all orders to an array for execution
         prepared_orders = [initial_order]
 
+        logger.info(f"Calculating new take-profits for trade based on {take_profits}")
         # Calculating new take-profits for trade
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
 
