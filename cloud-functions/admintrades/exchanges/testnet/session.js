@@ -1,6 +1,7 @@
 const ExchangeSession = require("../exchangeSession");
 const CustomError = require("../../utils/error");
 const { getTestnetBalance } = require("./balance");
+const { getTestnetPositions } = require("./positions");
 
 /**
  * Represents an exchange session for the testnet.
