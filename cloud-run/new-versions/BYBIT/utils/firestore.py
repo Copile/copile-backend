@@ -67,7 +67,7 @@ async def store_tp(account_id, tp_dict):
             FIELD_EXECUTED: "1",
             FIELD_TP_NUMBER: tp_dict["tp_number"],
             FIELD_TP_VALUE: tp_dict["tp_value"],
-            FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"] / 100,
+            FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
             FIELD_TP_AMOUNT: tp_dict["tp_amount"]
         })
     except Exception as e:

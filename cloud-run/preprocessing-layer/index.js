@@ -10,7 +10,7 @@ app.enable("trust proxy");
 
 app.use(bodyParser.text({ type: "*/*" }));
 
-async function addTaskToQueue(type, trade_data, user_type) {
+async function addTaskToQueue(type, trade_data) {
   let parent;
   let url;
 
@@ -144,7 +144,7 @@ app.post("/newTrade", async (req, res) => {
 
             if (exchange.api_key !== "x" && exchange.api_secret !== "x") {
               trade_data.exchange = preferredExchange;
-              await addTaskToQueue("send_call", trade_data, "user");
+              await addTaskToQueue("send_call", trade_data);
             }
           } else {
             const validExchanges = Object.entries(user.exchanges).filter(
@@ -161,7 +161,7 @@ app.post("/newTrade", async (req, res) => {
               const randomIndex = Math.floor(Math.random() * validExchanges.length);
               const exchangeName = validExchanges[randomIndex][0];
               trade_data.exchange = exchangeName;
-              await addTaskToQueue("send_call", trade_data, "user");
+              await addTaskToQueue("send_call", trade_data);
             }
           }
         }
@@ -188,9 +188,9 @@ app.post("/bulkTP", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("bulk_tp", traderExecData, "test");
+      await addTaskToQueue("bulk_tp", traderExecData);
     } else {
-      await addTaskToQueue("bulk_tp", traderExecData, "trader");
+      await addTaskToQueue("bulk_tp", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -207,7 +207,7 @@ app.post("/bulkTP", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("bulk_tp", trade_data, "user"));
+        tasks.push(addTaskToQueue("bulk_tp", trade_data));
       }
     });
 
@@ -238,7 +238,7 @@ app.post("/submitTP", async (req, res) => {
     tradeQuery.forEach(async (doc) => {
       const userId = doc.ref.parent.parent.id;
       trade_data.account_id = userId;
-      await addTaskToQueue("send_tp", trade_data, "user");
+      await addTaskToQueue("send_tp", trade_data);
     });
 
     res.status(200).json({ success: true, message: "take-profit executed successfully" });
@@ -262,7 +262,7 @@ app.post("/replaceTP", async (req, res) => {
       user_type: "traders",
     };
 
-    await addTaskToQueue("replace_tp", traderData, "trader");
+    await addTaskToQueue("replace_tp", traderData);
 
     const tradesRef = firestore.collectionGroup("trades");
     const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
@@ -279,7 +279,7 @@ app.post("/replaceTP", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("replace_tp", trade_data, "user"));
+        tasks.push(addTaskToQueue("replace_tp", trade_data));
       }
     });
 
@@ -306,9 +306,9 @@ app.post("/submitSL", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("send_sl", traderExecData, "test");
+      await addTaskToQueue("send_sl", traderExecData);
     } else {
-      await addTaskToQueue("send_sl", traderExecData, "trader");
+      await addTaskToQueue("send_sl", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -326,7 +326,7 @@ app.post("/submitSL", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("send_sl", trade_data, "user"));
+        tasks.push(addTaskToQueue("send_sl", trade_data));
       }
     });
 
@@ -354,9 +354,9 @@ app.post("/replaceSL", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("replace_sl", traderExecData, "test");
+      await addTaskToQueue("replace_sl", traderExecData);
     } else {
-      await addTaskToQueue("replace_sl", traderExecData, "trader");
+      await addTaskToQueue("replace_sl", traderExecData);
     }
 
     const tradesRef = firestore.collectionGroup("trades");
@@ -374,7 +374,7 @@ app.post("/replaceSL", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("replace_sl", trade_data, "user"));
+        tasks.push(addTaskToQueue("replace_sl", trade_data));
       }
     });
 
@@ -390,21 +390,21 @@ app.post("/replaceSL", async (req, res) => {
 app.post("/cancelOrder", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
-    const { tradeId, traderId, orderId, type } = trade;
+    const { tradeId, traderId, document_id, type } = trade;
 
     const traderExecData = {
       trade_id: tradeId,
       account_id: traderId,
-      document_id: orderId,
+      document_id: document_id,
       trade_type: type,
       exchange: await getExchangeForTrade(traderId, tradeId),
       user_type: "traders",
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("cancel_order", traderExecData, "test");
+      await addTaskToQueue("cancel_order", traderExecData);
     } else {
-      await addTaskToQueue("cancel_order", traderExecData, "trader");
+      await addTaskToQueue("cancel_order", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -417,12 +417,12 @@ app.post("/cancelOrder", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           account_id: userId,
-          document_id: orderId,
+          document_id: document_id,
           trade_type: type,
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("cancel_order", trade_data, "user"));
+        tasks.push(addTaskToQueue("cancel_order", trade_data));
       }
     });
 
@@ -448,9 +448,9 @@ app.post("/cancelAllOrders", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("cancel_all_orders", traderExecData, "test");
+      await addTaskToQueue("cancel_all_orders", traderExecData);
     } else {
-      await addTaskToQueue("cancel_all_orders", traderExecData, "trader");
+      await addTaskToQueue("cancel_all_orders", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -466,7 +466,7 @@ app.post("/cancelAllOrders", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("cancel_all_orders", trade_data, "user"));
+        tasks.push(addTaskToQueue("cancel_all_orders", trade_data));
       }
     });
 
@@ -492,9 +492,9 @@ app.post("/cancelAllTPs", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("cancel_all_tps", traderExecData, "test");
+      await addTaskToQueue("cancel_all_tps", traderExecData);
     } else {
-      await addTaskToQueue("cancel_all_tps", traderExecData, "trader");
+      await addTaskToQueue("cancel_all_tps", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -510,7 +510,7 @@ app.post("/cancelAllTPs", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("cancel_all_tps", trade_data, "user"));
+        tasks.push(addTaskToQueue("cancel_all_tps", trade_data));
       }
     });
 
@@ -556,8 +556,8 @@ app.post("/bulkOrder", async (req, res) => {
     // Add the trader task to the queue, with a different queue depending on whether the trader ID is the test ID
     const traderTask =
       traderId === process.env.testID
-        ? addTaskToQueue("bulk_order", traderExecData, "test")
-        : addTaskToQueue("bulk_order", traderExecData, "trader");
+        ? addTaskToQueue("bulk_order", traderExecData)
+        : addTaskToQueue("bulk_order", traderExecData);
     console.log(`Added task for trader: ${traderId}`);
 
     // If no exchanges or plans are selected, skip user tasks
@@ -638,7 +638,7 @@ app.post("/bulkOrder", async (req, res) => {
 
           console.log(`Adding task to queue for user ${userId}`);
           // Add a task to the queue to execute the trade for the user
-          return addTaskToQueue("bulk_order", currentTradeData, "user");
+          return addTaskToQueue("bulk_order", currentTradeData);
         } else {
           // If the preferred exchange is not in the list of selected exchanges or the user does not have valid API keys for the preferred exchange
           console.log(
@@ -667,7 +667,7 @@ app.post("/bulkOrder", async (req, res) => {
               `Selected exchange ${currentTradeData.exchange} and adding task to queue for user ${userId}`
             );
             // Add a task to the queue to execute the trade for the user
-            return addTaskToQueue("bulk_order", currentTradeData, "user");
+            return addTaskToQueue("bulk_order", currentTradeData);
           }
         }
       } catch (error) {
@@ -707,9 +707,9 @@ app.post("/partialClose", async (req, res) => {
     };
 
     if (traderId === process.env.testID) {
-      await addTaskToQueue("partial_close", traderExecData, "test");
+      await addTaskToQueue("partial_close", traderExecData);
     } else {
-      await addTaskToQueue("partial_close", traderExecData, "trader");
+      await addTaskToQueue("partial_close", traderExecData);
     }
 
     const plansRef = firestore.collectionGroup("trades");
@@ -726,7 +726,7 @@ app.post("/partialClose", async (req, res) => {
           exchange: doc.get("exchange"),
           user_type: "users",
         };
-        tasks.push(addTaskToQueue("partial_close", trade_data, "user"));
+        tasks.push(addTaskToQueue("partial_close", trade_data));
       }
     });
 

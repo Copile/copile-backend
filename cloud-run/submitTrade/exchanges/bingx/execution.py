@@ -5,7 +5,7 @@ from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, upd
 from utils.message import message_replace_sl, message_send_sl, message_bulk_tp, message_bulk_order, \
     message_cancel_order, message_cancel_all_tps, message_cancel_orders, message_partial_close
 from utils.partial import distribute_percentages
-from logs.error_logger import log_error
+from logs.logger import Logger
 from .scripts.order_factory import Order
 from .scripts.settings import convert_symbol, get_position_quantity
 from .scripts.cancel import send_cancel
@@ -19,6 +19,10 @@ async def bulk_order(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         margin = data['margin']
         trader_exchange = data['trader_exchange']
         margin_type = data['margin_type']
@@ -141,7 +145,7 @@ async def bulk_order(api_key, api_secret, data):
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def send_sl(api_key, api_secret, data):
@@ -151,6 +155,10 @@ async def send_sl(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         document_id = data['sl_id']
         payload = data['payload']
 
@@ -192,7 +200,7 @@ async def send_sl(api_key, api_secret, data):
         return message_send_sl(tradeId, payload)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def replace_sl(api_key, api_secret, data):
@@ -202,6 +210,10 @@ async def replace_sl(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         document_id = data['document_id']
         payload = data['payload']
 
@@ -245,7 +257,7 @@ async def replace_sl(api_key, api_secret, data):
         return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def cancel_order(api_key, api_secret, data):
@@ -255,6 +267,10 @@ async def cancel_order(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         document_id = data['document_id']
         trade_type = data['trade_type']
 
@@ -268,7 +284,7 @@ async def cancel_order(api_key, api_secret, data):
         return message_cancel_order(tradeId, document_id, trade_type)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def cancel_all_orders(api_key, api_secret, data):
@@ -278,6 +294,9 @@ async def cancel_all_orders(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
 
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
@@ -307,7 +326,7 @@ async def cancel_all_orders(api_key, api_secret, data):
         return message_cancel_orders(tradeId)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def cancel_all_tps(api_key, api_secret, data):
@@ -317,6 +336,9 @@ async def cancel_all_tps(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
 
         # Fetching the trade info and current take-profit orders from firestore
         trade_info, tp_orders = await asyncio.gather(
@@ -332,7 +354,7 @@ async def cancel_all_tps(api_key, api_secret, data):
         return message_cancel_all_tps(tradeId, tp_orders)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def bulk_tp(api_key, api_secret, data):
@@ -342,6 +364,10 @@ async def bulk_tp(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
@@ -402,7 +428,7 @@ async def bulk_tp(api_key, api_secret, data):
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e
 
 async def partial_close(api_key, api_secret, data):
@@ -412,6 +438,10 @@ async def partial_close(api_key, api_secret, data):
 
         traderId = data['traderId']
         tradeId = data['tradeId']
+
+        # Creating logger for info/errors
+        logger = Logger(traderId, tradeId)
+
         percentage = data['percentage']
 
         # Fetching the trade info and current take-profits/stop-losses from firestore
@@ -551,5 +581,5 @@ async def partial_close(api_key, api_secret, data):
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(traderId, tradeId, e)
+        logger.error(e)
         raise e

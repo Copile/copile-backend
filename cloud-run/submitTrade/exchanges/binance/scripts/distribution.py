@@ -19,7 +19,7 @@ def calculate_tp_amounts(take_profits, quantity, precision):
             tp_id = tp_data.get('document_id', tp_data.get('tp_id'))
             tp_number = tp_data['tp_number']
             tp_value = tp_data['tp_value']
-            tp_percentage = round((tp_amounts[index] / total_amount) * 100, 2)
+            tp_percentage = round(tp_amounts[index] / total_amount, 2)
 
             new_take_profit = {
                 'tp_id': tp_id,

@@ -1,4 +1,8 @@
 def distribute_percentages(orders):
+    # Return empty array if there are no orders
+    if len(orders) == 0:
+        return []
+
     # Extract the tp_percentage for each order
     tps = [order["tp_percentage"] for order in orders]
     n = len(tps)

@@ -2,7 +2,7 @@ from google.cloud import firestore
 from .decryption import decrypt_data
 import time
 import asyncio
-from logs.error_logger import log_error
+from logs.logger import Logger
 
 db = firestore.AsyncClient()
 
@@ -43,7 +43,8 @@ async def trader_check(trader_id):
         return document_snapshot.exists
 
     except Exception as e:
-        log_error(trader_id, None, e)
+        logger = Logger(trader_id, None)
+        logger.error(e)
         raise e
 
 
@@ -66,7 +67,8 @@ async def store_trade(account_id, order_dict):
             FIELD_CREATED_AT: int(time.time())
         })
     except Exception as e:
-        log_error(account_id, order_dict['trade_id'], e)
+        logger = Logger(account_id, order_dict['trade_id'])
+        logger.error(e)
         raise e
 
 
@@ -80,11 +82,12 @@ async def store_tp(account_id, tp_dict):
             FIELD_EXECUTED: "1",
             FIELD_TP_NUMBER: tp_dict["tp_number"],
             FIELD_TP_VALUE: tp_dict["tp_value"],
-            FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"] / 100,
+            FIELD_TP_PERCENTAGE: tp_dict["tp_percentage"],
             FIELD_TP_AMOUNT: tp_dict["tp_amount"]
         })
     except Exception as e:
-        log_error(account_id, tp_dict['trade_id'], e)
+        logger = Logger(account_id, tp_dict['trade_id'])
+        logger.error(e)
         raise e
 
 
@@ -102,9 +105,9 @@ async def store_sl(account_id, sl_dict):
             FIELD_SL_AMOUNT: sl_dict['sl_amount']
         })
     except Exception as e:
-        log_error(account_id, sl_dict['trade_id'], e)
+        logger = Logger(account_id, sl_dict['trade_id'])
+        logger.error(e)
         raise e
-
 
 # Delete single order from db
 async def delete_order(account_id, trade_id):
@@ -112,7 +115,8 @@ async def delete_order(account_id, trade_id):
         await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
             trade_id).delete()
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -126,7 +130,8 @@ async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
             await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
                 trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -145,7 +150,8 @@ async def get_user_keys(account_id, exchange):
 
         return exchange_data
     except Exception as e:
-        log_error(account_id, None, e)
+        logger = Logger(account_id, None)
+        logger.error(e)
         raise e
 
 
@@ -156,19 +162,21 @@ async def get_user_margin(account_id, plan_id):
         margin = (await plan.get()).to_dict()["margin"]
         return margin
     except Exception as e:
-        log_error(account_id, None, e)
+        logger = Logger(account_id, None)
+        logger.error(e)
         raise e
 
 
 # get user plans from firestore with account_id and exchange
-async def get_user_plan(account_id, plan_id, trader_id):
+async def get_user_plan(account_id, plan_id, worker_id):
     try:
         plan = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_PLANS).document(
-            plan_id).collection(COLLECTION_WORKERS).document(trader_id)
+            plan_id).collection(COLLECTION_WORKERS).document(worker_id)
         plan_object = (await plan.get()).to_dict()
         return plan_object
     except Exception as e:
-        log_error(account_id, None, e)
+        logger = Logger(account_id, None)
+        logger.error(e)
         raise e
 
 
@@ -181,7 +189,8 @@ async def get_trade_info(account_id, trade_id):
                 trade_id).get()).to_dict()
         return trade_info
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 # Get specific tp/sl order document
@@ -203,9 +212,9 @@ async def get_specific_order(account_id, trade_id, document_id, trade_type):
         else:
             return None
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
-
 
 # Get take profit or stop loss info
 async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
@@ -221,7 +230,8 @@ async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
                     trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
         return tp_sl_info
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -240,7 +250,8 @@ async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
             executed_info = None
         return executed_info
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -253,7 +264,8 @@ async def update_trade_quantity(account_id, trade_id, new_quantity):
         await trade_ref.update({'quantity': new_quantity})
         return f"Trade quantity successfully updated to {new_quantity}"
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -271,7 +283,8 @@ async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_
                 FIELD_EXECUTED: str(status)
             })
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -293,7 +306,8 @@ async def get_tp_orders(account_id, trade_id):
 
         return tp_orders
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
 
 
@@ -325,5 +339,6 @@ async def get_tp_sl_orders(account_id, trade_id):
 
         return tp_sl_orders
     except Exception as e:
-        log_error(account_id, trade_id, e)
+        logger = Logger(account_id, trade_id)
+        logger.error(e)
         raise e
