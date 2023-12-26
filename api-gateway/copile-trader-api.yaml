@@ -383,7 +383,7 @@ paths:
       operationId: getAccount
       parameters:
         - name: traderId
-          in: header    # Updated to read traderId from header
+          in: header
           required: true
           type: string
       responses:

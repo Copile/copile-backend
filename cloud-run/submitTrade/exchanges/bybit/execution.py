@@ -486,7 +486,7 @@ async def partial_close(api_key, api_secret, data):
         take_profits = distribute_percentages(tps_data)
 
         # Calculating new take-profits for replacing current ones
-        new_take_profits = await calculate_tp_amounts(take_profits, new_quantity, precision)
+        new_take_profits = calculate_tp_amounts(take_profits, new_quantity, precision)
 
         # Cancelling all active tps/sls as well as old limit orders
         await session.cancel_all_orders(symbol)
