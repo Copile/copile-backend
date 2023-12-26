@@ -397,6 +397,33 @@ paths:
       consumes:
         - application/json
       produces:
+        - application/
+  /trader/updateMonitorStatus:
+    post:
+      operationId: updateMonitorStatus
+      parameters:
+        - name: traderId
+          in: header
+          required: true
+          type: string
+        - name: requestBody
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateMonitorStatusRequest'
+      responses:
+        200:
+          description: "Plan created successfully"
+        400:
+          description: "Bad request, missing fields"
+        500:
+          description: "Server error"
+      x-google-backend:
+        address: https://us-central1-copile.cloudfunctions.net
+        path_translation: APPEND_PATH_TO_ADDRESS
+      consumes:
+        - application/json
+      produces:
         - application/json
   /trader/alwaysExchanges:
     put:
@@ -783,6 +810,12 @@ definitions:
         type: boolean
       message:
         type: string
+
+  UpdateMonitorStatusRequest:
+    type: object
+    properties:
+      isMonitorEnabled:
+        type: boolean
 
   UpdateExchangeRequest:
     type: object
