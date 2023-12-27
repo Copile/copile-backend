@@ -95,8 +95,7 @@ app.post("/bulkTP", async (req, res) => {
           trade_id: tradeId,
           user_id: userId,
           take_profits: take_profits,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("bulk_tp", trade_data));
       }
@@ -160,9 +159,8 @@ app.post("/submitSL", async (req, res) => {
           trade_id: tradeId,
           user_id: userId,
           payload: payload,
-          sl_id: sl_id,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          document_id: sl_id,
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("send_sl", trade_data));
       }
@@ -194,8 +192,7 @@ app.post("/replaceSL", async (req, res) => {
           user_id: userId,
           document_id: orderId,
           payload: payload,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("replace_sl", trade_data));
       }
@@ -227,8 +224,7 @@ app.post("/cancelOrder", async (req, res) => {
           user_id: userId,
           document_id: document_id,
           trade_type: type,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("cancel_order", trade_data));
       }
@@ -258,8 +254,7 @@ app.post("/cancelAllOrders", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           user_id: userId,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("cancel_all_orders", trade_data));
       }
@@ -289,8 +284,7 @@ app.post("/cancelAllTps", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           user_id: userId,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("cancel_all_tps", trade_data));
       }
@@ -380,8 +374,7 @@ app.post("/bulkOrder", async (req, res) => {
           user_id: userId,
           payload: payload,
           exchange: preferredExchange,
-          plan_id: plans[0],
-          user_type: "users",
+          plan_id: plans[0]
         };
 
         // Fetch the user document from Firestore
@@ -472,8 +465,7 @@ app.post("/partialClose", async (req, res) => {
           trade_id: tradeId,
           user_id: userId,
           percentage: percentage,
-          exchange: doc.get("exchange"),
-          user_type: "users",
+          exchange: doc.get("exchange")
         };
         tasks.push(addTaskToQueue("partial_close", trade_data));
       }
