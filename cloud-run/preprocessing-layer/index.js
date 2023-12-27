@@ -93,7 +93,7 @@ app.post("/bulkTP", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           take_profits: take_profits,
           exchange: doc.get("exchange"),
           user_type: "users",
@@ -125,7 +125,7 @@ app.post("/replaceTP", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           document_id: orderId,
           payload: payload,
           exchange: doc.get("exchange"),
@@ -158,7 +158,7 @@ app.post("/submitSL", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           payload: payload,
           sl_id: sl_id,
           exchange: doc.get("exchange"),
@@ -191,7 +191,7 @@ app.post("/replaceSL", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           document_id: orderId,
           payload: payload,
           exchange: doc.get("exchange"),
@@ -224,7 +224,7 @@ app.post("/cancelOrder", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           document_id: document_id,
           trade_type: type,
           exchange: doc.get("exchange"),
@@ -257,7 +257,7 @@ app.post("/cancelAllOrders", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           exchange: doc.get("exchange"),
           user_type: "users",
         };
@@ -288,7 +288,7 @@ app.post("/cancelAllTps", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           exchange: doc.get("exchange"),
           user_type: "users",
         };
@@ -470,7 +470,7 @@ app.post("/partialClose", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
-          account_id: userId,
+          user_id: userId,
           percentage: percentage,
           exchange: doc.get("exchange"),
           user_type: "users",
