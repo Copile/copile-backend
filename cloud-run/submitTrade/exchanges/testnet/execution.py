@@ -551,32 +551,29 @@ async def partial_close(api_key, api_secret, data):
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
         # Assign orderIds to take profits and stop losses
-        tp_count = 0
-        for i, tp_order in enumerate(prepared_orders[1:len(new_take_profits) + 1], start=1):
+        for i, tp_order in enumerate(prepared_orders[:len(new_take_profits)]):
             tp_order_dict = vars(tp_order)
-            tp_order_dict['order_id'] = order_ids[i]['orderId']
-            tp_order_dict['tp_document_id'] = new_take_profits[tp_count]['tp_id']
-            tp_order_dict['tp_number'] = new_take_profits[tp_count]['tp_number']
-            tp_order_dict['tp_percentage'] = new_take_profits[tp_count]['tp_percentage']
-            tp_order_dict['tp_value'] = new_take_profits[tp_count]['tp_value']
-            tp_order_dict['tp_amount'] = new_take_profits[tp_count]['tp_amount']
+            tp_order_dict['order_id'] = order_ids[i]['order']['orderId']
+            tp_order_dict['tp_document_id'] = new_take_profits[i]['tp_id']
+            tp_order_dict['tp_number'] = new_take_profits[i]['tp_number']
+            tp_order_dict['tp_percentage'] = new_take_profits[i]['tp_percentage']
+            tp_order_dict['tp_value'] = new_take_profits[i]['tp_value']
+            tp_order_dict['tp_amount'] = tp_order_dict['quantity']
             tp_order_dict['trade_id'] = tradeId
             new_take_profits_with_ids.append(tp_order_dict)
-            tp_count += 1
 
-        sl_count = 0
-        for i, sl_order in enumerate(prepared_orders[len(new_take_profits) + 1:], start=len(new_take_profits) + 1):
+        start_index_for_sl = len(new_take_profits)
+        for i, sl_order in enumerate(prepared_orders[start_index_for_sl:], start=start_index_for_sl):
             sl_order_dict = vars(sl_order)
-            sl_order_dict['order_id'] = order_ids[i]['orderId']
-            sl_order_dict['sl_document_id'] = sl_orders[sl_count]['sl_id']
-            sl_order_dict['sl_number'] = sl_orders[sl_count]['sl_number']
-            sl_order_dict['sl_percentage'] = sl_orders[sl_count]['sl_percentage']
-            sl_order_dict['sl_value'] = sl_orders[sl_count]['sl_value']
-            sl_order_dict['sl_amount'] = sl_orders[sl_count]['sl_amount']
+            sl_order_dict['order_id'] = order_ids[i]['order']['orderId']
+            sl_order_dict['sl_document_id'] = sl_orders[i - start_index_for_sl]['sl_id']
+            sl_order_dict['sl_number'] = sl_orders[i - start_index_for_sl]['sl_number']
+            sl_order_dict['sl_percentage'] = sl_orders[i - start_index_for_sl]['sl_percentage']
+            sl_order_dict['sl_value'] = sl_orders[i - start_index_for_sl]['sl_value']
+            sl_order_dict['sl_amount'] = sl_order_dict['quantity']
             sl_order_dict['trade_id'] = tradeId
             stop_losses_with_ids.append(sl_order_dict)
-            sl_count += 1
-
+            
         # Storing take-profits and stop-losses in firestore
         tp_promises = [store_tp(traderId, tp) for tp in new_take_profits_with_ids]
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
