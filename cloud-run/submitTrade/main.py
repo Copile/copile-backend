@@ -7,6 +7,7 @@ import uuid
 import os
 import datetime
 from utils.firestore import trader_check, get_user_keys
+from logs.logger import Logger
 from trade.trade_execution import trade_execution
 
 app = FastAPI()
@@ -47,6 +48,7 @@ async def add_task_to_queue(type, payload):
 
     # Create the Cloud Task request with the parent queue, task and schedule time
     response = await client.create_task(request={"parent": parent, "task": task})
+    print(response)
     return
 
 @app.get('/test')
@@ -73,9 +75,11 @@ async def submit_sl(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("submitSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/cancel_order')
 async def cancel_order(data: dict, traderId: str = Header(None)):
@@ -97,9 +101,11 @@ async def cancel_order(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("cancelOrder", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/cancel_all_orders')
 async def cancel_all_orders(data: dict, traderId: str = Header(None)):
@@ -121,9 +127,11 @@ async def cancel_all_orders(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("cancelAllOrders", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/cancel_all_tps')
 async def cancel_all_tps(data: dict, traderId: str = Header(None)):
@@ -145,9 +153,11 @@ async def cancel_all_tps(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("cancelAllTps", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/bulk_order')
 async def bulk_order(data: dict, traderId: str = Header(None)):
@@ -169,9 +179,11 @@ async def bulk_order(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("bulkOrder", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/bulk_tp')
 async def bulk_tp(data: dict, traderId: str = Header(None)):
@@ -193,9 +205,11 @@ async def bulk_tp(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("bulkTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/replace_tp')
 async def replace_tp(data: dict, traderId: str = Header(None)):
@@ -217,9 +231,11 @@ async def replace_tp(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("replaceTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/replace_sl')
 async def replace_sl(data: dict, traderId: str = Header(None)):
@@ -241,9 +257,11 @@ async def replace_sl(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("replaceSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post('/partial_close')
 async def partial_close(data: dict, traderId: str = Header(None)):
@@ -265,9 +283,11 @@ async def partial_close(data: dict, traderId: str = Header(None)):
         await add_task_to_queue("partialClose", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as err:
+    except Exception as e:
         # Log the error and return an error response
-        raise HTTPException(status_code=500, detail=str(err))
+        logger = Logger(traderId, None)
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
     
 if __name__ == '__main__':
     import uvicorn

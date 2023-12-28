@@ -17,41 +17,26 @@ async function addTaskToQueue(type, trade_data) {
   switch (trade_data.exchange) {
     case "bybit":
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
-      url =
-        type === "send_tp" || type === "send_sl"
-          ? `https://asia-bybit-track-handler-zvakwy7kgq-as.a.run.app/${type}`
-          : `https://asia-bybit-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      url = `https://asia-bybit-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "kucoin":
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
-      url =
-        type === "send_tp" || type === "send_sl"
-          ? `https://asia-kucoin-track-handler-zvakwy7kgq-as.a.run.app/${type}`
-          : `https://asia-kucoin-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      url = `https://asia-kucoin-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "binance":
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
-      url =
-        type === "send_tp" || type === "send_sl"
-          ? `https://asia-binance-track-handler-zvakwy7kgq-as.a.run.app/${type}`
-          : `https://asia-binance-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      url = `https://asia-binance-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "bingx":
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
-      url =
-        type === "send_tp" || type === "send_sl"
-          ? `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
-          : `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      url = `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
     case "testnet":
       parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
-      url =
-        type === "send_tp" || type === "send_sl"
-          ? `https://asia-testnet-track-handler-zvakwy7kgq-as.a.run.app/${type}`
-          : `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     default:
