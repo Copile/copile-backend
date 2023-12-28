@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from utils.firestore import get_user_keys
-from .bybit_api.api.session import BybitSession
+from bybit_api.api.session import BybitSession
 
 app = FastAPI()
 

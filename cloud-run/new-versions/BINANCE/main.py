@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from utils.firestore import get_user_keys
-from .binance_api.api.session import BinanceSession
+from binance_api.api.session import BinanceSession
 
 app = FastAPI()
 

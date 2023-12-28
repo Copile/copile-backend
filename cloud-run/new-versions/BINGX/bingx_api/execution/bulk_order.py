@@ -35,7 +35,7 @@ async def bulk_order(api_key, api_secret, data):
         order_type = "LIMIT" if entry != "market" else "MARKET"
 
         # Order side for inital order
-        order_side = "LONG" if side == "Buy" else "SHORT"
+        order_side = "LONG" if side == "BUY" else "SHORT"
 
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)

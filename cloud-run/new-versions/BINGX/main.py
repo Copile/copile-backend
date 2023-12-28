@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from utils.firestore import get_user_keys
-from .bingx_api.api.session import BingXSession
+from bingx_api.api.session import BingXSession
 
 app = FastAPI()
 
