@@ -23,7 +23,7 @@ async def add_task_to_queue(type, payload):
     task = {
         "http_request": {
             "http_method": tasks_v2.HttpMethod.POST,
-            "url": os.environ.get('exchange') + '/' + type,
+            "url": 'https://preprocessing-layer-zvakwy7kgq-as.a.run.app/' + type,
             "oidc_token": tasks_v2.OidcToken(
                 service_account_email="tasks-service-account@copile.iam.gserviceaccount.com"
             ),
