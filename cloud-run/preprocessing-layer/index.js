@@ -374,6 +374,7 @@ app.post("/bulkOrder", async (req, res) => {
           user_id: userId,
           payload: payload,
           exchange: preferredExchange,
+          margin_type: "ISOLATED",
           plan_id: plans[0]
         };
 
