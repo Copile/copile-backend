@@ -24,8 +24,6 @@ async function getTestnetOrders(apiKey, apiSecret, traderId) {
       settleCoin: "USDT",
     });
 
-    console.log(response);
-
     if (!response || !response.result.list.length) {
       return [];
     }
