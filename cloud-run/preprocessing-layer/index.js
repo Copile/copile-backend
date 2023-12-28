@@ -11,31 +11,27 @@ app.enable("trust proxy");
 app.use(bodyParser.text({ type: "*/*" }));
 
 async function addTaskToQueue(type, trade_data) {
-  let parent;
+  
+  let parent = client.queuePath("copile", "asia-southeast1", "track-queue");
   let url;
-
   switch (trade_data.exchange) {
     case "bybit":
-      parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url = `https://asia-bybit-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "kucoin":
-      parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url = `https://asia-kucoin-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "binance":
-      parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url = `https://asia-binance-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
     case "bingx":
-      parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url = `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
+
     case "testnet":
-      parent = client.queuePath("copile", "asia-southeast1", "trade-queue");
       url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
       break;
 
@@ -58,6 +54,7 @@ async function addTaskToQueue(type, trade_data) {
       body: Buffer.from(JSON.stringify(trade_data)).toString("base64"),
     },
   };
+  console.log(task);
   const request = { parent, task };
   const [response] = await client.createTask(request);
   const name = response.name;
@@ -302,22 +299,10 @@ app.post("/bulkOrder", async (req, res) => {
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
 
-    // If no exchanges or plans are selected, skip user tasks
-    // This is because without a selected exchange or plan, we cannot determine where to execute the trade
-    if (!exchanges.length || !plans.length) {
-      console.log("No exchanges or plans selected. Skipping user tasks.");
-      // Wait for the trader task to complete
-      await traderTask;
-      // Log the completion of all tasks
-      console.log("============ All tasks settled ============");
-      // Return a success response
-      return res.status(200).json({ success: true, message: "Bulk order executed successfully" });
-    }
-
     // Get a reference to the Firestore collection group for workers
     const workersRef = firestore.collectionGroup("workers");
     // Initialize an array to hold the tasks to add to the queue
-    const tasksToAdd = [traderTask];
+    const tasksToAdd = [];
 
     console.log("Fetching all matching workers from Firestore");
     // Fetch all workers that match the trader ID and are enabled
