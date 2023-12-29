@@ -545,6 +545,8 @@ async def partial_close(api_key, api_secret, data):
         # Executing all orders in the orders array
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
+        print(order_ids)
+
         # Assign orderIds to take profits and stop losses
         for i, tp_order in enumerate(prepared_orders[:len(new_take_profits)]):
             tp_order_dict = vars(tp_order)
