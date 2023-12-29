@@ -43,7 +43,7 @@ async def bulk_order(api_key, api_secret, data):
         precision, margin_mode, set_leverage, market_price = await asyncio.gather(
             session.get_precisions(symbol),
             session.switch_margin_mode(symbol, margin_type),
-            session.set_leverage(symbol, side, leverage),
+            session.set_leverage(symbol, order_side, leverage),
             session.get_market(symbol)
         )
 
