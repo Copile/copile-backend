@@ -548,24 +548,24 @@ async def partial_close(api_key, api_secret, data):
         # Assign orderIds to take profits and stop losses
         for i, tp_order in enumerate(prepared_orders[:len(new_take_profits)]):
             tp_order_dict = vars(tp_order)
-            tp_order_dict['order_id'] = order_ids[i]['order']['orderId']
+            tp_order_dict['order_id'] = order_ids[i]['orderId']
             tp_order_dict['tp_document_id'] = new_take_profits[i]['tp_id']
             tp_order_dict['tp_number'] = new_take_profits[i]['tp_number']
             tp_order_dict['tp_percentage'] = new_take_profits[i]['tp_percentage']
             tp_order_dict['tp_value'] = new_take_profits[i]['tp_value']
-            tp_order_dict['tp_amount'] = tp_order_dict['quantity']
+            tp_order_dict['tp_amount'] = new_take_profits[i]['tp_amount']
             tp_order_dict['trade_id'] = tradeId
             new_take_profits_with_ids.append(tp_order_dict)
 
         start_index_for_sl = len(new_take_profits)
         for i, sl_order in enumerate(prepared_orders[start_index_for_sl:], start=start_index_for_sl):
             sl_order_dict = vars(sl_order)
-            sl_order_dict['order_id'] = order_ids[i]['order']['orderId']
+            sl_order_dict['order_id'] = order_ids[i]['orderId']
             sl_order_dict['sl_document_id'] = sl_orders[i - start_index_for_sl]['sl_id']
             sl_order_dict['sl_number'] = sl_orders[i - start_index_for_sl]['sl_number']
             sl_order_dict['sl_percentage'] = sl_orders[i - start_index_for_sl]['sl_percentage']
             sl_order_dict['sl_value'] = sl_orders[i - start_index_for_sl]['sl_value']
-            sl_order_dict['sl_amount'] = sl_order_dict['quantity']
+            sl_order_dict['sl_amount'] = sl_orders[i - start_index_for_sl]['sl_amount']
             sl_order_dict['trade_id'] = tradeId
             stop_losses_with_ids.append(sl_order_dict)
 

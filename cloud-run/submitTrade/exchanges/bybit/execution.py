@@ -558,7 +558,7 @@ async def partial_close(api_key, api_secret, data):
             tp_order_dict['tp_number'] = new_take_profits[i]['tp_number']
             tp_order_dict['tp_percentage'] = new_take_profits[i]['tp_percentage']
             tp_order_dict['tp_value'] = new_take_profits[i]['tp_value']
-            tp_order_dict['tp_amount'] = tp_order_dict['quantity']
+            tp_order_dict['tp_amount'] = new_take_profits[i]['tp_amount']
             tp_order_dict['trade_id'] = tradeId
             new_take_profits_with_ids.append(tp_order_dict)
 
@@ -570,7 +570,7 @@ async def partial_close(api_key, api_secret, data):
             sl_order_dict['sl_number'] = sl_orders[i - start_index_for_sl]['sl_number']
             sl_order_dict['sl_percentage'] = sl_orders[i - start_index_for_sl]['sl_percentage']
             sl_order_dict['sl_value'] = sl_orders[i - start_index_for_sl]['sl_value']
-            sl_order_dict['sl_amount'] = sl_order_dict['quantity']
+            sl_order_dict['sl_amount'] = sl_orders[i - start_index_for_sl]['sl_amount']
             sl_order_dict['trade_id'] = tradeId
             stop_losses_with_ids.append(sl_order_dict)
 
