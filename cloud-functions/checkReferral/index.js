@@ -89,7 +89,20 @@ app.get("/plan", async (req, res, next) => {
     const doc = snapshot.docs[0];
     console.log(`Found matching document: ${doc.id} => ${JSON.stringify(doc.data())}`);
     const data = doc.data();
-    console.log("Sending success response with direct link...");
+
+    // Fetch the assigned_workers sub-collection
+    const assignedWorkersRef = doc.ref.collection("assigned_workers");
+    const assignedWorkersSnapshot = await assignedWorkersRef.get();
+
+    let assignedWorkers = [];
+    assignedWorkersSnapshot.forEach((workerDoc) => {
+      assignedWorkers.push({ id: workerDoc.id, ...workerDoc.data() });
+    });
+
+    // Add assigned_workers to the data object
+    data.assigned_workers = assignedWorkers;
+
+    console.log("Sending success response with plan data..");
     return res.send({ success: true, plan: data });
   } catch (error) {
     console.error("Error occurred while fetching referral code: ", error);
