@@ -34,9 +34,12 @@ async def bulk_order(api_key, api_secret, data):
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
 
+        logger.info(f"Starting bulk order with data: {data}")
+
         # Order type of initial order
         order_type = "Limit" if entry != "market" else "Market"
 
+        logger.info(f"Getting precision for {symbol}, setting leverage to {leverage}, switching margin mode to {margin_type} and getting market price")
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as position mode and margin mode (ISOLATED, CROSSED)
         # Fetching current market price
@@ -60,6 +63,7 @@ async def bulk_order(api_key, api_secret, data):
         prepared_orders = [initial_order]
 
         # Calculating new take-profits for trade
+        logger.info(f"Calculating new take-profits for trade based on {take_profits}, {quantity}, {precision}")
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
 
         # Preparing position sides for take-profits and stop-losses
@@ -81,6 +85,7 @@ async def bulk_order(api_key, api_secret, data):
             sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
                              "MarkPrice", True, True)
             prepared_orders.append(sl_order)
+        logger.info(f"Prepared orders: {prepared_orders}")
 
         # Executing all orders in the orders array
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
@@ -130,6 +135,7 @@ async def bulk_order(api_key, api_secret, data):
         }
 
         # Storing trade info in firestore
+        logger.info(f"Saving trade info to firestore: {trade_info}")
         await store_trade(traderId, trade_info)
 
         # Storing take-profits and stop-losses in firestore
@@ -137,6 +143,7 @@ async def bulk_order(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+        logger.info(f"Executed bulk_order successfully")
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 

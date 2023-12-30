@@ -48,7 +48,6 @@ async def add_task_to_queue(type, payload):
 
     # Create the Cloud Task request with the parent queue, task and schedule time
     response = await client.create_task(request={"parent": parent, "task": task})
-    print(response)
     return
 
 @app.get('/test')
