@@ -10,7 +10,13 @@ def rearrange_tps(quantity, precision, tps_amount, min_qty):
     tps_sum = sum(tps_amount)
 
     tps_ratio = [tp / tps_sum for tp in tps_amount]
-    tps_rounded = [(rounded_quantity * ratio).quantize(Decimal('1e-{0}'.format(precision))) for ratio in tps_ratio]
+
+    if precision == 0:
+        # Round to the nearest whole number when precision is zero
+        tps_rounded = [int((rounded_quantity * ratio).to_integral_value()) for ratio in tps_ratio]
+    else:
+        # Use quantize for non-zero precision
+        tps_rounded = [(rounded_quantity * ratio).quantize(Decimal('1e-{0}'.format(precision))) for ratio in tps_ratio]
 
     # Adjust values if any tps_rounded value is smaller than min_qty
     for i in range(len(tps_rounded)):

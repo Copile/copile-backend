@@ -70,9 +70,8 @@ async def submit_sl(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "send_sl", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("submitSL", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("submitSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -97,9 +96,8 @@ async def cancel_order(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_order", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("cancelOrder", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("cancelOrder", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -124,9 +122,8 @@ async def cancel_all_orders(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_orders", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("cancelAllOrders", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("cancelAllOrders", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -151,9 +148,8 @@ async def cancel_all_tps(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_tps", data)
         
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("cancelAllTps", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("cancelAllTps", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -205,9 +201,8 @@ async def bulk_tp(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_tp", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("bulkTP", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("bulkTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -232,9 +227,8 @@ async def replace_tp(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_tp", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("replaceTP", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("replaceTP", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -259,9 +253,8 @@ async def replace_sl(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_sl", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("replaceSL", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("replaceSL", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
@@ -286,9 +279,8 @@ async def partial_close(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "partial_close", data)
 
-        if len(data['plans']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("partialClose", data)
+        # Add the trade to the processing queue
+        await add_task_to_queue("partialClose", data)
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:

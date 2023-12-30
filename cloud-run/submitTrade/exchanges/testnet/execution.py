@@ -61,7 +61,7 @@ async def bulk_order(api_key, api_secret, data):
 
         # Adding all orders to an array for execution
         prepared_orders = [initial_order]
-
+        
         # Calculating new take-profits for trade
         logger.info(f"Calculating new take-profits for trade based on {take_profits}, {quantity}, {precision}")
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)

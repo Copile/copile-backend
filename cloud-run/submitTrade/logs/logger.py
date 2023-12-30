@@ -2,10 +2,10 @@ from .logger_config import get_custom_logger
 import traceback
 
 # Get a custom info logger
-info_logger = get_custom_logger("cloudLogger", "info")
+info_logger = get_custom_logger("infoLogger", "info")
 
 # Get a custom error logger
-error_logger = get_custom_logger("cloudLogger", "error")
+error_logger = get_custom_logger("errorLogger", "error")
 
 class Logger:
     """
