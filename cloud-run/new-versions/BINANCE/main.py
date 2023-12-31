@@ -62,7 +62,6 @@ async def cancel_all_orders(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
-        logger.error(f"An error occurred for {user_id} in cancel_all_orders: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
