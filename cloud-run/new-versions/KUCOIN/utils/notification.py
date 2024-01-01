@@ -8,6 +8,7 @@ url = os.environ.get("notification_url")
 
 endpoints = {
     "bulk_order": "/trade",
+    "bulk_tp": "/action?type=bulkTp",
     "cancel_all_orders": "/action?type=emergencyClose",
     "cancel_order": "/action?type=cancelOrder",
     "replace_sl": "/action?type=replaceSl",
