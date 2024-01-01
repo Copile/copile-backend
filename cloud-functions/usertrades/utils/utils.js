@@ -173,7 +173,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     }
     return String(order.orderId) === String(orderID);
   });
-
+  console.log(foundOrder.status);
   return foundOrder ? foundOrder.status : STATUS.UNKNOWN;
 }
 
