@@ -156,7 +156,7 @@ async function getOrderStatuses(apiKey, apiSecret, symbol) {
     const data = await makeSignedRequest(url, payload, apiKey, apiSecret);
     if (!data || !data.length) return;
     return data.filter(
-      (order) => order.type === "TAKE_PROFIT" || order.type === "STOP_MARKET"
+      (order) => order.type === "TAKE_PROFIT_MARKET" || order.type === "STOP_MARKET"
     );
   } catch (error) {
     throw new CustomError({
