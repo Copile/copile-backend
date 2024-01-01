@@ -39,7 +39,6 @@ async def bulk_order(api_key, api_secret, data):
         # Order type of initial order
         order_type = "Limit" if entry != "market" else "Market"
 
-        logger.info(f"Getting precision for {symbol}, setting leverage to {leverage}, switching margin mode to {margin_type} and getting market price")
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as position mode and margin mode (ISOLATED, CROSSED)
         # Fetching current market price
@@ -63,8 +62,8 @@ async def bulk_order(api_key, api_secret, data):
         prepared_orders = [initial_order]
         
         # Calculating new take-profits for trade
-        logger.info(f"Calculating new take-profits for trade based on {take_profits}, {quantity}, {precision}")
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
+        logger.info(f"New take-profits: {new_take_profits}, for trade based on {take_profits}, {quantity}, {precision}")
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "Sell" if side == "Buy" else "Buy"
@@ -85,14 +84,13 @@ async def bulk_order(api_key, api_secret, data):
             sl_order = Order(symbol, "Limit", tp_sl_side, sl_price, sl['sl_amount'], sl_trigger_direction, sl_price,
                              "MarkPrice", True, True)
             prepared_orders.append(sl_order)
-        logger.info(f"Prepared orders: {prepared_orders}")
 
         # Executing all orders in the orders array
         order_ids = await asyncio.gather(*(session.trade_order(order) for order in prepared_orders))
 
         new_take_profits_with_ids = []
         stop_losses_with_ids = []
-
+        
         # Assign orderIds to take profits and stop losses
         tp_count = 0
         for i, tp_order in enumerate(prepared_orders[1:len(new_take_profits) + 1], start=1):
@@ -165,6 +163,8 @@ async def send_sl(api_key, api_secret, data):
         document_id = data['sl_id']
         payload = data['payload']
 
+        logger.info(f"Starting send sl with data: {data}")
+
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
@@ -184,6 +184,7 @@ async def send_sl(api_key, api_secret, data):
 
         # Getting current position quantity to use for stop-loss order
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position quantity for send sl: {position_quantity}")
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
@@ -199,6 +200,8 @@ async def send_sl(api_key, api_secret, data):
         payload["sl_amount"] = position_quantity
         payload["order_id"] = create_order["orderId"]
         payload['sl_document_id'] = document_id
+
+        logger.info(f"Storing stop-loss in firestore: {payload}")
 
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
@@ -223,6 +226,8 @@ async def replace_sl(api_key, api_secret, data):
         document_id = data['document_id']
         payload = data['payload']
 
+        logger.info(f"Starting replace sl with data: {data}")
+
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
@@ -244,6 +249,7 @@ async def replace_sl(api_key, api_secret, data):
 
         # Getting current position quantity to use for stop-loss order
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position quantity for replace sl: {position_quantity}")
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
@@ -263,6 +269,8 @@ async def replace_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
 
+        logger.info(f"Storing stop-loss in firestore: {payload}")
+
         return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
@@ -279,6 +287,8 @@ async def cancel_order(api_key, api_secret, data):
 
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
+
+        logger.info(f"Starting cancel order with data: {data}")
 
         document_id = data['document_id']
         trade_type = data['trade_type']
