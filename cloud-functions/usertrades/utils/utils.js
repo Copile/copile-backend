@@ -165,15 +165,13 @@ async function getActiveOrders(
 }
 
 async function checkOrderStatus(activeOrders, orderID, price, exchange) {
-  console.log("activeOrders", activeOrders);
-  console.log("orderID", orderID);
   let foundOrder = activeOrders.find((order) => {
     if (exchange === EXCHANGE.BINANCE && order.symbol === "ETHUSDT") {
       return Number(order.stopPrice).toFixed(2) === Number(price).toFixed(2);
     }
     return String(order.orderId) === String(orderID);
   });
-  console.log(foundOrder.status);
+
   return foundOrder ? foundOrder.status : STATUS.UNKNOWN;
 }
 
