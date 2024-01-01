@@ -5,8 +5,8 @@ class Order:
         self.type = order_type
         self.side = side
         self.price = str(price) if price is not None else None
-        self.size = int(quantity)
-        self.leverage = str(leverage)
+        self.size = int(quantity) if quantity is not None else None
+        self.leverage = str(leverage) if leverage is not None else None
         self.stop = stop
         self.stopPriceType = stop_price_type
         self.stopPrice = str(stop_price) if stop_price is not None else None

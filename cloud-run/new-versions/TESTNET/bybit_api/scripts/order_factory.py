@@ -4,8 +4,8 @@ class Order:
         self.symbol = symbol
         self.orderType = order_type
         self.side = side
-        self.price = str(price)
-        self.qty = str(quantity)
+        self.price = str(price) if price is not None else None
+        self.qty = str(quantity) if quantity is not None else None
         self.triggerDirection = trigger_direction
         self.triggerPrice = str(trigger_price) if trigger_price is not None else None
         self.triggerBy = trigger_by

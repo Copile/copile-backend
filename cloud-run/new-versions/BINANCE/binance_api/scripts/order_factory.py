@@ -5,7 +5,7 @@ class Order:
         self.type = order_type
         self.side = side
         self.price = float(price) if price is not None else None
-        self.quantity = float(quantity)
+        self.quantity = float(quantity) if quantity is not None else None
         self.stopPrice = float(stop_price) if stop_price is not None else None
         self.reduceOnly = reduce_only
 
