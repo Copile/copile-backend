@@ -24,6 +24,8 @@ async def bulk_order(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting bulk order with data: {data}")
+
         margin = data['margin']
         trader_exchange = data['trader_exchange']
         margin_type = data['margin_type']
@@ -35,12 +37,9 @@ async def bulk_order(api_key, api_secret, data):
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
 
-        logger.info(f"Starting bulk order with data: {data}")
-
         # Order type of initial order
         order_type = "LIMIT" if entry != "market" else "MARKET"
 
-        logger.info(f"Getting precision for {symbol}, setting leverage to {leverage}, switching margin mode to {margin_type} and getting market price")
         # Fetching precision for specific symbol
         # Setting leverage for trade as well as margin mode (ISOLATED, CROSSED)
         # Fetching current market price
@@ -62,9 +61,9 @@ async def bulk_order(api_key, api_secret, data):
         # Adding all orders to an array for execution
         prepared_orders = [initial_order]
 
-        logger.info(f"Calculating new take-profits for trade based on {take_profits}, {quantity}, {precision}")
         # Calculating new take-profits for trade
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
+        logger.info(f"New take-profits: {new_take_profits}, for trade based on {take_profits}, {quantity}, {precision}")
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "SELL" if side == "BUY" else "BUY"
@@ -130,6 +129,7 @@ async def bulk_order(api_key, api_secret, data):
         }
 
         # Storing trade info in firestore
+        logger.info(f"Saving trade info to firestore: {trade_info}")
         await store_trade(traderId, trade_info)
 
         # Storing take-profits and stop-losses in firestore
@@ -137,6 +137,7 @@ async def bulk_order(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+        logger.info(f"Executed bulk_order successfully")
 
         return message_bulk_order(tradeId, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
@@ -158,6 +159,8 @@ async def send_sl(api_key, api_secret, data):
         document_id = data['sl_id']
         payload = data['payload']
 
+        logger.info(f"Starting send sl with data: {data}")
+
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
@@ -174,6 +177,7 @@ async def send_sl(api_key, api_secret, data):
 
         # Getting current position quantity to use for stop-loss order
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position quantity for send sl: {position_quantity}")
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
@@ -191,6 +195,8 @@ async def send_sl(api_key, api_secret, data):
 
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
+
+        logger.info(f"Executed send_sl successfully")
 
         return message_send_sl(tradeId, payload)
 
@@ -212,6 +218,8 @@ async def replace_sl(api_key, api_secret, data):
         document_id = data['document_id']
         payload = data['payload']
 
+        logger.info(f"Starting replace sl with data: {data}")
+
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
@@ -230,6 +238,7 @@ async def replace_sl(api_key, api_secret, data):
 
         # Getting current position quantity to use for stop-loss order
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position quantity for replace sl: {position_quantity}")
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
@@ -248,6 +257,8 @@ async def replace_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(traderId, payload)
 
+        logger.info(f"Executed replace_sl successfully")
+
         return message_replace_sl(tradeId, document_id, payload)
 
     except Exception as e:
@@ -265,6 +276,8 @@ async def cancel_order(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting cancel order with data: {data}")
+
         document_id = data['document_id']
         trade_type = data['trade_type']
 
@@ -274,6 +287,8 @@ async def cancel_order(api_key, api_secret, data):
 
         # Cancelling specific order based on trade_type (tp/sl)
         await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
+
+        logger.info(f"Executed cancel_order successfully")
 
         return message_cancel_order(tradeId, document_id, trade_type)
 
@@ -292,12 +307,16 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting cancel all orders with data: {data}")
+
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
 
         # Getting current position info
         position = await session.get_position(symbol)
+
+        logger.info(f"Position info: {position}")
 
         quantity = float(position['positionAmt'])
 
@@ -316,6 +335,8 @@ async def cancel_all_orders(api_key, api_secret, data):
         # Cancelling all active take-profits and stop-losses
         await session.cancel_all_orders(symbol)
 
+        logger.info(f"Executed cancel_all_orders successfully")
+
         return message_cancel_orders(tradeId)
 
     except Exception as e:
@@ -333,6 +354,8 @@ async def cancel_all_tps(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting cancel all tps with data: {data}")
+
         # Fetching the trade info and current take-profit orders from firestore
         trade_info, tp_orders = await asyncio.gather(
             get_trade_info(traderId, tradeId),
@@ -344,6 +367,8 @@ async def cancel_all_tps(api_key, api_secret, data):
             *[session.cancel_order(trade_info["symbol"], order['orderID'], None) for order in tp_orders])
         await asyncio.gather(
             *[delete_tp_sl_order(traderId, tradeId, order['document_id'], "tp") for order in tp_orders])
+
+        logger.info(f"Executed cancel_all_tps successfully")
 
         return message_cancel_all_tps(tradeId, tp_orders)
 
@@ -362,6 +387,8 @@ async def bulk_tp(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting bulk tp with data: {data}")
+
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
@@ -379,9 +406,11 @@ async def bulk_tp(api_key, api_secret, data):
 
         # Getting current position quantity to use for take-profit orders
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position info: {position}")
 
         # Calculating new take-profits for replacing current ones
         new_take_profits = calculate_tp_amounts(take_profits, position_quantity, precision)
+        logger.info(f"New take-profits: {new_take_profits}")
 
         prepared_orders = []
 
@@ -416,6 +445,8 @@ async def bulk_tp(api_key, api_secret, data):
 
         await asyncio.gather(*tp_promises)
 
+        logger.info(f"Executed bulk_tp successfully")
+
         return message_bulk_tp(tradeId, new_take_profits_with_ids)
 
     except Exception as e:
@@ -432,6 +463,8 @@ async def partial_close(api_key, api_secret, data):
 
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
+
+        logger.info(f"Starting partial close with data: {data}")
 
         percentage = data['percentage']
 
@@ -465,6 +498,8 @@ async def partial_close(api_key, api_secret, data):
         quantity_to_sell = round(position_quantity * float(percentage), precision["quantity_precision"])
         new_quantity = round(position_quantity - quantity_to_sell, precision["quantity_precision"])
 
+        logger.info(f"Position info: {position}, quantity to sell: {quantity_to_sell}, new quantity: {new_quantity}")
+
         # Fetching the statuses of all take-profits for filtering active/inactive
         tps_data = await get_tps_status(session, tp_orders, trade_info)
 
@@ -473,6 +508,8 @@ async def partial_close(api_key, api_secret, data):
 
         # Calculating new take-profits for replacing current ones
         new_take_profits = calculate_tp_amounts(take_profits, new_quantity, precision)
+
+        logger.info(f"New take-profits: {new_take_profits}")
 
         # Cancelling all active tps/sls as well as old limit orders
         await session.cancel_all_orders(symbol)
@@ -486,6 +523,7 @@ async def partial_close(api_key, api_secret, data):
 
             # Updating new quantity in firestore
             await update_trade_quantity(traderId, tradeId, new_quantity)
+            logger.info(f"Updated quantity in firestore: {new_quantity}")
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "LIMIT", side, entry, new_quantity, None, False)
@@ -506,6 +544,8 @@ async def partial_close(api_key, api_secret, data):
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
             }
+
+            logger.info(f"Saving trade info to firestore: {trade_info}")
 
             # Storing trade info in firestore
             await store_trade(traderId, trade_info)
@@ -560,6 +600,8 @@ async def partial_close(api_key, api_secret, data):
         sl_promises = [store_sl(traderId, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+
+        logger.info(f"Executed partial_close successfully")
 
         return message_partial_close(tradeId, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
