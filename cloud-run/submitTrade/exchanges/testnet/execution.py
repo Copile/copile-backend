@@ -23,6 +23,8 @@ async def bulk_order(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
+        logger.info(f"Starting bulk order with data: {data}")
+
         margin = data['margin']
         trader_exchange = data['trader_exchange']
         margin_type = "ISOLATED-MARGIN" if data['margin_type'] == "ISOLATED" else "REGULAR_MARGIN"
@@ -33,8 +35,6 @@ async def bulk_order(api_key, api_secret, data):
         entry = data['payload']['entry']
         take_profits = data['payload']['take_profits']
         stop_losses = data['payload']['stop_losses']
-
-        logger.info(f"Starting bulk order with data: {data}")
 
         # Order type of initial order
         order_type = "Limit" if entry != "market" else "Market"
@@ -403,7 +403,7 @@ async def bulk_tp(api_key, api_secret, data):
         # Creating logger for info/errors
         logger = Logger(traderId, tradeId)
 
-        logger.info(f"Starting bulk tps with data: {data}")
+        logger.info(f"Starting bulk tp with data: {data}")
 
         take_profits = data['take_profits']
 
@@ -424,12 +424,10 @@ async def bulk_tp(api_key, api_secret, data):
 
         # Getting current position quantity to use for take-profit orders
         position_quantity = get_position_quantity(position, trade_info)
-
         logger.info(f"Position info: {position}")
 
         # Calculating new take-profits for replacing current ones
         new_take_profits = calculate_tp_amounts(take_profits, position_quantity, precision)
-
         logger.info(f"New take-profits: {new_take_profits}")
 
         prepared_orders = []
@@ -548,8 +546,8 @@ async def partial_close(api_key, api_secret, data):
 
             # Updating new quantity in firestore
             await update_trade_quantity(traderId, tradeId, new_quantity)
-
             logger.info(f"Updated quantity in firestore: {new_quantity}")
+
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "Limit", side, trade_info['entry'], new_quantity, None, None, None, False, False)
