@@ -31,7 +31,8 @@ class BinanceFunctions:
     async def get_balance(self):
         # https://binance-docs.github.io/apidocs/futures/en/#futures-account-balance-v2-user_data
         path = "/fapi/v2/balance"
-        response = await make_signed_request("GET", path, None, self.api_key, self.api_secret)
+        payload = {}
+        response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
         for account in response:
             if account['asset'] == "USDT":
                 balance = account['availableBalance']

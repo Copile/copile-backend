@@ -13,7 +13,6 @@ class KucoinFunctions:
         path = "/api/v1/orders"
         order.remove_none_attributes()
         payload = {**order.__dict__, 'clientOid': create_client_oid()}
-        print(payload)
         return await make_signed_request("POST", path, payload, self.api_key, self.api_secret, self.api_passphrase)
 
     async def get_position(self, symbol):
@@ -59,6 +58,7 @@ class KucoinFunctions:
     async def get_precisions(self, symbol):
         # https://www.kucoin.com/docs/rest/futures-trading/market-data/get-symbol-detail
         path = f"/api/v1/contracts/{symbol}"
+        payload = {}
         response = await make_signed_request("GET", path, None, self.api_key, self.api_secret, self.api_passphrase)
         multiplier = response['multiplier']
         min_qty = 1 * float(multiplier)

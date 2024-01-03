@@ -22,7 +22,7 @@ class BingXFunctions:
 
     async def get_balance(self):
         path = "/openApi/swap/v2/user/balance"
-        payload = None
+        payload = {}
         response = await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
         return float(response['balance']['availableMargin'])
 
