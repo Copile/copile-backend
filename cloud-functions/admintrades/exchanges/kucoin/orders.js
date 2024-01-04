@@ -43,7 +43,7 @@ async function getKucoinOrderStatuses(
     if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return;
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
-      status: order.status === "open" ? "Active" : "Filled",
+      status: order.status === "open" || order.status === "active"  ? "Active" : order.status,
     }));
   } catch (e) {
     // If it's already a custom error, throw it as-is
