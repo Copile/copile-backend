@@ -247,7 +247,7 @@ async def replace_sl(api_key, api_secret, api_passphrase, data):
         precision, position, cancel = await asyncio.gather(
             session.get_precisions(symbol),
             session.get_position(symbol),
-            send_cancel(session, symbol, traderId, tradeId, document_id, "sl")
+            send_cancel(session, traderId, tradeId, document_id, "sl")
         )
 
         # Getting current position quantity to use for stop-loss order
@@ -302,7 +302,7 @@ async def cancel_order(api_key, api_secret, api_passphrase, data):
         symbol = trade_info["symbol"]
 
         # Cancelling specific order based on trade_type (tp/sl)
-        await send_cancel(session, symbol, traderId, tradeId, document_id, trade_type)
+        await send_cancel(session, traderId, tradeId, document_id, trade_type)
 
         logger.info(f"Executed cancel_order successfully")
 
