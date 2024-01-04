@@ -40,7 +40,7 @@ async function getKucoinOrderStatuses(
       type: "market",
       symbol: symbol,
     });
-    console.log(rawOrders.data.items);
+    
     if (!rawOrders || !rawOrders.data || !rawOrders.data.items) return;
     return (rawOrders.data.items || []).map((order) => ({
       orderId: order.id,
