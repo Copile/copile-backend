@@ -172,7 +172,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     return String(order.orderId) === String(orderID);
   });
 
-  return foundOrder ? foundOrder.status : STATUS.CANCELLED;
+  return foundOrder ? foundOrder.status : STATUS.QUEUED;
 }
 
 /**
