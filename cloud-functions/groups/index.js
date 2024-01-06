@@ -825,21 +825,21 @@ app.post("/requestPayout", async (req, res, next) => {
 
   console.log("requestPayout endpoint hit. Processing request...");
   const { group_id, plan_id } = req.query;
-  const { discord_username, request_amount, email } = req.body;
+  const { discord_username, request_amount, email, plan_name } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
   // Validate required fields
   const requiredFields = { group_id, plan_id, request_amount, email, discord_username };
   const missingFields = Object.entries(requiredFields)
-    .filter(([key, value]) => !value || typeof value !== "string" || value.trim() === "")
+    .filter(([key, value]) => value === undefined || value === null || value === "")
     .map(([key]) => key);
 
   if (missingFields.length > 0) {
-    console.log(`Missing or invalid required fields: ${missingFields.join(", ")}. Sending error response...`);
+    console.log(`Missing required fields: ${missingFields.join(", ")}. Sending error response...`);
     return next(
       new CustomError({
-        message: `Missing or invalid required fields: ${missingFields.join(", ")}`,
+        message: `Missing required fields: ${missingFields.join(", ")}`,
         status: 400,
         source: "requestPayout",
       })
@@ -883,6 +883,7 @@ app.post("/requestPayout", async (req, res, next) => {
       email: newPayout.email,
       group_id,
       plan_id,
+      plan_name,
     };
 
     await sendDiscordNotification(webhookUrl, discordPayoutData);
@@ -905,7 +906,8 @@ app.post("/requestPayout", async (req, res, next) => {
 });
 
 const sendDiscordNotification = async (webhookUrl, payoutData) => {
-  const { requested_at, id, request_amount, status, discord_username, email, group_id, plan_id } = payoutData;
+  const { requested_at, id, request_amount, status, discord_username, email, group_id, plan_id, plan_name } =
+    payoutData;
 
   try {
     const payload = {
@@ -921,7 +923,7 @@ const sendDiscordNotification = async (webhookUrl, payoutData) => {
             },
             {
               name: `Group & Plan Details`,
-              value: `> plan_id: ${plan_id}\n> group_id: ${group_id}`,
+              value: `> plan_name: ${plan_name}\n> plan_id: ${plan_id}\n> group_id: ${group_id}`,
             },
           ],
           thumbnail: {
