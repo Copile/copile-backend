@@ -866,9 +866,9 @@ app.post("/requestPayout", async (req, res, next) => {
     };
     await payoutsRef.doc(newPayoutId).set(newPayout);
 
-    // Calculate the total amount paid out
-    const allPayoutsSnapshot = await payoutsRef.where("status", "==", "completed").get();
-    const totalPaidOut = allPayoutsSnapshot.docs.reduce((total, doc) => total + (doc.data().paid_amount || 0), 0);
+    // Fetch all payouts for the plan
+    const payoutsSnapshot = await payoutsRef.get();
+    const payouts = payoutsSnapshot.docs.map((doc) => doc.data());
 
     // Send a discord notification
     const webhookUrl =
@@ -891,7 +891,7 @@ app.post("/requestPayout", async (req, res, next) => {
     console.log("New payout request created and total paid out calculated.");
     res.status(200).json({
       message: "Payout request processed successfully",
-      total_paid_out: totalPaidOut,
+      payouts: payouts,
     });
   } catch (error) {
     console.log(`Failed to update plan: ${error.message}`);
