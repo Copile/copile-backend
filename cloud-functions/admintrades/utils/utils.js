@@ -164,7 +164,7 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
     return String(order.orderId) === String(orderID);
   });
 
-  return foundOrder ? foundOrder.status : STATUS.QUEUED;
+  return foundOrder ? foundOrder.status : null;
 }
 
 /**
@@ -180,20 +180,26 @@ async function checkTakeProfitStatus(exchange, takeProfitData, activeOrders) {
     if (tp.executed === "0") {
       tp.tp_status = STATUS.QUEUED;
     } else if (tp.executed === "1") {
-      tp.tp_status = await checkOrderStatus(
+      const orderStatus = await checkOrderStatus(
         activeOrders,
         tp.orderID,
         tp.tp_price,
         exchange
       );
+
+      // Only update tp_status if orderStatus is not null
+      tp.tp_status = orderStatus !== null ? orderStatus : tp.tp_status;
     } else if (tp.executed === "2") {
       tp.tp_status = STATUS.CANCELLED;
     }
     return tp;
   });
 
-  return Promise.all(promises);
+  const results = await Promise.all(promises);
+
+  return results.filter(tp => tp.tp_status !== null);
 }
+
 
 /**
  * Checks the status of stop loss orders and returns updated data.
@@ -208,20 +214,26 @@ async function checkStopLossStatus(exchange, stopLossData, activeOrders) {
     if (sl.executed === "0") {
       sl.sl_status = STATUS.QUEUED;
     } else if (sl.executed === "1") {
-      sl.sl_status = await checkOrderStatus(
+      const orderStatus = await checkOrderStatus(
         activeOrders,
         sl.orderID,
         sl.sl_price,
         exchange
       );
+
+      // Only update sl_status if orderStatus is not null
+      sl.sl_status = orderStatus !== null ? orderStatus : sl.sl_status;
     } else if (sl.executed === "2") {
       sl.sl_status = STATUS.CANCELLED;
     }
     return sl;
   });
 
-  return Promise.all(promises);
+  const results = await Promise.all(promises);
+  
+  return results.filter(sl => sl.sl_status !== null);
 }
+
 
 module.exports = {
   getTradeProfitLossDetails,
