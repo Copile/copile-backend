@@ -479,8 +479,9 @@ app.get("/getData", async (req, res, next) => {
   }
 
   try {
-    console.log(`Fetching plans and workers for group_id: ${group_id} from Firestore...`);
-    const plansSnapshot = await db.collection("groups").doc(group_id).collection("plans").get();
+    console.log(`Fetching plans for group_id: ${group_id} from Firestore...`);
+    const plansRef = db.collection("groups").doc(group_id).collection("plans");
+    const plansSnapshot = await plansRef.get();
 
     const plans = [];
     const whopRequests = []; // Array to hold promises for Whop API requests
@@ -498,17 +499,16 @@ app.get("/getData", async (req, res, next) => {
           })
         );
 
-        const workersSnapshot = await db
-          .collection("groups")
-          .doc(group_id)
-          .collection("plans")
-          .doc(planData.plan_id)
-          .collection("assigned_workers")
-          .get();
-        let workers = [];
-        workersSnapshot.forEach((doc) => {
-          workers.push(doc.data());
-        });
+        // Fetch payouts and workers in parallel using Promise.all
+        const [payoutsSnapshot, workersSnapshot] = await Promise.all([
+          plansRef.doc(planData.plan_id).collection("payouts").get(),
+          plansRef.doc(planData.plan_id).collection("assigned_workers").get(),
+        ]);
+
+        let workers = workersSnapshot.docs.map((doc) => doc.data());
+        let payouts = payoutsSnapshot.docs.map((doc) => doc.data());
+
+        planData.payouts = payouts;
         planData.assigned_workers = workers;
         plans.push(planData);
       } else {
@@ -669,9 +669,6 @@ async function findAndSyncUsers(groupId, planId, planName) {
       if (response.success) {
         console.log(`Successfully synced user ${membership.user}`);
       }
-
-      // Wait 1s before doing next membership just incase it blows up
-      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     console.log("--- FINISHED FIND AND SYNC USERS ---");
@@ -822,6 +819,124 @@ app.post("/updateWorkerStats", async (req, res, next) => {
     );
   }
 });
+
+app.post("/requestPayout", async (req, res, next) => {
+  console.log("=====================================");
+
+  console.log("requestPayout endpoint hit. Processing request...");
+  const { group_id, plan_id } = req.query;
+  const { discord_username, request_amount, email } = req.body;
+  console.log(`group_id: ${group_id}, plan_id: ${plan_id}`);
+  console.log(`Request body: ${JSON.stringify(req.body)}`);
+
+  // Validate required fields
+  const requiredFields = { group_id, plan_id, request_amount, email, discord_username };
+  const missingFields = Object.entries(requiredFields)
+    .filter(([key, value]) => !value || typeof value !== "string" || value.trim() === "")
+    .map(([key]) => key);
+
+  if (missingFields.length > 0) {
+    console.log(`Missing or invalid required fields: ${missingFields.join(", ")}. Sending error response...`);
+    return next(
+      new CustomError({
+        message: `Missing or invalid required fields: ${missingFields.join(", ")}`,
+        status: 400,
+        source: "requestPayout",
+      })
+    );
+  }
+
+  try {
+    const payoutsRef = db
+      .collection("groups")
+      .doc(group_id)
+      .collection("plans")
+      .doc(plan_id)
+      .collection("payouts");
+
+    // Create a new payout request
+    const newPayoutId = payoutsRef.doc().id; // Generate a new document ID for the payout
+    const newPayout = {
+      id: newPayoutId,
+      request_amount: parseFloat(request_amount),
+      status: "requested",
+      requested_at: new Date(),
+      discord_username,
+      email,
+    };
+    await payoutsRef.doc(newPayoutId).set(newPayout);
+
+    // Calculate the total amount paid out
+    const allPayoutsSnapshot = await payoutsRef.where("status", "==", "completed").get();
+    const totalPaidOut = allPayoutsSnapshot.docs.reduce((total, doc) => total + (doc.data().paid_amount || 0), 0);
+
+    // Send a discord notification
+    const webhookUrl =
+      "https://discord.com/api/webhooks/1193288509902037002/bR1mLlbLL8K9RMT_rbd_Xsr7fhGc-96eNUIdEo1i0GJeWrs49JDkQfsd1_zFGItZYSOf";
+
+    const discordPayoutData = {
+      requested_at: newPayout.requested_at,
+      id: newPayout.id,
+      request_amount: newPayout.request_amount,
+      status: newPayout.status,
+      discord_username: newPayout.discord_username,
+      email: newPayout.email,
+      group_id,
+      plan_id,
+    };
+
+    await sendDiscordNotification(webhookUrl, discordPayoutData);
+
+    console.log("New payout request created and total paid out calculated.");
+    res.status(200).json({
+      message: "Payout request processed successfully",
+      total_paid_out: totalPaidOut,
+    });
+  } catch (error) {
+    console.log(`Failed to update plan: ${error.message}`);
+    return next(
+      new CustomError({
+        message: "Failed to update worker stats",
+        status: 500,
+        source: "updateWorkerStats",
+      })
+    );
+  }
+});
+
+const sendDiscordNotification = async (webhookUrl, payoutData) => {
+  const { requested_at, id, request_amount, status, discord_username, email, group_id, plan_id } = payoutData;
+
+  try {
+    const payload = {
+      content: null,
+      embeds: [
+        {
+          title: "Copile Payout Request",
+          color: 8350975,
+          fields: [
+            {
+              name: "Payout Details",
+              value: `> email: ${email}\n> id: ${id}\n> request_amount: ${request_amount}\n> status: ${status}\n> discord_username: ${discord_username}\n> requested_at: ${requested_at}`,
+            },
+            {
+              name: `Group & Plan Details`,
+              value: `> plan_id: ${plan_id}\n> group_id: ${group_id}`,
+            },
+          ],
+          thumbnail: {
+            url: "https://i.imgur.com/P5VzVB4.png",
+          },
+        },
+      ],
+      attachments: [],
+    };
+
+    await axios.post(webhookUrl, payload);
+  } catch (error) {
+    console.error(`Failed to send discord notification: ${error.message}`);
+  }
+};
 
 app.get("/", (req, res) => {
   res.send("Copile Groups API");
