@@ -805,8 +805,7 @@ app.post("/updateWorkerStats", async (req, res, next) => {
     await assignedWorkersCollection.doc(worker_id).update(worker);
     console.log("Worker updated successfully.");
 
-    console.log("=====================================");
-
+    console.log("Revalidating landing page...");
     const landingRevalidationResponse = await axios.get("https://copile.trade/api/partner/planData/revalidate");
 
     if (!landingRevalidationResponse.data.revalidated) {
@@ -819,6 +818,9 @@ app.post("/updateWorkerStats", async (req, res, next) => {
         })
       );
     }
+
+    console.log("Landing page revalidated successfully.");
+    console.log("=====================================");
 
     res.status(200).json({ message: `Worker: ${worker_id} stats updated successfully` });
   } catch (error) {
