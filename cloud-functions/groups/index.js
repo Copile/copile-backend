@@ -860,7 +860,7 @@ app.post("/requestPayout", async (req, res, next) => {
       id: newPayoutId,
       request_amount: parseFloat(request_amount),
       status: "requested",
-      requested_at: new Date(),
+      requested_at: Math.floor(Date.now() / 1000),
       discord_username,
       email,
     };
