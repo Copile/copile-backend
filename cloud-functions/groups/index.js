@@ -806,7 +806,9 @@ app.post("/updateWorkerStats", async (req, res, next) => {
     console.log("Worker updated successfully.");
 
     console.log("Revalidating landing page...");
-    const landingRevalidationResponse = await axios.get("https://copile.trade/api/partner/planData/revalidate");
+    const landingRevalidationResponse = await axios.get(
+      "https://copile.trade/api/partner/planData/revalidate?tag=planData"
+    );
 
     if (!landingRevalidationResponse.data.revalidated) {
       console.log("Failed to revalidate landing page");
