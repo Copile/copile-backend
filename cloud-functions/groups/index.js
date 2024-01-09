@@ -744,7 +744,7 @@ app.post("/updateWorkerStats", async (req, res, next) => {
 
   console.log("updateWorkerStats endpoint hit. Processing request...");
   const { group_id, plan_id, worker_id } = req.query;
-  const { winrate, avg_pct, trade_count } = req.body;
+  const { winrate, avg_pct, trade_count, trader_since } = req.body;
   console.log(`group_id: ${group_id}, plan_id: ${plan_id}, worker_id: ${worker_id}`);
   console.log(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -798,6 +798,7 @@ app.post("/updateWorkerStats", async (req, res, next) => {
       winrate,
       avg_pct,
       trade_count,
+      trader_since,
     };
     console.log(`Updated worker stats: ${JSON.stringify(worker)}`);
 
