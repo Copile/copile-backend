@@ -16,7 +16,7 @@ async def add_task_to_queue(type, payload):
     
     client = tasks_v2.CloudTasksAsyncClient()
 
-    parent = client.queue_path("copile", "us-central1", "processing-queue")
+    parent = client.queue_path("copile", "asia-southeast1", "processing-queue")
 
     # Create a Cloud Task object with the task payload and target URL
     task = {
@@ -39,7 +39,7 @@ async def add_task_to_queue(type, payload):
     task["schedule_time"] = timestamp
 
     task_name = str(uuid.uuid4())
-    task["name"] = client.task_path("copile", "us-central1", 'processing-queue', task_name)
+    task["name"] = client.task_path("copile", "asia-southeast1", 'processing-queue', task_name)
 
     duration = duration_pb2.Duration()
     duration.FromSeconds(900)
