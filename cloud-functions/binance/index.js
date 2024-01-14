@@ -38,7 +38,4 @@ app.get("*", (req, res) => {
   return res.status(400).send("Not Authorized");
 });
 
-// expose the express app as a cloud function
-module.exports = {
-  balances: app,
-};
+exports.binance = app;
