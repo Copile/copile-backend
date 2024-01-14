@@ -2,7 +2,7 @@ import asyncio
 from ..api.perpetual import BinanceFunctions
 from utils.firestore import store_sl, get_trade_info
 from utils.message import message_send_sl
-from logs.error_logger import log_error
+from logs.logger import Logger
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 
@@ -13,8 +13,14 @@ async def send_sl(api_key, api_secret, data):
 
         user_id = data['user_id']
         trade_id = data['trade_id']
+
+        # Creating logger for info/errors
+        logger = Logger(user_id, trade_id)
+
         document_id = data['sl_id']
         payload = data['payload']
+
+        logger.info(f"Starting send sl with data: {data}")
 
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(user_id, trade_id)
@@ -32,6 +38,7 @@ async def send_sl(api_key, api_secret, data):
 
         # Getting current position quantity to use for stop-loss order
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position quantity for send sl: {position_quantity}")
 
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
@@ -50,8 +57,10 @@ async def send_sl(api_key, api_secret, data):
         # Storing stop-loss in firestore
         await store_sl(user_id, payload)
 
+        logger.info(f"Executed send_sl successfully")
+
         return message_send_sl(trade_id, payload)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e
