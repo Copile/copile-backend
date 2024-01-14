@@ -63,11 +63,11 @@
     "entry_point": "createBalances"
   },
   {
-    "name": "get-balance",
+    "name": "binance",
     "runtime": "nodejs18",
     "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "balances"
+    "region": "europe-west2",
+    "entry_point": "binance"
   },
   {
     "name": "member",
