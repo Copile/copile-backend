@@ -176,10 +176,10 @@ async function checkOrderStatus(activeOrders, orderID, price, exchange) {
  * @returns {Promise<Array>} An updated array of take profit orders with status.
  */
 async function checkTakeProfitStatus(exchange, takeProfitData, activeOrders) {
-  const promises = takeProfitData.map(async (tp) => {
-    if (tp.executed === "0") {
-      tp.tp_status = STATUS.QUEUED;
-    } else if (tp.executed === "1") {
+  const results = [];
+
+  await Promise.all(takeProfitData.map(async (tp) => {
+    if (tp.executed === "1") {
       const orderStatus = await checkOrderStatus(
         activeOrders,
         tp.orderID,
@@ -188,16 +188,17 @@ async function checkTakeProfitStatus(exchange, takeProfitData, activeOrders) {
       );
 
       // Only update tp_status if orderStatus is not null
-      tp.tp_status = orderStatus !== null ? orderStatus : tp.tp_status;
+      if (orderStatus !== null) {
+        tp.tp_status = orderStatus;
+        results.push(tp);  // Add the order to results
+      }
     } else if (tp.executed === "2") {
       tp.tp_status = STATUS.CANCELLED;
+      results.push(tp);  // Add the order to results
     }
-    return tp;
-  });
+  }));
 
-  const results = await Promise.all(promises);
-
-  return results.filter(tp => tp.tp_status !== null);
+  return results;
 }
 
 
@@ -210,10 +211,10 @@ async function checkTakeProfitStatus(exchange, takeProfitData, activeOrders) {
  * @returns {Promise<Array>} An updated array of stop loss orders with status.
  */
 async function checkStopLossStatus(exchange, stopLossData, activeOrders) {
-  const promises = stopLossData.map(async (sl) => {
-    if (sl.executed === "0") {
-      sl.sl_status = STATUS.QUEUED;
-    } else if (sl.executed === "1") {
+  const results = [];
+
+  await Promise.all(stopLossData.map(async (sl) => {
+    if (sl.executed === "1") {
       const orderStatus = await checkOrderStatus(
         activeOrders,
         sl.orderID,
@@ -222,18 +223,18 @@ async function checkStopLossStatus(exchange, stopLossData, activeOrders) {
       );
 
       // Only update sl_status if orderStatus is not null
-      sl.sl_status = orderStatus !== null ? orderStatus : sl.sl_status;
+      if (orderStatus !== null) {
+        sl.sl_status = orderStatus;
+        results.push(sl);  // Add the order to results
+      }
     } else if (sl.executed === "2") {
       sl.sl_status = STATUS.CANCELLED;
+      results.push(sl);  // Add the order to results
     }
-    return sl;
-  });
+  }));
 
-  const results = await Promise.all(promises);
-  
-  return results.filter(sl => sl.sl_status !== null);
+  return results;
 }
-
 
 module.exports = {
   getTradeProfitLossDetails,
