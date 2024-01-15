@@ -4,7 +4,7 @@ from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
 from utils.margin import get_margin
-from logs.error_logger import log_error
+from logs.logger import Logger
 from ..scripts.order_factory import Order
 from ..scripts.settings import reformat_symbol
 from ..scripts.distribution import calculate_tp_amounts
@@ -16,6 +16,12 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         user_id = data['user_id']
         trade_id = data['trade_id']
+
+        # Creating logger for info/errors
+        logger = Logger(user_id, trade_id)
+
+        logger.info(f"Starting bulk order with data: {data}")        
+
         plan_id = data['plan_id']
         worker_id = data['worker_id']
         margin = await get_margin(session, user_id, plan_id, worker_id)
@@ -58,6 +64,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
 
         # Calculating new take-profits for trade
         new_take_profits = calculate_tp_amounts(take_profits, quantity, precision)
+        logger.info(f"New take-profits: {new_take_profits}, for trade based on {take_profits}, {quantity}, {precision}")
 
         # Preparing position sides for take-profits and stop-losses
         tp_sl_side = "sell" if side == "buy" else "buy"
@@ -127,6 +134,7 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         }
 
         # Storing trade info in firestore
+        logger.info(f"Saving trade info to firestore: {trade_info}")
         await store_trade(user_id, trade_info)
 
         # Storing take-profits and stop-losses in firestore
@@ -134,11 +142,12 @@ async def bulk_order(api_key, api_secret, api_passphrase, data):
         sl_promises = [store_sl(user_id, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
+        logger.info(f"Executed bulk_order successfully")
 
         await notification_bulk_order(user_id, trade_id, trade_info, new_take_profits, stop_losses)
 
         return message_bulk_order(trade_id, trade_info, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e

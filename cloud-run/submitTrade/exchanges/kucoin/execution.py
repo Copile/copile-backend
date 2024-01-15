@@ -297,10 +297,6 @@ async def cancel_order(api_key, api_secret, api_passphrase, data):
         document_id = data['document_id']
         trade_type = data['trade_type']
 
-        # Fetching the trade info from firestore
-        trade_info = await get_trade_info(traderId, tradeId)
-        symbol = trade_info["symbol"]
-
         # Cancelling specific order based on trade_type (tp/sl)
         await send_cancel(session, traderId, tradeId, document_id, trade_type)
 
@@ -331,7 +327,6 @@ async def cancel_all_orders(api_key, api_secret, api_passphrase, data):
 
         # Getting current position info
         position = await session.get_position(symbol)
-
         logger.info(f"Position info: {position}")
 
         # Getting current position quantity to use for cancel order
@@ -552,7 +547,6 @@ async def partial_close(api_key, api_secret, api_passphrase, data):
             # Updating new quantity in firestore
             await update_trade_quantity(traderId, tradeId, new_quantity)
             logger.info(f"Updated quantity in firestore: {new_quantity}")
-
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "limit", side, trade_info['entry'], new_quantity, leverage, None, None, None, False)

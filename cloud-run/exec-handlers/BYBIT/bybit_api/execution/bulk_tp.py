@@ -3,7 +3,7 @@ from ..api.perpetual import BybitFunctions
 from utils.firestore import store_tp, get_trade_info
 from utils.message import message_bulk_tp
 from utils.notification import notification_bulk_tp
-from logs.error_logger import log_error
+from logs.logger import Logger
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
@@ -15,6 +15,12 @@ async def bulk_tp(api_key, api_secret, data):
 
         user_id = data['user_id']
         trade_id = data['trade_id']
+
+        # Creating logger for info/errors
+        logger = Logger(user_id, trade_id)
+
+        logger.info(f"Starting bulk tp with data: {data}")        
+
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
@@ -34,9 +40,11 @@ async def bulk_tp(api_key, api_secret, data):
 
         # Getting current position quantity to use for take-profit orders
         position_quantity = get_position_quantity(position, trade_info)
+        logger.info(f"Position info: {position}")
 
         # Calculating new take-profits for replacing current ones
         new_take_profits = calculate_tp_amounts(take_profits, position_quantity, precision)
+        logger.info(f"New take-profits: {new_take_profits}")
 
         prepared_orders = []
 
@@ -72,10 +80,12 @@ async def bulk_tp(api_key, api_secret, data):
 
         await asyncio.gather(*tp_promises)
 
+        logger.info(f"Executed bulk_tp successfully")
+
         await notification_bulk_tp(user_id, trade_id, new_take_profits)
 
         return message_bulk_tp(trade_id, new_take_profits_with_ids)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e
