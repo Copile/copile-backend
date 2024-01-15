@@ -2,7 +2,7 @@ from ..api.perpetual import BingXFunctions
 from utils.firestore import get_trade_info
 from utils.notification import notification_cancel_all_orders
 from utils.message import message_cancel_orders
-from logs.error_logger import log_error
+from logs.logger import Logger
 from ..scripts.order_factory import Order
 
 async def cancel_all_orders(api_key, api_secret, data):
