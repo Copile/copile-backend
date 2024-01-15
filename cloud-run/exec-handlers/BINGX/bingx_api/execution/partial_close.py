@@ -4,7 +4,7 @@ from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, upd
 from utils.message import message_partial_close
 from utils.partial import distribute_percentages
 from utils.notification import notification_partial_close
-from logs.error_logger import log_error
+from logs.logger import Logger
 from ..scripts.order_factory import Order
 from ..scripts.settings import get_position_quantity
 from ..scripts.distribution import calculate_tp_amounts
@@ -17,6 +17,10 @@ async def partial_close(api_key, api_secret, data):
 
         user_id = data['user_id']
         trade_id = data['trade_id']
+
+        # Creating logger for info/errors
+        logger = Logger(user_id, trade_id)
+
         percentage = data['percentage']
 
         # Fetching the trade info and current take-profits/stop-losses from firestore
@@ -50,6 +54,8 @@ async def partial_close(api_key, api_secret, data):
         quantity_to_sell = round(position_quantity * float(percentage), precision["quantity_precision"])
         new_quantity = round(position_quantity - quantity_to_sell, precision["quantity_precision"])
 
+        logger.info(f"Position info: {position}, quantity to sell: {quantity_to_sell}, new quantity: {new_quantity}")
+
         # Fetching the statuses of all take-profits for filtering active/inactive
         tps_data = await get_tps_status(session, tp_orders, trade_info)
 
@@ -58,6 +64,8 @@ async def partial_close(api_key, api_secret, data):
 
         # Calculating new take-profits for replacing current ones
         new_take_profits = calculate_tp_amounts(take_profits, new_quantity, precision)
+
+        logger.info(f"New take-profits: {new_take_profits}")
 
         # Cancelling all active tps/sls as well as old limit orders
         await session.cancel_all_orders(symbol)
@@ -72,6 +80,7 @@ async def partial_close(api_key, api_secret, data):
 
             # Updating new quantity in firestore
             await update_trade_quantity(user_id, trade_id, new_quantity)
+            logger.info(f"Updated quantity in firestore: {new_quantity}")
         else:
             # Creating new limit order object to replace old order
             order = Order(symbol, "LIMIT", side, trade_info["entry"], new_quantity, tp_sl_position_side, None,
@@ -93,6 +102,8 @@ async def partial_close(api_key, api_secret, data):
                 "margin": round(float(trade_info["margin"] * float(percentage)), 2),
                 "exchange": trade_info["exchange"]
             }
+
+            logger.info(f"Saving trade info to firestore: {trade_info}")
 
             # Storing trade info in firestore
             await store_trade(user_id, trade_info)
@@ -150,10 +161,12 @@ async def partial_close(api_key, api_secret, data):
 
         await asyncio.gather(*tp_promises, *sl_promises)
 
+        logger.info(f"Executed partial_close successfully")
+
         await notification_partial_close(user_id, trade_id, percentage)
 
         return message_partial_close(trade_id, new_quantity, new_take_profits_with_ids, stop_losses_with_ids)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e

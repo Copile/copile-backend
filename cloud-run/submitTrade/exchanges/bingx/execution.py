@@ -327,7 +327,6 @@ async def cancel_all_orders(api_key, api_secret, data):
 
         # Getting current position info
         position = await session.get_position(symbol)
-
         logger.info(f"Position info: {position}")
 
         if len(position) != 0:
