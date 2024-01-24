@@ -21,6 +21,7 @@ steps:
 
           # Check if the current function is notifications, admintrades, bybit or usertrades before deploying
           if [ "$name" = "to" ] || [ "$name" = "x" ] || [ "$name" = "x" ] || [ "$name" = "x" ]; then
+          if [ "$name" = " to code" ] || [ "$name" = "x" ] || [ "$name" = "x" ] || [ "$name" = "x" ]; then
             echo "Deploying function: $name"
             # Deploy Cloud Function with specified settings
             gcloud functions deploy $name \
