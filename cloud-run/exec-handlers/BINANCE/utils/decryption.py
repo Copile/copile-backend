@@ -1,5 +1,4 @@
 import base64
-import logging
 from google.cloud import kms_v1
 
 async def decrypt_data(trader_id, ciphertext):
