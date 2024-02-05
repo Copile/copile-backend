@@ -36,7 +36,7 @@ class BinanceFunctions:
         for account in response:
             if account['asset'] == "USDT":
                 balance = account['availableBalance']
-                return balance
+                return float(balance)
 
     async def cancel_all_orders(self, symbol):
         # https://binance-docs.github.io/apidocs/futures/en/#cancel-all-open-orders-trade
