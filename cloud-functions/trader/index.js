@@ -189,25 +189,25 @@ app.post("/addMetaAccount", async (req, res) => {
   console.log("addMetaAccount endpoint hit");
   const traderId = req.get("traderId");
   console.log("req.body", req.body);
-  const { loginId, password, server, nickname } = req.body;
-  console.log({ loginId, password, server, nickname });
+  const { login_id, password, server, nickname } = req.body;
+  console.log({ login_id, password, server, nickname });
   const userRef = db.collection("traders").doc(traderId);
 
   try {
     const updateFields = {
-      [`meta_accounts.${loginId}.loginId`]: loginId,
-      [`meta_accounts.${loginId}.password`]: password,
-      [`meta_accounts.${loginId}.sever`]: server,
-      [`meta_accounts.${loginId}.nickname`]: nickname,
+      [`meta_accounts.${login_id}.login_id`]: login_id,
+      [`meta_accounts.${login_id}.password`]: password,
+      [`meta_accounts.${login_id}.sever`]: server,
+      [`meta_accounts.${login_id}.nickname`]: nickname,
     };
 
     userRef
       .update(updateFields)
       .then(() => {
-        console.log(`Account ${loginId} added - ${traderId}!`);
+        console.log(`Account ${login_id} added - ${traderId}!`);
         res.status(200).json({
           success: true,
-          message: `Account ${loginId} added - ${traderId}!`,
+          message: `Account ${login_id} added - ${traderId}!`,
         });
       })
       .catch((error) => {
@@ -392,9 +392,9 @@ app.get("/account", async (req, res) => {
 
     let metaAccounts = [];
     for (const account in traderData.meta_accounts) {
-      const { loginId, server, nickname } = traderData.meta_accounts[account];
+      const { login_id, server, nickname } = traderData.meta_accounts[account];
 
-      metaAccounts.push({ loginId, server, nickname });
+      metaAccounts.push({ login_id, server, nickname });
     }
 
     // Fetch product IDs from the 'plans' subcollection
