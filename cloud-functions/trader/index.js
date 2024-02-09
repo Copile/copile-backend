@@ -185,6 +185,46 @@ app.get("/:traderID/sales", async (req, res) => {
   }
 });
 
+app.post("/addMetaAccount", async (req, res) => {
+  console.log("addMetaAccount endpoint hit");
+  const traderId = req.get("traderId");
+  const { loginId, password, server, nickname } = req.body;
+  console.log({ loginId, password, server, nickname });
+  const userRef = db.collection("traders").doc(traderId);
+
+  try {
+    const updateFields = {
+      [`meta_accounts.${loginId}.loginId`]: loginId,
+      [`meta_accounts.${loginId}.password`]: password,
+      [`meta_accounts.${loginId}.sever`]: server,
+      [`meta_accounts.${loginId}.nickname`]: nickname,
+    };
+
+    userRef
+      .update(updateFields)
+      .then(() => {
+        console.log(`Account ${loginId} added - ${traderId}!`);
+        res.status(200).json({
+          success: true,
+          message: `Account ${loginId} added - ${traderId}!`,
+        });
+      })
+      .catch((error) => {
+        console.error(`Error adding document: ${error}`);
+        res.status(500).json({
+          success: false,
+          error: `Error adding document: ${traderId}`,
+        });
+      });
+  } catch (error) {
+    console.error("Error encrypting data:", error);
+    res.status(500).json({
+      success: false,
+      error: "An error occurred during the process",
+    });
+  }
+});
+
 app.post("/updateExchange", async (req, res) => {
   console.log("updateExchange endpoint hit");
   const traderId = req.get("traderId");
