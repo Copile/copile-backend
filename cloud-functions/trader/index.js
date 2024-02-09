@@ -188,6 +188,7 @@ app.get("/:traderID/sales", async (req, res) => {
 app.post("/addMetaAccount", async (req, res) => {
   console.log("addMetaAccount endpoint hit");
   const traderId = req.get("traderId");
+  console.log("req.body", req.body);
   const { loginId, password, server, nickname } = req.body;
   console.log({ loginId, password, server, nickname });
   const userRef = db.collection("traders").doc(traderId);
