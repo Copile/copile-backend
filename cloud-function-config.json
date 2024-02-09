@@ -1,5 +1,12 @@
 [
   {
+    "name": "saveUserEman",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "saveUserEman"
+  },
+  {
     "name": "checkReferral",
     "runtime": "nodejs18",
     "memory": "256MB",
