@@ -390,6 +390,13 @@ app.get("/account", async (req, res) => {
       }
     }
 
+    let metaAccounts = [];
+    for (const account in traderData.meta_accounts) {
+      const { loginId, server, nickname } = traderData.meta_accounts[account];
+
+      metaAccounts.push({ loginId, server, nickname });
+    }
+
     // Fetch product IDs from the 'plans' subcollection
     const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
@@ -403,6 +410,7 @@ app.get("/account", async (req, res) => {
       trader_name: traderData.trader_name,
       is_monitor_enabled: traderData.is_monitor_enabled,
       plans, // adding product plans to the response data
+      meta_accounts: metaAccounts,
     };
 
     res.json(responseData);
