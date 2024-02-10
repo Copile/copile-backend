@@ -185,6 +185,44 @@ app.get("/:traderID/sales", async (req, res) => {
   }
 });
 
+app.delete("/deleteMetaAccount", async (req, res) => {
+  console.log("deleteMetaAccount endpoint hit");
+  const traderId = req.get("traderId");
+  console.log(`traderId: ${traderId}`);
+  const login_id = req.query.login_id;
+  console.log(`login_id: ${login_id}`);
+  const userRef = db.collection("traders").doc(traderId);
+
+  try {
+    const updateFields = {
+      [`meta_accounts.${login_id}`]: Firestore.FieldValue.delete(),
+    };
+
+    userRef
+      .update(updateFields)
+      .then(() => {
+        console.log(`Account ${login_id} deleted - ${traderId}!`);
+        res.status(200).json({
+          success: true,
+          message: `Account ${login_id} deleted - ${traderId}!`,
+        });
+      })
+      .catch((error) => {
+        console.error(`Error deleting document: ${error}`);
+        res.status(500).json({
+          success: false,
+          error: `Error deleting document: ${traderId}`,
+        });
+      });
+  } catch (error) {
+    console.error("Error encrypting data:", error);
+    res.status(500).json({
+      success: false,
+      error: "An error occurred during the process",
+    });
+  }
+});
+
 app.post("/addMetaAccount", async (req, res) => {
   console.log("addMetaAccount endpoint hit");
   const traderId = req.get("traderId");
