@@ -197,7 +197,7 @@ app.post("/addMetaAccount", async (req, res) => {
     const updateFields = {
       [`meta_accounts.${login_id}.login_id`]: login_id,
       [`meta_accounts.${login_id}.password`]: password,
-      [`meta_accounts.${login_id}.sever`]: server,
+      [`meta_accounts.${login_id}.server`]: server,
       [`meta_accounts.${login_id}.nickname`]: nickname,
     };
 
