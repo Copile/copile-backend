@@ -516,7 +516,7 @@ app.put("/alwaysExchanges", async (req, res) => {
 app.delete("/deleteExchange", async (req, res) => {
   // Removed traderId from the route
   const traderId = req.get("traderId");
-  const exchangeName = req.body.query.toLowerCase();
+  const exchangeName = req.query.exchange.toLowerCase();
   const read_only = req.query.is_monitor;
 
   try {
