@@ -514,33 +514,43 @@ app.put("/alwaysExchanges", async (req, res) => {
 });
 
 app.delete("/deleteExchange", async (req, res) => {
+  console.log("Starting to process /deleteExchange request");
   // Removed traderId from the route
   const traderId = req.get("traderId");
+  console.log(`Received traderId: ${traderId}`);
   const exchangeName = req.query.exchange.toLowerCase();
+  console.log(`Processing for exchange: ${exchangeName}`);
   const read_only = req.query.is_monitor;
+  console.log(`Is read only mode? ${read_only}`);
 
   try {
+    console.log("Attempting to retrieve trader document");
     const documentRef = db.collection("traders").doc(traderId);
     const documentSnapshot = await documentRef.get();
 
     if (!documentSnapshot.exists) {
+      console.log("Trader not found, sending 404");
       res.status(404).json({ success: false, error: "Trader not found" });
       return;
     }
 
+    console.log("Trader found, processing exchanges");
     const traderData = documentSnapshot.data();
     const exchanges = traderData.exchanges;
 
     if (!exchanges.hasOwnProperty(exchangeName)) {
+      console.log("Exchange not found, sending 404");
       res.status(404).json({ success: false, error: "Exchange not found" });
       return;
     }
 
+    console.log("Exchange found, preparing to delete credentials");
     // Determine the key and secret fields based on read_only
     const keyField = read_only ? "read_only_api_key" : "api_key";
     const secretField = read_only ? "read_only_api_secret" : "api_secret";
     const passphraseField = read_only ? "read_only_api_passphrase" : "api_passphrase"; // determine the passphrase field based on read_only
 
+    console.log(`Deleting credentials: ${keyField}, ${secretField}, ${passphraseField}`);
     // Delete API credentials by setting them to 'x'
     exchanges[exchangeName][keyField] = "x";
     exchanges[exchangeName][secretField] = "x";
@@ -548,8 +558,10 @@ app.delete("/deleteExchange", async (req, res) => {
       exchanges[exchangeName][passphraseField] = "x";
     }
 
+    console.log("Updating document with deleted credentials");
     await documentRef.update({ exchanges });
 
+    console.log("Credentials deleted successfully, sending response");
     res.json({
       success: true,
       message: "Exchange credentials deleted successfully",
