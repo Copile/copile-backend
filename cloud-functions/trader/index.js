@@ -520,7 +520,7 @@ app.delete("/deleteExchange", async (req, res) => {
   console.log(`Received traderId: ${traderId}`);
   const exchangeName = req.query.exchange.toLowerCase();
   console.log(`Processing for exchange: ${exchangeName}`);
-  const read_only = req.query.is_monitor;
+  const read_only = req.query.is_monitor === "true" ? true : false;
   console.log(`Is read only mode? ${read_only}`);
 
   try {
