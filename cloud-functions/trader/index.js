@@ -1,6 +1,7 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
 const { getPublicKey } = require("./encryption");
+const { v4: uuidv4 } = require("uuid");
 
 const express = require("express");
 const applyMiddleware = require("./middleware");
