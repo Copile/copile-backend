@@ -229,37 +229,41 @@ app.post("/addMetaAccount", async (req, res) => {
   console.log("req.body", req.body);
   const { login_id, password, server, nickname } = req.body;
   console.log({ login_id, password, server, nickname });
-  const userRef = db.collection("traders").doc(traderId);
+
+  const id = uuidv4();
+
+  // Reference to the new sub-collection and document for meta_accounts
+  const metaAccountRef = db
+    .collection("traders")
+    .doc(traderId)
+    .collection("accounts")
+    .doc("meta_accounts")
+    .collection("meta_accounts")
+    .doc(id);
 
   try {
-    const updateFields = {
-      [`meta_accounts.${login_id}.login_id`]: login_id,
-      [`meta_accounts.${login_id}.password`]: password,
-      [`meta_accounts.${login_id}.server`]: server,
-      [`meta_accounts.${login_id}.nickname`]: nickname,
+    // Prepare the document data
+    const accountData = {
+      id: id,
+      login_id: login_id,
+      password: password,
+      server: server,
+      nickname: nickname,
     };
 
-    userRef
-      .update(updateFields)
-      .then(() => {
-        console.log(`Account ${login_id} added - ${traderId}!`);
-        res.status(200).json({
-          success: true,
-          message: `Account ${login_id} added - ${traderId}!`,
-        });
-      })
-      .catch((error) => {
-        console.error(`Error adding document: ${error}`);
-        res.status(500).json({
-          success: false,
-          error: `Error adding document: ${traderId}`,
-        });
-      });
+    // Add the new meta account document
+    await metaAccountRef.set(accountData);
+
+    console.log(`Account ${login_id} added - ${traderId}!`);
+    res.status(200).json({
+      success: true,
+      message: `Account ${login_id} added - ${traderId}!`,
+    });
   } catch (error) {
-    console.error("Error encrypting data:", error);
+    console.error(`Error adding document: ${error}`);
     res.status(500).json({
       success: false,
-      error: "An error occurred during the process",
+      error: `Error adding document: ${traderId}`,
     });
   }
 });
@@ -428,15 +432,21 @@ app.get("/account", async (req, res) => {
       }
     }
 
-    let metaAccounts = [];
-    for (const account in traderData.meta_accounts) {
-      const { login_id, server, nickname } = traderData.meta_accounts[account];
+    // let metaAccounts = [];
+    // for (const account in traderData.meta_accounts) {
+    //   const { login_id, server, nickname } = traderData.meta_accounts[account];
 
-      metaAccounts.push({ login_id, server, nickname });
-    }
+    //   metaAccounts.push({ login_id, server, nickname });
+    // }
+
+    const metaAccountsCollectionSnapshot = traderDocumentSnapshot
+      .collection("accounts")
+      .collection("meta_accounts")
+      .get();
+    const metaAccounts = metaAccountsCollectionSnapshot.docs.map((doc) => doc.data());
 
     // Fetch product IDs from the 'plans' subcollection
-    const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
+    const plansCollectionSnapshot = await traderDocumentSnapshot.collection("plans").get();
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
     const responseData = {
       success: true,
