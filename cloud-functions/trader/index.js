@@ -186,8 +186,69 @@ app.get("/:traderID/sales", async (req, res) => {
   }
 });
 
-app.delete("/deleteMetaAccount", async (req, res) => {
-  console.log("deleteMetaAccount endpoint hit");
+app.delete("/subBingx", async (req, res) => {
+  console.log("delete subBingx endpoint hit");
+  const traderId = req.get("traderId");
+  console.log(`traderId: ${traderId}`);
+  const documentId = req.query.id;
+  console.log(`Document ID: ${documentId}`);
+  const metaAccountRef = db.collection("traders").doc(traderId).collection("sub_bingx").doc(documentId);
+
+  try {
+    await metaAccountRef.delete();
+    console.log(`Sub Bingx deleted - ${traderId}!`);
+    res.status(204).json({
+      success: true,
+      message: `Sub Bingx deleted - ${traderId}!`,
+    });
+  } catch (error) {
+    console.error(`Error deleting sub Bingx: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: `Error deleting sub Bingx: ${traderId}`,
+    });
+  }
+});
+
+app.post("/subBingx", async (req, res) => {
+  console.log("post subBingx endpoint hit");
+  const traderId = req.get("traderId");
+  console.log("req.body", req.body);
+  const { api_key, api_secret, nickname } = req.body;
+  console.log({ api_key, api_secret, nickname });
+
+  const id = uuidv4();
+
+  const newMetaAccountRef = db
+    .collection("traders")
+    .doc(traderId) // Navigate to the specific trader
+    .collection("sub_bingx") // Directly access the meta_accounts sub-collection
+    .doc(id); // Use the provided id for this document
+
+  try {
+    await newMetaAccountRef.set({
+      id: id,
+      api_key: api_key,
+      api_secret: api_secret,
+      nickname: nickname,
+    });
+
+    console.log(`Sub Bingx added - ${traderId}!`);
+    res.status(201).json({
+      success: true,
+      message: `Sub Bingx added - ${traderId}!`,
+    });
+  } catch (error) {
+    console.error(`Error adding document: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: `Error adding document: ${traderId}`,
+    });
+  }
+});
+
+app.delete("/metaAccount", async (req, res) => {
+  console.log("delete metaAccount endpoint hit");
   const traderId = req.get("traderId");
   console.log(`traderId: ${traderId}`);
   const documentId = req.query.id;
@@ -197,7 +258,7 @@ app.delete("/deleteMetaAccount", async (req, res) => {
   try {
     await metaAccountRef.delete();
     console.log(`Meta account ${documentId} deleted - ${traderId}!`);
-    res.status(200).json({
+    res.status(204).json({
       success: true,
       message: `Meta account ${documentId} deleted - ${traderId}!`,
     });
@@ -210,8 +271,8 @@ app.delete("/deleteMetaAccount", async (req, res) => {
   }
 });
 
-app.post("/addMetaAccount", async (req, res) => {
-  console.log("addMetaAccount endpoint hit");
+app.post("/metaAccount", async (req, res) => {
+  console.log("post metaAccount endpoint hit");
   const traderId = req.get("traderId");
   console.log("req.body", req.body);
   const { login_id, password, server, nickname } = req.body;
@@ -235,7 +296,7 @@ app.post("/addMetaAccount", async (req, res) => {
     });
 
     console.log(`Account ${login_id} added - ${traderId}!`);
-    res.status(200).json({
+    res.status(201).json({
       success: true,
       message: `Account ${login_id} added - ${traderId}!`,
     });
@@ -386,11 +447,13 @@ app.get("/account", async (req, res) => {
 
   try {
     // Fetch trader document, meta accounts, and plans in parallel
-    const [traderDocumentSnapshot, metaAccountsSnapshot, plansCollectionSnapshot] = await Promise.all([
-      db.collection("traders").doc(traderId).get(),
-      db.collection("traders").doc(traderId).collection("meta_accounts").get(),
-      db.collection("traders").doc(traderId).collection("plans").get(),
-    ]);
+    const [traderDocumentSnapshot, metaAccountsSnapshot, subBingxSnapshot, plansCollectionSnapshot] =
+      await Promise.all([
+        db.collection("traders").doc(traderId).get(),
+        db.collection("traders").doc(traderId).collection("meta_accounts").get(),
+        db.collection("traders").doc(traderId).collection("sub_bingx").get(),
+        db.collection("traders").doc(traderId).collection("plans").get(),
+      ]);
 
     if (!traderDocumentSnapshot.exists) {
       res.status(404).json({ success: false, error: "Trader not found" });
@@ -412,6 +475,7 @@ app.get("/account", async (req, res) => {
 
     // Map documents to data for meta accounts and plans
     const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
+    const subBingx = subBingxSnapshot.docs.map((doc) => doc.data());
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data());
 
     const responseData = {
@@ -425,6 +489,7 @@ app.get("/account", async (req, res) => {
       is_monitor_enabled: traderData.is_monitor_enabled,
       plans,
       meta_accounts: metaAccounts,
+      sub_bingx: subBingx,
     };
 
     res.json(responseData);
