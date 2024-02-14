@@ -439,12 +439,16 @@ app.get("/account", async (req, res) => {
     //   metaAccounts.push({ login_id, server, nickname });
     // }
 
-    const metaAccountsCollectionSnapshot = await db;
-    traderData.collection("accounts").collection("meta_accounts").get();
+    const metaAccountsCollectionSnapshot = await db
+      .collection("traders")
+      .doc(traderId)
+      .collection("accounts")
+      .collection("meta_accounts")
+      .get();
     const metaAccounts = metaAccountsCollectionSnapshot.docs.map((doc) => doc.data());
 
     // Fetch product IDs from the 'plans' subcollection
-    const plansCollectionSnapshot = await traderData.collection("plans").get();
+    const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
     const responseData = {
       success: true,
