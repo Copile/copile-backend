@@ -189,36 +189,22 @@ app.delete("/deleteMetaAccount", async (req, res) => {
   console.log("deleteMetaAccount endpoint hit");
   const traderId = req.get("traderId");
   console.log(`traderId: ${traderId}`);
-  const login_id = req.query.login_id;
-  console.log(`login_id: ${login_id}`);
-  const userRef = db.collection("traders").doc(traderId);
+  const documentId = req.query.id;
+  console.log(`Document ID: ${documentId}`);
+  const metaAccountRef = db.collection("traders").doc(traderId).collection("meta_accounts").doc(documentId);
 
   try {
-    const updateFields = {
-      [`meta_accounts.${login_id}`]: Firestore.FieldValue.delete(),
-    };
-
-    userRef
-      .update(updateFields)
-      .then(() => {
-        console.log(`Account ${login_id} deleted - ${traderId}!`);
-        res.status(200).json({
-          success: true,
-          message: `Account ${login_id} deleted - ${traderId}!`,
-        });
-      })
-      .catch((error) => {
-        console.error(`Error deleting document: ${error}`);
-        res.status(500).json({
-          success: false,
-          error: `Error deleting document: ${traderId}`,
-        });
-      });
+    await metaAccountRef.delete();
+    console.log(`Meta account ${documentId} deleted - ${traderId}!`);
+    res.status(200).json({
+      success: true,
+      message: `Meta account ${documentId} deleted - ${traderId}!`,
+    });
   } catch (error) {
-    console.error("Error encrypting data:", error);
+    console.error(`Error deleting meta account: ${error}`);
     res.status(500).json({
       success: false,
-      error: "An error occurred during the process",
+      error: `Error deleting meta account: ${traderId}`,
     });
   }
 });
@@ -232,27 +218,20 @@ app.post("/addMetaAccount", async (req, res) => {
 
   const id = uuidv4();
 
-  // Reference to the new sub-collection and document for meta_accounts
-  const metaAccountRef = db
+  const newMetaAccountRef = db
     .collection("traders")
-    .doc(traderId)
-    .collection("accounts")
-    .doc("meta_accounts")
-    .collection("meta_accounts")
-    .doc(id);
+    .doc(traderId) // Navigate to the specific trader
+    .collection("meta_accounts") // Directly access the meta_accounts sub-collection
+    .doc(id); // Use the provided id for this document
 
   try {
-    // Prepare the document data
-    const accountData = {
+    await newMetaAccountRef.set({
       id: id,
       login_id: login_id,
       password: password,
       server: server,
       nickname: nickname,
-    };
-
-    // Add the new meta account document
-    await metaAccountRef.set(accountData);
+    });
 
     console.log(`Account ${login_id} added - ${traderId}!`);
     res.status(200).json({
@@ -432,22 +411,8 @@ app.get("/account", async (req, res) => {
       }
     }
 
-    // let metaAccounts = [];
-    // for (const account in traderData.meta_accounts) {
-    //   const { login_id, server, nickname } = traderData.meta_accounts[account];
-
-    //   metaAccounts.push({ login_id, server, nickname });
-    // }
-
-    const metaAccountsCollectionSnapshot = await db
-      .collection("traders")
-      .doc(traderId)
-      .collection("accounts")
-      .collection("meta_accounts")
-      .get();
-    const metaAccounts = metaAccountsCollectionSnapshot.docs.map((doc) => doc.data());
-
-    // Fetch product IDs from the 'plans' subcollection
+    const metaAccountsSnapshot = await db.collection("traders").doc(traderId).collection("meta_accounts").get();
+    const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
     const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
     const responseData = {
