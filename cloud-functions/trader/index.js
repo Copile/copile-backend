@@ -475,7 +475,12 @@ app.get("/account", async (req, res) => {
 
     // Map documents to data for meta accounts and plans
     const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
-    const subBingx = subBingxSnapshot.docs.map((doc) => doc.data());
+    const subBingx = subBingxSnapshot.docs.map((doc) => {
+      return {
+        id: doc.id,
+        nickname: doc.data().nickname,
+      };
+    });
     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data());
 
     const responseData = {
