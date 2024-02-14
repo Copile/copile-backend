@@ -1,6 +1,7 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
 const { getPublicKey } = require("./encryption");
+const { v4: uuidv4 } = require("uuid");
 
 const express = require("express");
 const applyMiddleware = require("./middleware");
@@ -189,36 +190,22 @@ app.delete("/deleteMetaAccount", async (req, res) => {
   console.log("deleteMetaAccount endpoint hit");
   const traderId = req.get("traderId");
   console.log(`traderId: ${traderId}`);
-  const login_id = req.query.login_id;
-  console.log(`login_id: ${login_id}`);
-  const userRef = db.collection("traders").doc(traderId);
+  const documentId = req.query.id;
+  console.log(`Document ID: ${documentId}`);
+  const metaAccountRef = db.collection("traders").doc(traderId).collection("meta_accounts").doc(documentId);
 
   try {
-    const updateFields = {
-      [`meta_accounts.${login_id}`]: Firestore.FieldValue.delete(),
-    };
-
-    userRef
-      .update(updateFields)
-      .then(() => {
-        console.log(`Account ${login_id} deleted - ${traderId}!`);
-        res.status(200).json({
-          success: true,
-          message: `Account ${login_id} deleted - ${traderId}!`,
-        });
-      })
-      .catch((error) => {
-        console.error(`Error deleting document: ${error}`);
-        res.status(500).json({
-          success: false,
-          error: `Error deleting document: ${traderId}`,
-        });
-      });
+    await metaAccountRef.delete();
+    console.log(`Meta account ${documentId} deleted - ${traderId}!`);
+    res.status(200).json({
+      success: true,
+      message: `Meta account ${documentId} deleted - ${traderId}!`,
+    });
   } catch (error) {
-    console.error("Error encrypting data:", error);
+    console.error(`Error deleting meta account: ${error}`);
     res.status(500).json({
       success: false,
-      error: "An error occurred during the process",
+      error: `Error deleting meta account: ${traderId}`,
     });
   }
 });
@@ -229,37 +216,34 @@ app.post("/addMetaAccount", async (req, res) => {
   console.log("req.body", req.body);
   const { login_id, password, server, nickname } = req.body;
   console.log({ login_id, password, server, nickname });
-  const userRef = db.collection("traders").doc(traderId);
+
+  const id = uuidv4();
+
+  const newMetaAccountRef = db
+    .collection("traders")
+    .doc(traderId) // Navigate to the specific trader
+    .collection("meta_accounts") // Directly access the meta_accounts sub-collection
+    .doc(id); // Use the provided id for this document
 
   try {
-    const updateFields = {
-      [`meta_accounts.${login_id}.login_id`]: login_id,
-      [`meta_accounts.${login_id}.password`]: password,
-      [`meta_accounts.${login_id}.server`]: server,
-      [`meta_accounts.${login_id}.nickname`]: nickname,
-    };
+    await newMetaAccountRef.set({
+      id: id,
+      login_id: login_id,
+      password: password,
+      server: server,
+      nickname: nickname,
+    });
 
-    userRef
-      .update(updateFields)
-      .then(() => {
-        console.log(`Account ${login_id} added - ${traderId}!`);
-        res.status(200).json({
-          success: true,
-          message: `Account ${login_id} added - ${traderId}!`,
-        });
-      })
-      .catch((error) => {
-        console.error(`Error adding document: ${error}`);
-        res.status(500).json({
-          success: false,
-          error: `Error adding document: ${traderId}`,
-        });
-      });
+    console.log(`Account ${login_id} added - ${traderId}!`);
+    res.status(200).json({
+      success: true,
+      message: `Account ${login_id} added - ${traderId}!`,
+    });
   } catch (error) {
-    console.error("Error encrypting data:", error);
+    console.error(`Error adding document: ${error}`);
     res.status(500).json({
       success: false,
-      error: "An error occurred during the process",
+      error: `Error adding document: ${traderId}`,
     });
   }
 });
@@ -394,13 +378,19 @@ app.post("/updateMonitorStatus", async (req, res) => {
   }
 });
 
+// faster version of the /account endpoint
 app.get("/account", async (req, res) => {
   const traderId = req.get("traderId");
 
   console.log(traderId);
 
   try {
-    const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+    // Fetch trader document, meta accounts, and plans in parallel
+    const [traderDocumentSnapshot, metaAccountsSnapshot, plansCollectionSnapshot] = await Promise.all([
+      db.collection("traders").doc(traderId).get(),
+      db.collection("traders").doc(traderId).collection("meta_accounts").get(),
+      db.collection("traders").doc(traderId).collection("plans").get(),
+    ]);
 
     if (!traderDocumentSnapshot.exists) {
       res.status(404).json({ success: false, error: "Trader not found" });
@@ -409,35 +399,21 @@ app.get("/account", async (req, res) => {
 
     const traderData = traderDocumentSnapshot.data();
 
-    // Extracting exchange APIs with valid keys and secrets
+    // Process exchange APIs to determine valid keys and secrets
     const existingApis = {};
     const existingReadOnlyApis = {};
-    for (const exchange in traderData.exchanges) {
-      const { api_key, api_secret, read_only_api_key, read_only_api_secret } = traderData.exchanges[exchange];
-
-      if (api_key && api_key !== "x" && api_secret && api_secret !== "x") {
-        existingApis[exchange] = true;
-      } else {
-        existingApis[exchange] = false;
+    Object.entries(traderData.exchanges || {}).forEach(
+      ([exchange, { api_key, api_secret, read_only_api_key, read_only_api_secret }]) => {
+        existingApis[exchange] = api_key && api_key !== "x" && api_secret && api_secret !== "x";
+        existingReadOnlyApis[exchange] =
+          read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x";
       }
+    );
 
-      if (read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x") {
-        existingReadOnlyApis[exchange] = true;
-      } else {
-        existingReadOnlyApis[exchange] = false;
-      }
-    }
+    // Map documents to data for meta accounts and plans
+    const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
+    const plans = plansCollectionSnapshot.docs.map((doc) => doc.data());
 
-    let metaAccounts = [];
-    for (const account in traderData.meta_accounts) {
-      const { login_id, server, nickname } = traderData.meta_accounts[account];
-
-      metaAccounts.push({ login_id, server, nickname });
-    }
-
-    // Fetch product IDs from the 'plans' subcollection
-    const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
-    const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
     const responseData = {
       success: true,
       existingApis,
@@ -447,7 +423,7 @@ app.get("/account", async (req, res) => {
       connected_telegram: traderData.connected_telegram,
       trader_name: traderData.trader_name,
       is_monitor_enabled: traderData.is_monitor_enabled,
-      plans, // adding product plans to the response data
+      plans,
       meta_accounts: metaAccounts,
     };
 
@@ -457,6 +433,65 @@ app.get("/account", async (req, res) => {
     res.status(500).json({ success: false, error: "Error retrieving trader data" });
   }
 });
+
+// slower version of the /account endpoint
+// app.get("/account", async (req, res) => {
+//   const traderId = req.get("traderId");
+
+//   console.log(traderId);
+
+//   try {
+//     const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+
+//     if (!traderDocumentSnapshot.exists) {
+//       res.status(404).json({ success: false, error: "Trader not found" });
+//       return;
+//     }
+
+//     const traderData = traderDocumentSnapshot.data();
+
+//     // Extracting exchange APIs with valid keys and secrets
+//     const existingApis = {};
+//     const existingReadOnlyApis = {};
+//     for (const exchange in traderData.exchanges) {
+//       const { api_key, api_secret, read_only_api_key, read_only_api_secret } = traderData.exchanges[exchange];
+
+//       if (api_key && api_key !== "x" && api_secret && api_secret !== "x") {
+//         existingApis[exchange] = true;
+//       } else {
+//         existingApis[exchange] = false;
+//       }
+
+//       if (read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x") {
+//         existingReadOnlyApis[exchange] = true;
+//       } else {
+//         existingReadOnlyApis[exchange] = false;
+//       }
+//     }
+
+//     const metaAccountsSnapshot = await db.collection("traders").doc(traderId).collection("meta_accounts").get();
+//     const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
+//     const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
+//     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
+//     const responseData = {
+//       success: true,
+//       existingApis,
+//       existingReadOnlyApis,
+//       always_exchanges: traderData.always_exchanges,
+//       connected_discord: traderData.connected_discord,
+//       connected_telegram: traderData.connected_telegram,
+//       trader_name: traderData.trader_name,
+//       is_monitor_enabled: traderData.is_monitor_enabled,
+//       plans, // adding product plans to the response data
+//       meta_accounts: metaAccounts,
+//     };
+
+//     res.json(responseData);
+//   } catch (error) {
+//     console.error("Error retrieving trader data:", error);
+//     res.status(500).json({ success: false, error: "Error retrieving trader data" });
+//   }
+// });
 
 app.get("/pubKey", async (req, res) => {
   const traderId = req.get("traderId");

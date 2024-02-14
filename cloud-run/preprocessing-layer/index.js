@@ -11,28 +11,27 @@ app.enable("trust proxy");
 app.use(bodyParser.text({ type: "*/*" }));
 
 async function addTaskToQueue(type, trade_data) {
-  
   let parent = client.queuePath("copile", "asia-southeast1", "track-queue");
   let url;
   switch (trade_data.exchange) {
     case "bybit":
-      url = `https://asia-bybit-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
+      url = `https://asia-bybit-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
     case "kucoin":
-      url = `https://asia-kucoin-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
+      url = `https://asia-kucoin-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
     case "binance":
-      url = `https://asia-binance-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
+      url = `https://asia-binance-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
     case "bingx":
-      url = `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
+      url = `https://asia-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
     case "testnet":
-      url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`
+      url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
     default:
@@ -77,7 +76,7 @@ app.post("/bulkTP", async (req, res) => {
           trade_id: tradeId,
           user_id: userId,
           take_profits: take_profits,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("bulk_tp", trade_data));
       }
@@ -142,7 +141,7 @@ app.post("/submitSL", async (req, res) => {
           user_id: userId,
           payload: payload,
           document_id: sl_id,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("send_sl", trade_data));
       }
@@ -174,7 +173,7 @@ app.post("/replaceSL", async (req, res) => {
           user_id: userId,
           document_id: orderId,
           payload: payload,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("replace_sl", trade_data));
       }
@@ -206,7 +205,7 @@ app.post("/cancelOrder", async (req, res) => {
           user_id: userId,
           document_id: document_id,
           trade_type: type,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("cancel_order", trade_data));
       }
@@ -236,7 +235,7 @@ app.post("/cancelAllOrders", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           user_id: userId,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("cancel_all_orders", trade_data));
       }
@@ -266,7 +265,7 @@ app.post("/cancelAllTps", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           user_id: userId,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("cancel_all_tps", trade_data));
       }
@@ -299,21 +298,25 @@ app.post("/bulkOrder", async (req, res) => {
     const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
 
-    // Get a reference to the Firestore collection group for workers
-    const workersRef = firestore.collectionGroup("workers");
+    // Get a reference to the Firestore collection of workers across all users > plans > (plan) > **WORKERS**
+    const workersAcrossAllUsersRef = firestore.collectionGroup("workers");
     // Initialize an array to hold the tasks to add to the queue
     const tasksToAdd = [];
 
     console.log("Fetching all matching workers from Firestore");
-    // Fetch all workers that match the trader ID and are enabled
-    const allMatchingWorkers = await workersRef
+    // Fetch all workers that match the trader ID and are enabled within every users plan
+    const allMatchingWorkers = await workersAcrossAllUsersRef
       .where("id", "==", traderId)
       .where("enabled", "==", true)
       .get();
     // Initialize a set to hold the user IDs of the matching workers
     const userIds = new Set();
 
-    // For each matching worker, add the user ID to the set of user IDs
+    // For each matching worker, find the corresponding user that has the worker enabled and add the user ID to the set
+    // this gives us a list of users, who, regardless of plan, have the specified worker enabled
+    // FIXME: This disregards the plan and only checks if the worker is enabled
+    // In a case where the worker is enabled in multiple plans, the user will be added multiple times
+    // and in a case where the worker is in multiple plans for the same user, if the worker is enabled in one plan and disabled in another, the user will still be added to the set
     allMatchingWorkers.forEach((doc) => {
       userIds.add(doc.ref.parent.parent.parent.parent.id);
     });
@@ -324,9 +327,7 @@ app.post("/bulkOrder", async (req, res) => {
       try {
         console.log(`Processing user ${userId}`);
         // Find the worker document for the user
-        const workerDoc = allMatchingWorkers.docs.find(
-          (doc) => doc.ref.parent.parent.parent.parent.id === userId
-        );
+        const workerDoc = allMatchingWorkers.docs.find((doc) => doc.ref.parent.parent.parent.parent.id === userId);
         // Get the worker data from the worker document
         const workerData = workerDoc.data();
         // Get the preferred exchange from the worker data
@@ -345,7 +346,7 @@ app.post("/bulkOrder", async (req, res) => {
           payload: payload,
           exchange: preferredExchange,
           margin_type: "ISOLATED",
-          plan_id: plans[0]
+          plan_id: plans[0],
         };
 
         // Fetch the user document from Firestore
@@ -377,9 +378,7 @@ app.post("/bulkOrder", async (req, res) => {
           // This is to ensure that the selected exchange is valid for the user
           const validExchanges = Object.entries(user.exchanges).filter(
             ([exchangeName, exchangeData]) =>
-              exchanges.includes(exchangeName) &&
-              exchangeData.api_key !== "x" &&
-              exchangeData.api_secret !== "x"
+              exchanges.includes(exchangeName) && exchangeData.api_key !== "x" && exchangeData.api_secret !== "x"
           );
 
           console.log(`Valid exchanges for user ${userId}: ${JSON.stringify(validExchanges)}`);
@@ -436,7 +435,7 @@ app.post("/partialClose", async (req, res) => {
           trade_id: tradeId,
           user_id: userId,
           percentage: percentage,
-          exchange: doc.get("exchange")
+          exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("partial_close", trade_data));
       }
