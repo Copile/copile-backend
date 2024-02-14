@@ -378,13 +378,19 @@ app.post("/updateMonitorStatus", async (req, res) => {
   }
 });
 
+// faster version of the /account endpoint
 app.get("/account", async (req, res) => {
   const traderId = req.get("traderId");
 
   console.log(traderId);
 
   try {
-    const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+    // Fetch trader document, meta accounts, and plans in parallel
+    const [traderDocumentSnapshot, metaAccountsSnapshot, plansCollectionSnapshot] = await Promise.all([
+      db.collection("traders").doc(traderId).get(),
+      db.collection("traders").doc(traderId).collection("meta_accounts").get(),
+      db.collection("traders").doc(traderId).collection("plans").get(),
+    ]);
 
     if (!traderDocumentSnapshot.exists) {
       res.status(404).json({ success: false, error: "Trader not found" });
@@ -393,29 +399,21 @@ app.get("/account", async (req, res) => {
 
     const traderData = traderDocumentSnapshot.data();
 
-    // Extracting exchange APIs with valid keys and secrets
+    // Process exchange APIs to determine valid keys and secrets
     const existingApis = {};
     const existingReadOnlyApis = {};
-    for (const exchange in traderData.exchanges) {
-      const { api_key, api_secret, read_only_api_key, read_only_api_secret } = traderData.exchanges[exchange];
-
-      if (api_key && api_key !== "x" && api_secret && api_secret !== "x") {
-        existingApis[exchange] = true;
-      } else {
-        existingApis[exchange] = false;
+    Object.entries(traderData.exchanges || {}).forEach(
+      ([exchange, { api_key, api_secret, read_only_api_key, read_only_api_secret }]) => {
+        existingApis[exchange] = api_key && api_key !== "x" && api_secret && api_secret !== "x";
+        existingReadOnlyApis[exchange] =
+          read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x";
       }
+    );
 
-      if (read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x") {
-        existingReadOnlyApis[exchange] = true;
-      } else {
-        existingReadOnlyApis[exchange] = false;
-      }
-    }
-
-    const metaAccountsSnapshot = await db.collection("traders").doc(traderId).collection("meta_accounts").get();
+    // Map documents to data for meta accounts and plans
     const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
-    const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
-    const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
+    const plans = plansCollectionSnapshot.docs.map((doc) => doc.data());
+
     const responseData = {
       success: true,
       existingApis,
@@ -425,7 +423,7 @@ app.get("/account", async (req, res) => {
       connected_telegram: traderData.connected_telegram,
       trader_name: traderData.trader_name,
       is_monitor_enabled: traderData.is_monitor_enabled,
-      plans, // adding product plans to the response data
+      plans,
       meta_accounts: metaAccounts,
     };
 
@@ -435,6 +433,65 @@ app.get("/account", async (req, res) => {
     res.status(500).json({ success: false, error: "Error retrieving trader data" });
   }
 });
+
+// slower version of the /account endpoint
+// app.get("/account", async (req, res) => {
+//   const traderId = req.get("traderId");
+
+//   console.log(traderId);
+
+//   try {
+//     const traderDocumentSnapshot = await db.collection("traders").doc(traderId).get();
+
+//     if (!traderDocumentSnapshot.exists) {
+//       res.status(404).json({ success: false, error: "Trader not found" });
+//       return;
+//     }
+
+//     const traderData = traderDocumentSnapshot.data();
+
+//     // Extracting exchange APIs with valid keys and secrets
+//     const existingApis = {};
+//     const existingReadOnlyApis = {};
+//     for (const exchange in traderData.exchanges) {
+//       const { api_key, api_secret, read_only_api_key, read_only_api_secret } = traderData.exchanges[exchange];
+
+//       if (api_key && api_key !== "x" && api_secret && api_secret !== "x") {
+//         existingApis[exchange] = true;
+//       } else {
+//         existingApis[exchange] = false;
+//       }
+
+//       if (read_only_api_key && read_only_api_key !== "x" && read_only_api_secret && read_only_api_secret !== "x") {
+//         existingReadOnlyApis[exchange] = true;
+//       } else {
+//         existingReadOnlyApis[exchange] = false;
+//       }
+//     }
+
+//     const metaAccountsSnapshot = await db.collection("traders").doc(traderId).collection("meta_accounts").get();
+//     const metaAccounts = metaAccountsSnapshot.docs.map((doc) => doc.data());
+//     const plansCollectionSnapshot = await db.collection("traders").doc(traderId).collection("plans").get();
+//     const plans = plansCollectionSnapshot.docs.map((doc) => doc.data()); // fetch document data
+//     const responseData = {
+//       success: true,
+//       existingApis,
+//       existingReadOnlyApis,
+//       always_exchanges: traderData.always_exchanges,
+//       connected_discord: traderData.connected_discord,
+//       connected_telegram: traderData.connected_telegram,
+//       trader_name: traderData.trader_name,
+//       is_monitor_enabled: traderData.is_monitor_enabled,
+//       plans, // adding product plans to the response data
+//       meta_accounts: metaAccounts,
+//     };
+
+//     res.json(responseData);
+//   } catch (error) {
+//     console.error("Error retrieving trader data:", error);
+//     res.status(500).json({ success: false, error: "Error retrieving trader data" });
+//   }
+// });
 
 app.get("/pubKey", async (req, res) => {
   const traderId = req.get("traderId");
