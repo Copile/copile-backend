@@ -25,4 +25,4 @@ async def bulk_order(login_id, password, server, data):
     except Exception as e:
         print(e)
 
-asyncio.run(bulk_order(79099544, "A-RtFf7b", "MetaQuotes-Demo", "nothing"))
+asyncio.run(bulk_order(48078, "*164B)A5fDEH", "EvolveMarkets-MT5 Demo Server", "nothing"))
