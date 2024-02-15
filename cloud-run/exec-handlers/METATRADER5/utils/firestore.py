@@ -61,7 +61,7 @@ async def store_trade(trader_id, meta_id, order_dict):
 # Store take profit data in db
 async def store_tp(trader_id, meta_id, tp_dict):
     try:
-        tp_doc_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_TRADES).document(
+        tp_doc_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             tp_dict["trade_id"]).collection(COLLECTION_TAKE_PROFITS).document(tp_dict["tp_document_id"])
         await tp_doc_ref.set({
             FIELD_ORDER_ID: str(tp_dict["order_id"]),
@@ -76,11 +76,10 @@ async def store_tp(trader_id, meta_id, tp_dict):
         logger.error(e)
         raise e
 
-
 # Store stop loss data in db
-async def store_sl(account_id, sl_dict):
+async def store_sl(trader_id, meta_id, sl_dict):
     try:
-        sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        sl_doc_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             sl_dict["trade_id"]).collection(COLLECTION_STOP_LOSSES).document(sl_dict["sl_document_id"])
         await sl_doc_ref.set({
             FIELD_ORDER_ID: str(sl_dict["order_id"]),
@@ -91,73 +90,73 @@ async def store_sl(account_id, sl_dict):
             FIELD_SL_AMOUNT: sl_dict['sl_amount']
         })
     except Exception as e:
-        logger = Logger(account_id, sl_dict['trade_id'])
+        logger = Logger(meta_id, sl_dict['trade_id'])
         logger.error(e)
         raise e
 
 # Delete single order from db
-async def delete_order(account_id, trade_id):
+async def delete_order(trader_id, meta_id, trade_id):
     try:
-        await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id).delete()
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
 
 
 # Delete single take profit or stop loss from db
-async def delete_tp_sl_order(account_id, trade_id, document_id, is_tp_or_sl):
+async def delete_tp_sl_order(trader_id, meta_id, trade_id, document_id, is_tp_or_sl):
     try:
         if is_tp_or_sl == "tp":
-            await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                 trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).delete()
         if is_tp_or_sl == "sl":
-            await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                 trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
 
 
 # Get user api keys for a specific exchange
-async def get_user_keys(account_id, exchange):
+async def get_user_keys(trader_id, meta_id, exchange):
     try:
-        keys = db.collection(COLLECTION_TRADERS).document(account_id)
+        keys = db.collection(COLLECTION_TRADERS).document(trader_id)
         exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-        exchange_data['api_secret'] = await decrypt_data(account_id, exchange_data['api_secret'])
+        exchange_data['api_secret'] = await decrypt_data(trader_id, exchange_data['api_secret'])
 
         # Decrypt the api_passphrase if encrypted
         if 'api_passphrase' in exchange_data:
-            exchange_data['api_passphrase'] = await decrypt_data(account_id, exchange_data['api_passphrase'])
+            exchange_data['api_passphrase'] = await decrypt_data(trader_id, exchange_data['api_passphrase'])
         else:
             exchange_data['api_passphrase'] = None
 
         return exchange_data
     except Exception as e:
-        logger = Logger(account_id, None)
+        logger = Logger(meta_id, None)
         logger.error(e)
         raise e
 
 # Get trade related info for a specific tradeId
-async def get_trade_info(account_id, trade_id):
+async def get_trade_info(trader_id, meta_id, trade_id):
     try:
         # Get general trade info from firestore with account_id and trade_id
         trade_info = (
-            await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+            await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                 trade_id).get()).to_dict()
         return trade_info
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
 
 
 # Get specific tp/sl order document
-async def get_specific_order(account_id, trade_id, document_id, trade_type):
+async def get_specific_order(trader_id, meta_id, trade_id, document_id, trade_type):
     try:
-        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id)
 
         collection_name = COLLECTION_TAKE_PROFITS if trade_type == 'tp' else COLLECTION_STOP_LOSSES
@@ -173,87 +172,67 @@ async def get_specific_order(account_id, trade_id, document_id, trade_type):
         else:
             return None
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
 
 
 # Get take profit or stop loss info
-async def get_tp_sl_info(account_id, trade_id, document_id, is_tp_or_sl):
+async def get_tp_sl_info(trader_id, meta_id, trade_id, document_id, is_tp_or_sl):
     try:
         tp_sl_info = ""
         if is_tp_or_sl == "tp":
             tp_sl_info = (
-                await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                     trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()
         if is_tp_or_sl == "sl":
             tp_sl_info = (
-                await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                     trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
         return tp_sl_info
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
     
 
 # Check executed status of a specific order
-async def check_executed_status(account_id, trade_id, document_id, is_tp_or_sl):
+async def check_executed_status(trader_id, meta_id, trade_id, document_id, is_tp_or_sl):
     try:
         if is_tp_or_sl == "tp":
             executed_info = \
-                (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                (await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                     trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id).get()).to_dict()["executed"]
         if is_tp_or_sl == "sl":
             executed_info = \
-                (await db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+                (await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                     trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()["executed"]
         else:
             executed_info = None
         return executed_info
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
 
 
 # Update quantity field for a specific order
-async def update_trade_quantity(account_id, trade_id, new_quantity):
+async def update_trade_quantity(trader_id, meta_id, trade_id, new_quantity):
     try:
-        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id)
 
         await trade_ref.update({'quantity': new_quantity})
         return f"Trade quantity successfully updated to {new_quantity}"
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
-
-
-# Change executed status of take profit or stop loss
-async def change_executed_status_tp_sl(account_id, trade_id, document_id, is_tp_or_sl, status):
-    try:
-        if is_tp_or_sl == "tp":
-            tp_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-                trade_id).collection(COLLECTION_TAKE_PROFITS).document(document_id)
-            await tp_doc_ref.update({FIELD_EXECUTED: str(status)})
-        if is_tp_or_sl == "sl":
-            sl_doc_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
-                trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id)
-            await sl_doc_ref.update({
-                FIELD_EXECUTED: str(status)
-            })
-    except Exception as e:
-        logger = Logger(account_id, trade_id)
-        logger.error(e)
-        raise e
-
 
 # Async function to get all take profit orders for a trade
-async def get_tp_orders(account_id, trade_id):
+async def get_tp_orders(trader_id, meta_id, trade_id):
     try:
-        trade_ref = db.collection(COLLECTION_TRADERS).document(account_id).collection(COLLECTION_TRADES).document(
+        trade_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id)
 
         tp_collection = await trade_ref.collection(COLLECTION_TAKE_PROFITS).get()
@@ -268,20 +247,20 @@ async def get_tp_orders(account_id, trade_id):
 
         return tp_orders
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
     
 
 # Get take profit and stop loss orders from firestore with account_id and trade_id
-async def get_tp_sl_orders(account_id, trade_id):
+async def get_tp_sl_orders(trader_id, meta_id, trade_id):
     try:
         tp_sl_orders = []
 
-        tp_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(
+        tp_collection_task = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(
             COLLECTION_TRADES).document(
             trade_id).collection(COLLECTION_TAKE_PROFITS).get()
-        sl_collection_task = db.collection(COLLECTION_TRADERS).document(account_id).collection(
+        sl_collection_task = db.collection(COLLECTION_TRADERS).collection(COLLECTION_META_ACCS).document(meta_id).document(trader_id).collection(
             COLLECTION_TRADES).document(
             trade_id).collection(COLLECTION_STOP_LOSSES).get()
 
@@ -301,6 +280,6 @@ async def get_tp_sl_orders(account_id, trade_id):
 
         return tp_sl_orders
     except Exception as e:
-        logger = Logger(account_id, trade_id)
+        logger = Logger(meta_id, trade_id)
         logger.error(e)
         raise e
