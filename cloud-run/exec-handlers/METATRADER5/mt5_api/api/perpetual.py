@@ -164,8 +164,8 @@ def modify_position(order_number, symbol, new_stop_loss, new_take_profit):
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "symbol": symbol,
-        "sl": new_stop_loss,
-        "tp": new_take_profit,
+        "sl": float(new_stop_loss),
+        "tp": float(new_take_profit),
         "position": order_number
     }
     # Send order to MT5
@@ -174,7 +174,6 @@ def modify_position(order_number, symbol, new_stop_loss, new_take_profit):
         return True
     else:
         print(f"Error modifying position. Details: {order_result}")
-        raise mt5.MetaTraderModifyPositionError
 
 
 # Function to retrieve all open orders from MT5
