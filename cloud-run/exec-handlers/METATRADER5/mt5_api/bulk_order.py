@@ -13,8 +13,12 @@ async def bulk_order(login_id, password, server, data):
         #logger = Logger(user_id, trade_id)
 
         #logger.info(f"Starting bulk order with data: {data}")
-        print(mt5.account_info())
-        order = {'symbol': 'BTCUSD', 'volume': 0.01, 'type_time': 0, 
+        #print(mt5.account_info())
+        
+        symbol = "BTCUSD"
+        point = mt5.symbol_info(symbol).point
+        print(point)
+        order = {'symbol': symbol, 'volume': 0.01, 'type_time': 0, 
                  'comment': 'python Script', 'type': mt5.ORDER_TYPE_BUY, 
                  'action': mt5.TRADE_ACTION_DEAL, 'type_filling': mt5.ORDER_FILLING_FOK}
         print(mt5.order_send(order))
