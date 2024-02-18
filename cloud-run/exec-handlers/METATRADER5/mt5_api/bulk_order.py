@@ -1,8 +1,7 @@
 import time
 import asyncio
 import MetaTrader5 as mt5
-from api.perpetual import place_order, start_mt5 
-from scripts.order_factory import Order
+from api.perpetual import place_order, start_mt5
 
 async def bulk_order(login_id, password, server, data):
     try:
@@ -18,7 +17,7 @@ async def bulk_order(login_id, password, server, data):
         symbol = "BTCUSD"
         point = mt5.symbol_info(symbol).point
         print(point)
-        order = {'symbol': symbol, 'volume': 0.01, 'type_time': 0, 
+        order = {'symbol': symbol, 'volume': 0.01, 'sl': float(49000), 'type_time': 0, 
                  'comment': 'python Script', 'type': mt5.ORDER_TYPE_BUY, 
                  'action': mt5.TRADE_ACTION_DEAL, 'type_filling': mt5.ORDER_FILLING_FOK}
         print(mt5.order_send(order))
