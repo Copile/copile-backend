@@ -8,6 +8,18 @@ async def bulk_order(login_id, password, server, data):
         # Create server connection to mt5
         start_mt5(login_id, password, server)
 
+        trade_id = data['trade_id']
+        account_id = data['account_id']
+        trader_id = data['trader_id']
+        
+        side = data['payload']['side'].upper()
+        leverage = data['payload']['leverage']
+        entry = data['payload']['entry']
+        stop_losses = data['payload']['stop_losses']
+        take_profits = data['payload']['take_profits']
+
+        
+
         # Creating logger for info/errors
         #logger = Logger(user_id, trade_id)
 
