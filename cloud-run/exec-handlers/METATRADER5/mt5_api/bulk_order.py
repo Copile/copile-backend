@@ -20,8 +20,8 @@ async def bulk_order(login_id, password, server, data):
         order = {'symbol': symbol, 'volume': 0.01, 'sl': float(49000), 'type_time': 0, 
                  'comment': 'python Script', 'type': mt5.ORDER_TYPE_BUY, 
                  'action': mt5.TRADE_ACTION_DEAL, 'type_filling': mt5.ORDER_FILLING_FOK}
-        print(mt5.order_send(order))
-
+        #print(mt5.order_send(order))
+        print(mt5.account_info())
         #order_type, symbol, volume, stop_loss, take_profit, comment, direct=False, price=0
         #initial_order = place_order("BUY", "BTCUSD", 0.01, 50000, 55000, "python Script", False)
 
