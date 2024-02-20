@@ -1,7 +1,35 @@
 import time
 import asyncio
 import MetaTrader5 as mt5
-from api.perpetual import place_order, start_mt5
+from api.perpetual import place_order, start_mt5, retrieve_latest_tick
+from scripts.settings import reformat_symbol, get_precision
+
+data = {
+    "trade_id": "bastardtrade123",
+    "account_id": "bastardmt5",
+    "trader_id": "bastardtrader",
+    "trader_percentage": 0.05,
+    "trader_leverage": 20,
+    "payload": {
+        "side": "Buy",
+        "entry": 51000,
+        "symbol": "BTCUSDT",
+        "take_profits": [
+            {
+                "tp_id": "1231231312",
+                "tp_value": 54000,
+                "tp_percentage": 1.0
+            }
+        ],
+        "stop_losses": [
+            {
+                "sl_id": "123012031",
+                "sl_value": 50000,
+                "sl_percentage": 1.0
+            }
+        ]
+    }
+}
 
 async def bulk_order(login_id, password, server, data):
     try:
@@ -11,35 +39,52 @@ async def bulk_order(login_id, password, server, data):
         trade_id = data['trade_id']
         account_id = data['account_id']
         trader_id = data['trader_id']
-        
+        trader_percentage = data['trader_percentage']
+        trader_leverage = data['trader_leverage']
+
         side = data['payload']['side'].upper()
-        leverage = data['payload']['leverage']
         entry = data['payload']['entry']
         stop_losses = data['payload']['stop_losses']
         take_profits = data['payload']['take_profits']
 
-        
+        symbol = reformat_symbol(data['payload']['symbol'])
 
+        margin = round(float(mt5.account_info()._asdict()["margin_free"]) * trader_percentage, 2)
+
+        stop_loss_price = stop_losses[0]['sl_value'] if stop_losses != [] else None
+        take_profit_price = take_profits[0]['tp_value'] if take_profits != [] else None
+
+        market_price = retrieve_latest_tick(symbol)
+        print(market_price)
         # Creating logger for info/errors
         #logger = Logger(user_id, trade_id)
 
         #logger.info(f"Starting bulk order with data: {data}")
-        #print(mt5.account_info())
-        
-        symbol = "BTCUSD"
-        point = mt5.symbol_info(symbol).point
-        print(point)
+
+        # Fetching precision for specific symbol
+        precision = get_precision(symbol)
+        price_precision = precision['price_precision']
+        quantity_precision = precision['quantity_precision']
+
+        #quantity = ((margin * 100) * (trader_leverage / 100)) / market_price
+
+        #print(quantity)
+
+        print(precision)
+
         order = {'symbol': symbol, 'volume': 0.01, 'sl': float(49000), 'type_time': 0, 
                  'comment': 'python Script', 'type': mt5.ORDER_TYPE_BUY, 
                  'action': mt5.TRADE_ACTION_DEAL, 'type_filling': mt5.ORDER_FILLING_FOK}
         #print(mt5.order_send(order))
         print(mt5.account_info())
         #order_type, symbol, volume, stop_loss, take_profit, comment, direct=False, price=0
-        #initial_order = place_order("BUY", "BTCUSD", 0.01, 50000, 55000, "python Script", False)
+        #initial_order = place_order(side, symbol, stop_loss_price, take_profit_price, "Python Script", False, )
+
+
 
         mt5.shutdown()
 
     except Exception as e:
         print(e)
 
-asyncio.run(bulk_order(48116, "3Aq^[^^!X£D1Qa3jd", "EvolveMarkets-MT5 Demo Server", "nothing"))
+asyncio.run(bulk_order(48116, "3Aq^[^^!X£D1Qa3jd", "EvolveMarkets-MT5 Demo Server", data))

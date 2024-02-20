@@ -57,10 +57,10 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
     }
 
     if stop_loss is not None:
-        request["sl"] = round(stop_loss, 3)
+        request["sl"] = float(stop_loss)
 
     if take_profit is not None:
-        request["tp"] = round(take_profit, 3)
+        request["tp"] = float(take_profit)
 
 
     # Create the order type based upon provided values. This can be expanded for different order types as needed.
@@ -247,4 +247,4 @@ def retrieve_latest_tick(symbol):
     tick = mt5.symbol_info_tick(symbol)._asdict()
     spread = tick['ask'] - tick['bid']
     tick['spread'] = spread
-    return tick
+    return float(spread)
