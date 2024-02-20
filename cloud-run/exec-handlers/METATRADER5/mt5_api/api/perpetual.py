@@ -64,36 +64,50 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
 
 
     # Create the order type based upon provided values. This can be expanded for different order types as needed.
-    if order_type == "SELL_STOP":
+    if order_type == "BUY":
+        request['type_filling'] = mt5.ORDER_FILLING_FOK
+        if price != 0:
+            request['type'] = mt5.ORDER_TYPE_BUY_LIMIT
+            request['action'] = mt5.TRADE_ACTION_PENDING
+            request['price'] = float(price)
+        else:
+            request['type'] = mt5.ORDER_TYPE_BUY
+            request['action'] = mt5.TRADE_ACTION_DEAL
+    
+    elif order_type == "SELL":
+        request['type_filling'] = mt5.ORDER_FILLING_FOK
+        if price != 0:
+            request['price'] = float(price)
+            request['type'] = mt5.ORDER_TYPE_SELL_LIMIT
+            request['action'] = mt5.TRADE_ACTION_PENDING
+        else:
+            request['type'] = mt5.ORDER_TYPE_SELL
+            request['action'] = mt5.TRADE_ACTION_DEAL
+
+    elif order_type == "SELL_STOP":
         request['type'] = mt5.ORDER_TYPE_SELL_STOP
         request['action'] = mt5.TRADE_ACTION_PENDING
         if price <= 0:
-            print("Incorrect StopPrice")
+            print("Incorrect Price")
         else:
-            request['price'] = round(price, 3)
-            request['type_filling'] = mt5.ORDER_FILLING_RETURN
+            request['price'] = float(price)
+            request['type_filling'] = mt5.ORDER_FILLING_FOK
+    
     elif order_type == "BUY_STOP":
         request['type'] = mt5.ORDER_TYPE_BUY_STOP
         request['action'] = mt5.TRADE_ACTION_PENDING
         if price <= 0:
-            print("Incorrect StopPrice")
+            print("Incorrect Price")
         else:
-            request['price'] = round(price, 3)
-            request['type_filling'] = mt5.ORDER_FILLING_RETURN
+            request['price'] = float(price)
+            request['type_filling'] = mt5.ORDER_FILLING_FOK
 
-    elif order_type == "SELL":
-        request['type'] = mt5.ORDER_TYPE_SELL
-        request['action'] = mt5.TRADE_ACTION_DEAL
-        request['type_filling'] = mt5.ORDER_FILLING_FOK
-    elif order_type == "BUY":
-        request['type'] = mt5.ORDER_TYPE_BUY
-        request['action'] = mt5.TRADE_ACTION_DEAL
-        request['type_filling'] = mt5.ORDER_FILLING_FOK
     else:
         print("Choose a valid order type from SELL_STOP, BUY_STOP, SELL, BUY")
         raise SyntaxError
 
     if direct is True:
+        print(request)
         # Send the order to MT5
         order_result = mt5.order_send(request)
         # Notify based on return outcomes
@@ -247,4 +261,4 @@ def retrieve_latest_tick(symbol):
     tick = mt5.symbol_info_tick(symbol)._asdict()
     spread = tick['ask'] - tick['bid']
     tick['spread'] = spread
-    return float(spread)
+    return float(tick['bid'])

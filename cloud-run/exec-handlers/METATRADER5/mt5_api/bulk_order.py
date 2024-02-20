@@ -11,7 +11,7 @@ data = {
     "trader_percentage": 0.05,
     "trader_leverage": 20,
     "payload": {
-        "side": "Buy",
+        "side": "BUY_STOP",
         "entry": 51000,
         "symbol": "BTCUSDT",
         "take_profits": [
@@ -51,11 +51,8 @@ async def bulk_order(login_id, password, server, data):
 
         margin = round(float(mt5.account_info()._asdict()["margin_free"]) * trader_percentage, 2)
 
-        stop_loss_price = stop_losses[0]['sl_value'] if stop_losses != [] else None
-        take_profit_price = take_profits[0]['tp_value'] if take_profits != [] else None
-
         market_price = retrieve_latest_tick(symbol)
-        print(market_price)
+
         # Creating logger for info/errors
         #logger = Logger(user_id, trade_id)
 
@@ -66,20 +63,15 @@ async def bulk_order(login_id, password, server, data):
         price_precision = precision['price_precision']
         quantity_precision = precision['quantity_precision']
 
-        #quantity = ((margin * 100) * (trader_leverage / 100)) / market_price
+        quantity = round(((margin * 100) * (trader_leverage / 100)) / market_price, quantity_precision)
 
-        #print(quantity)
+        price = round(entry, price_precision) if entry != 'market' else 0
 
-        print(precision)
-
-        order = {'symbol': symbol, 'volume': 0.01, 'sl': float(49000), 'type_time': 0, 
-                 'comment': 'python Script', 'type': mt5.ORDER_TYPE_BUY, 
-                 'action': mt5.TRADE_ACTION_DEAL, 'type_filling': mt5.ORDER_FILLING_FOK}
-        #print(mt5.order_send(order))
-        print(mt5.account_info())
+        stop_loss_price = round(stop_losses[0]['sl_value'] if stop_losses != [] else None, price_precision)
+        take_profit_price = round(take_profits[0]['tp_value'] if take_profits != [] else None, price_precision)
         #order_type, symbol, volume, stop_loss, take_profit, comment, direct=False, price=0
-        #initial_order = place_order(side, symbol, stop_loss_price, take_profit_price, "Python Script", False, )
-
+        initial_order = place_order(side, symbol, quantity, stop_loss_price, take_profit_price, "Python Script", True, price)
+        print(initial_order)
 
 
         mt5.shutdown()
