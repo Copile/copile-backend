@@ -1,4 +1,3 @@
-import time
 import asyncio
 import MetaTrader5 as mt5
 from api.perpetual import place_order, start_mt5, retrieve_latest_tick
@@ -109,9 +108,6 @@ async def bulk_order(login_id, password, server, data):
             store_tp(trader_id, account_id, tp_dict),
             store_sl(trader_id, account_id, sl_dict)
         )
-
-
-        mt5.shutdown()
 
     except Exception as e:
         print(e)
