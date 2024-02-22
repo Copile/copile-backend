@@ -110,6 +110,7 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
         print(request)
         # Send the order to MT5
         order_result = mt5.order_send(request)
+        print(order_result)
         # Notify based on return outcomes
         if order_result[0] == 10009:
             # Print result

@@ -3,6 +3,7 @@ import asyncio
 import MetaTrader5 as mt5
 from api.perpetual import place_order, start_mt5, retrieve_latest_tick
 from scripts.settings import reformat_symbol, get_precision
+from utils.firestore import store_trade, store_sl, store_tp
 
 data = {
     "trade_id": "bastardtrade123",
@@ -11,7 +12,7 @@ data = {
     "trader_percentage": 0.05,
     "trader_leverage": 20,
     "payload": {
-        "side": "BUY_STOP",
+        "side": "BUY",
         "entry": 51000,
         "symbol": "BTCUSDT",
         "take_profits": [
@@ -69,9 +70,45 @@ async def bulk_order(login_id, password, server, data):
 
         stop_loss_price = round(stop_losses[0]['sl_value'] if stop_losses != [] else None, price_precision)
         take_profit_price = round(take_profits[0]['tp_value'] if take_profits != [] else None, price_precision)
+        
         #order_type, symbol, volume, stop_loss, take_profit, comment, direct=False, price=0
         initial_order = place_order(side, symbol, quantity, stop_loss_price, take_profit_price, "Python Script", True, price)
-        print(initial_order)
+        
+        trade_info = {
+            "trade_id": trade_id,
+            "order_id": initial_order,
+            "symbol": symbol,
+            "type": "Market" if price == 0 else "Limit",
+            "side": side,
+            "quantity": quantity,
+            "entry": entry if entry != 'market' else market_price,
+            "leverage": 0,
+            "margin": margin,
+            "exchange": "MT5"
+        }
+
+        await store_trade(trader_id, account_id, trade_info)
+
+        tp_dict = {
+            "order_id": 0,
+            "tp_number": 1,
+            "tp_value": take_profit_price,
+            "tp_percentage": 1,
+            "tp_amount": 1
+        }
+
+        sl_dict = {
+            "order_id": 0,
+            "sl_number": 1,
+            "sl_value": stop_loss_price,
+            "sl_percentage": 1,
+            "sl_amount": 1
+        }
+
+        await asyncio.gather(
+            store_tp(trader_id, account_id, tp_dict),
+            store_sl(trader_id, account_id, sl_dict)
+        )
 
 
         mt5.shutdown()
