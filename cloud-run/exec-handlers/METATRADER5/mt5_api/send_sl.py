@@ -18,7 +18,7 @@ async def send_sl(login_id, password, server, data):
         symbol = trade_info['symbol']
         order_id = trade_info['orderID']
         
-        modification = modify_position(7541777, "BTCUSD", 49000, 0)
+        modification = modify_position(order_id, symbol, payload['sl_value'], None)
 
         if modification == True:
             payload['trade_id'] = trade_id
@@ -27,6 +27,5 @@ async def send_sl(login_id, password, server, data):
             payload['sl_document_id'] = document_id
 
             await store_sl(trader_id, account_id, payload) 
-
     except Exception as e:
         print(e)

@@ -107,10 +107,8 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
         raise SyntaxError
 
     if direct is True:
-        print(request)
         # Send the order to MT5
         order_result = mt5.order_send(request)
-        print(order_result)
         # Notify based on return outcomes
         if order_result[0] == 10009:
             # Print result
@@ -125,9 +123,7 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
 
     else:
         # Check the order
-        print(request)
         result = mt5.order_check(request)
-        print(result)
         if result[0] == 0:
             # print("Balance Check Successful") # Enable to error check Balance Check
             # If order check is successful, place the order. Little bit of recursion for fun.
@@ -179,10 +175,15 @@ def modify_position(order_number, symbol, new_stop_loss, new_take_profit):
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "symbol": symbol,
-        "sl": float(new_stop_loss),
-        "tp": float(new_take_profit),
         "position": order_number
     }
+
+    if new_stop_loss is not None:
+        request["sl"] = float(new_stop_loss)
+
+    if new_take_profit is not None:
+        request["tp"] = float(new_take_profit)
+
     # Send order to MT5
     order_result = mt5.order_send(request)
     if order_result[0] == 10009:
