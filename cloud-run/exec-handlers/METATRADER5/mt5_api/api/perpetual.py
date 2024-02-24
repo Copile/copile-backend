@@ -224,15 +224,22 @@ def close_position(order_number, symbol, volume, order_type, price, comment):
     :param order_number: int
     :return: Boolean
     """
+
+    def get_close_price(symbol, order_type):
+        if order_type == "SELL":
+            return mt5.symbol_info(symbol).bid
+        elif order_type == "BUY":
+            return mt5.symbol_info(symbol).ask
+
     # Create the request
     request = {
         'action': mt5.TRADE_ACTION_DEAL,
         'symbol': symbol,
         'volume': volume,
         'position': order_number,
-        'price': price,
+        'price': get_close_price(symbol, order_type),
         'type_time': mt5.ORDER_TIME_GTC,
-        'type_filling': mt5.ORDER_FILLING_IOC,
+        'type_filling': mt5.ORDER_FILLING_FOK,
         'comment': comment
     }
 
@@ -243,7 +250,6 @@ def close_position(order_number, symbol, volume, order_type, price, comment):
     else:
         print(f"Incorrect syntax for position close {order_type}")
         raise SyntaxError
-
     # Place the order
     result = mt5.order_send(request)
     if result[0] == 10009:
