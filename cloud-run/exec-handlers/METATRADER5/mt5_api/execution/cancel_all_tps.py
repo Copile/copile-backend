@@ -12,5 +12,3 @@ async def cancel_all_tps(login_id, password, server, data):
         
     except Exception as e:
         print(e)
-
-asyncio.run(cancel_all_tps(48116, "3Aq^[^^!X£D1Qa3jd", "EvolveMarkets-MT5 Demo Server", data))
