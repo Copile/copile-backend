@@ -1,14 +1,17 @@
 from api.perpetual import start_mt5, cancel_order, get_open_positions, close_position
-#from utils.firestore import get_trade_info
-import asyncio
-import MetaTrader5 as mt5
+from utils.firestore import get_trade_info
 
 async def cancel_all_orders(login_id, password, server, data):
     try:
         # Create server connection to mt5
         start_mt5(login_id, password, server)
 
-        order_id = 7545980
+        trader_id = data['trader_id']
+        account_id = data['acccount_id']
+        trade_id = data['trade_id']
+
+        trade_info = get_trade_info(trader_id, account_id, trade_id)
+        order_id = trade_info['orderID']
 
         # Filter open positions
         open_positions = get_open_positions()
@@ -34,6 +37,3 @@ async def cancel_all_orders(login_id, password, server, data):
 
     except Exception as e:
         print(e)
-
-
-asyncio.run(cancel_all_orders(48116, "3Aq^[^^!X£D1Qa3jd", "EvolveMarkets-MT5 Demo Server", None))

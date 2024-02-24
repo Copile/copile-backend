@@ -1,13 +1,8 @@
 import MetaTrader5 as mt5
 
 def count_decimals(number):
-    if isinstance(number, float):
-        _, decimals = str(number).split('.')
-        return len(decimals)
-    elif isinstance(number, int):
-        return 0
-    else:
-        raise ValueError("Input must be a number.")
+    decimals = int(len(str(number).split(".")[1])) if number != 1 else 0
+    return decimals
 
 def reformat_symbol(symbol):
     if isinstance(symbol, str):
@@ -17,5 +12,5 @@ def reformat_symbol(symbol):
     
 def get_precision(symbol):
     symbol_info = mt5.symbol_info(symbol)
-    precision = {"price_precision": count_decimals(float(symbol_info.point)), "quantity_precision": count_decimals(float(symbol_info.volume_min))}
+    precision = {"price_precision": count_decimals(symbol_info.point), "quantity_precision": count_decimals(symbol_info.volume_min)}
     return precision
