@@ -14,10 +14,10 @@ async def test():
 async def send_sl(data: dict):
     try:
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -32,10 +32,10 @@ async def send_sl(data: dict):
 @app.post('/cancel_order')
 async def cancel_order(data: dict):
     try:
-        exchange = data["exchange"]
-        user_id = data['user_id']
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -50,10 +50,10 @@ async def cancel_order(data: dict):
 @app.post('/cancel_all_orders')
 async def cancel_all_orders(data: dict):
     try:
-        exchange = data["exchange"]
-        user_id = data['user_id']
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -68,11 +68,10 @@ async def cancel_all_orders(data: dict):
 @app.post('/cancel_all_tps')
 async def cancel_all_tps(data: dict):
     try:
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
-
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -87,11 +86,10 @@ async def cancel_all_tps(data: dict):
 @app.post('/bulk_order')
 async def bulk_order(data: dict):
     try:
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
-
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -106,11 +104,10 @@ async def bulk_order(data: dict):
 @app.post('/bulk_tp')
 async def bulk_tp(data: dict):
     try:
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
-
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -125,11 +122,10 @@ async def bulk_tp(data: dict):
 @app.post('/replace_sl')
 async def replace_sl(data: dict):
     try:
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
-
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 
@@ -145,11 +141,10 @@ async def replace_sl(data: dict):
 @app.post('/partial_close')
 async def partial_close(data: dict):
     try:
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
 
-        exchange = data["exchange"]
-        user_id = data['user_id']
-
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, account_id)
 
         session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
 

@@ -121,19 +121,22 @@ async def delete_tp_sl_order(trader_id, meta_id, trade_id, document_id, is_tp_or
 
 
 # Get user api keys for a specific exchange
-async def get_user_keys(trader_id, meta_id, exchange):
+async def get_user_keys(trader_id, meta_id):
     try:
-        keys = db.collection(COLLECTION_TRADERS).document(trader_id)
-        exchange_data = (await keys.get()).to_dict()["exchanges"][exchange]
-        exchange_data['api_secret'] = await decrypt_data(trader_id, exchange_data['api_secret'])
+        keys = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id)
+        
+        keys_info = (await keys.get()).to_dict()
+        login_id = keys_info["login_id"]
+        password = await decrypt_data(trader_id, keys_info["password"])
+        server = keys_info['server']
 
-        # Decrypt the api_passphrase if encrypted
-        if 'api_passphrase' in exchange_data:
-            exchange_data['api_passphrase'] = await decrypt_data(trader_id, exchange_data['api_passphrase'])
-        else:
-            exchange_data['api_passphrase'] = None
+        account_data = {
+            "login_id": login_id,
+            "password": password,
+            "server": server
+        }
 
-        return exchange_data
+        return account_data
     except Exception as e:
         logger = Logger(meta_id, None)
         logger.error(e)
