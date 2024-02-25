@@ -4,33 +4,6 @@ from api.perpetual import place_order, start_mt5, retrieve_latest_tick
 from scripts.settings import reformat_symbol, get_precision
 from utils.firestore import store_trade, store_sl, store_tp
 
-data = {
-    "trade_id": "bastardtrade123",
-    "account_id": "bastardmt5",
-    "trader_id": "bastardtrader",
-    "trader_percentage": 0.05,
-    "trader_leverage": 20,
-    "payload": {
-        "side": "BUY",
-        "entry": 51000,
-        "symbol": "BTCUSDT",
-        "take_profits": [
-            {
-                "tp_id": "1231231312",
-                "tp_value": 54000,
-                "tp_percentage": 1.0
-            }
-        ],
-        "stop_losses": [
-            {
-                "sl_id": "123012031",
-                "sl_value": 50000,
-                "sl_percentage": 1.0
-            }
-        ]
-    }
-}
-
 async def bulk_order(login_id, password, server, data):
     try:
         # Create server connection to mt5
@@ -111,5 +84,3 @@ async def bulk_order(login_id, password, server, data):
 
     except Exception as e:
         print(e)
-
-asyncio.run(bulk_order(48116, "3Aq^[^^!X£D1Qa3jd", "EvolveMarkets-MT5 Demo Server", data))
