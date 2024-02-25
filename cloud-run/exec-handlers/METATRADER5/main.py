@@ -19,7 +19,7 @@ async def send_sl(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.send_sl(data)
 
@@ -37,7 +37,7 @@ async def cancel_order(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.cancel_order(data)
 
@@ -55,7 +55,7 @@ async def cancel_all_orders(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.cancel_all_orders(data)
 
@@ -73,7 +73,7 @@ async def cancel_all_tps(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.cancel_all_tps(data)
 
@@ -91,7 +91,7 @@ async def bulk_order(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.bulk_order(data)
 
@@ -109,7 +109,7 @@ async def bulk_tp(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.bulk_tp(data)
 
@@ -127,7 +127,7 @@ async def replace_sl(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.replace_sl(data)
 
@@ -146,7 +146,7 @@ async def partial_close(data: dict):
 
         keys = await get_user_keys(trader_id, account_id)
 
-        session = MetaSession(keys['api_key'], keys['api_secret'], keys['api_passphrase'])
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
 
         execution = await session.partial_close(data)
 
