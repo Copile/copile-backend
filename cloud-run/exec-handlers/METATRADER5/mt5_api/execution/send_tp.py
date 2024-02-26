@@ -1,5 +1,5 @@
-from api.perpetual import start_mt5, modify_position
-from utils.firestore import get_trade_info, store_tp
+from .api.perpetual import start_mt5, modify_position
+from .utils.firestore import get_trade_info, store_tp
 
 async def send_tp(login_id, password, server, data):
     try:

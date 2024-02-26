@@ -1,8 +1,8 @@
 import asyncio
 import MetaTrader5 as mt5
-from api.perpetual import place_order, start_mt5, retrieve_latest_tick
-from scripts.settings import reformat_symbol, get_precision
-from utils.firestore import get_trade_info, store_tp
+from .api.perpetual import place_order, start_mt5, retrieve_latest_tick
+from .scripts.settings import reformat_symbol, get_precision
+from .utils.firestore import get_trade_info, store_tp
 
 data = {
     'take_profits': [

@@ -1,6 +1,6 @@
-from api.perpetual import start_mt5, get_open_positions, close_position
-from utils.firestore import get_trade_info, update_trade_quantity
-from scripts.settings import get_precision
+from .api.perpetual import start_mt5, get_open_positions, close_position
+from .utils.firestore import get_trade_info, update_trade_quantity
+from .scripts.settings import get_precision
 
 
 async def partial_close(login_id, password, server, data):

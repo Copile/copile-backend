@@ -1,6 +1,6 @@
 from google.cloud import firestore
 from .decryption import decrypt_data
-from logs.logger import Logger
+from ..logs.logger import Logger
 import time
 import asyncio
 

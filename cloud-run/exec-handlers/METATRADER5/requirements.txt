@@ -3,7 +3,6 @@ fastapi[all]
 uvicorn[standard]
 gunicorn<21.0,>=19.2.0
 google-cloud-firestore
-google-cloud-tasks
 google-cloud-kms
 google-cloud-logging
 functions-framework==3.0.0

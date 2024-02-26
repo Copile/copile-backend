@@ -1,5 +1,5 @@
-from api.perpetual import start_mt5, cancel_order, get_open_positions, close_position
-from utils.firestore import get_trade_info
+from .api.perpetual import start_mt5, cancel_order, get_open_positions, close_position
+from .utils.firestore import get_trade_info
 
 async def cancel_all_orders(login_id, password, server, data):
     try:

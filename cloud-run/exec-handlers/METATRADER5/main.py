@@ -29,7 +29,7 @@ async def send_sl(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/send_tp')
-async def send_sl(data: dict):
+async def send_tp(data: dict):
     try:
 
         trader_id = data["trader_id"]

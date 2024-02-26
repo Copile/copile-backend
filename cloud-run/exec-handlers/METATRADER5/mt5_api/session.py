@@ -1,12 +1,12 @@
 import logging
-from execution.bulk_order import bulk_order
-from execution.bulk_tp import bulk_tp
-from execution.cancel_all_orders import cancel_all_orders
-from execution.cancel_all_tps import cancel_all_tps
-from execution.cancel_order import cancel_order
-from execution.send_sl import send_sl
-from execution.send_tp import send_tp
-from execution.partial_close import partial_close
+from .execution.bulk_order import bulk_order
+from .execution.bulk_tp import bulk_tp
+from .execution.cancel_all_orders import cancel_all_orders
+from .execution.cancel_all_tps import cancel_all_tps
+from .execution.cancel_order import cancel_order
+from .execution.send_sl import send_sl
+from .execution.send_tp import send_tp
+from .execution.partial_close import partial_close
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class MetaSession():
 
     async def send_tp(self, data):
         try:
-            return await send_sl(self.login_id, self.password, self.server, data)
+            return await send_tp(self.login_id, self.password, self.server, data)
         except Exception as e:
             logger.error(f"Failed to send send_tp: {str(e)}", exc_info=True)
             raise
