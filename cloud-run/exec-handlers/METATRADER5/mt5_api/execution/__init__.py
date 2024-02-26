@@ -5,3 +5,4 @@ from .cancel_all_orders import cancel_all_orders
 from .cancel_order import cancel_order
 from .partial_close import partial_close
 from .send_sl import send_sl
+from .send_tp import send_tp

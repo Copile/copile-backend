@@ -28,6 +28,23 @@ async def send_sl(data: dict):
         # Log the error and return an error response
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post('/send_tp')
+async def send_sl(data: dict):
+    try:
+
+        trader_id = data["trader_id"]
+        account_id = data['user_id']
+
+        keys = await get_user_keys(trader_id, account_id)
+
+        session = MetaSession(keys['login_id'], keys['password'], keys['server'])
+
+        execution = await session.send_sl(data)
+
+        return JSONResponse(status_code=200, content={"success": True, "message": execution})
+    except Exception as e:
+        # Log the error and return an error response
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/cancel_order')
 async def cancel_order(data: dict):
