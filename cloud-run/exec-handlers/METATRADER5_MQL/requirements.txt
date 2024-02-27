@@ -1,4 +1,4 @@
-metaapi-cloud-sdk==27.0.4
+MetaTrader5==5.0.33
 fastapi[all]
 uvicorn[standard]
 gunicorn<21.0,>=19.2.0

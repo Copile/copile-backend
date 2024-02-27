@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-alpine
+FROM python:3.8-slim-buster
 
 # Set an environment variable to make Python print directly to the console
 ENV PYTHONUNBUFFERED True
