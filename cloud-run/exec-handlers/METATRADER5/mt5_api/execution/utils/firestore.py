@@ -1,6 +1,5 @@
 from google.cloud import firestore
 from .decryption import decrypt_data
-from ..logs.logger import Logger
 import time
 import asyncio
 
@@ -54,8 +53,6 @@ async def store_trade(trader_id, meta_id, order_dict):
             FIELD_CREATED_AT: int(time.time())
         })
     except Exception as e:
-        logger = Logger(meta_id, order_dict['trade_id'])
-        logger.error(e)
         raise e
 
 # Store take profit data in db
@@ -72,8 +69,6 @@ async def store_tp(trader_id, meta_id, tp_dict):
             FIELD_TP_AMOUNT: tp_dict["tp_amount"]
         })
     except Exception as e:
-        logger = Logger(meta_id, tp_dict['trade_id'])
-        logger.error(e)
         raise e
 
 # Store stop loss data in db
@@ -90,8 +85,6 @@ async def store_sl(trader_id, meta_id, sl_dict):
             FIELD_SL_AMOUNT: sl_dict['sl_amount']
         })
     except Exception as e:
-        logger = Logger(meta_id, sl_dict['trade_id'])
-        logger.error(e)
         raise e
 
 # Delete single order from db
@@ -100,8 +93,6 @@ async def delete_order(trader_id, meta_id, trade_id):
         await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id).delete()
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 
@@ -115,8 +106,6 @@ async def delete_tp_sl_order(trader_id, meta_id, trade_id, document_id, is_tp_or
             await db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
                 trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).delete()
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 
@@ -138,8 +127,6 @@ async def get_user_keys(trader_id, meta_id):
 
         return account_data
     except Exception as e:
-        logger = Logger(meta_id, None)
-        logger.error(e)
         raise e
 
 # Get trade related info for a specific tradeId
@@ -151,8 +138,6 @@ async def get_trade_info(trader_id, meta_id, trade_id):
                 trade_id).get()).to_dict()
         return trade_info
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 
@@ -175,8 +160,6 @@ async def get_specific_order(trader_id, meta_id, trade_id, document_id, trade_ty
         else:
             return None
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 
@@ -194,8 +177,6 @@ async def get_tp_sl_info(trader_id, meta_id, trade_id, document_id, is_tp_or_sl)
                     trade_id).collection(COLLECTION_STOP_LOSSES).document(document_id).get()).to_dict()
         return tp_sl_info
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
     
 
@@ -214,8 +195,6 @@ async def check_executed_status(trader_id, meta_id, trade_id, document_id, is_tp
             executed_info = None
         return executed_info
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 
@@ -228,8 +207,6 @@ async def update_trade_quantity(trader_id, meta_id, trade_id, new_quantity):
         await trade_ref.update({'quantity': new_quantity})
         return f"Trade quantity successfully updated to {new_quantity}"
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
 
 # Async function to get all take profit orders for a trade
@@ -250,8 +227,6 @@ async def get_tp_orders(trader_id, meta_id, trade_id):
 
         return tp_orders
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
     
 
@@ -283,6 +258,4 @@ async def get_tp_sl_orders(trader_id, meta_id, trade_id):
 
         return tp_sl_orders
     except Exception as e:
-        logger = Logger(meta_id, trade_id)
-        logger.error(e)
         raise e
