@@ -305,7 +305,7 @@ app.post("/metaAccount", async (req, res) => {
     );
   } catch (error) {
     console.error(`Error submitting meta account to metaapi: ${error}`);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: `Error submitting meta account to metaapi: ${traderId}`,
     });
