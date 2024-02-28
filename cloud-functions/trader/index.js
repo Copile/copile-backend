@@ -248,6 +248,21 @@ app.post("/subBingx", async (req, res) => {
   }
 });
 
+// Function to delete an account from the meta API
+// abstracted to allow for use in both the delete /metaAccount endpoint and to catch
+// errors when adding a new account to the meta API
+async function deleteMetaAccount(accountId) {
+  try {
+    const metaApiUrl = `https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}`;
+    await axios.delete(metaApiUrl, {
+      headers: { "auth-token": process.env.MT_API_KEY },
+    });
+    console.log(`Account ${accountId} deleted from meta API.`);
+  } catch (error) {
+    console.error(`Failed to delete account ${accountId} from meta API: ${error}`);
+  }
+}
+
 app.delete("/metaAccount", async (req, res) => {
   console.log("delete metaAccount endpoint hit");
   const traderId = req.get("traderId");
@@ -255,14 +270,9 @@ app.delete("/metaAccount", async (req, res) => {
   const documentId = req.query.id;
   console.log(`Document ID: ${documentId}`);
   const metaAccountRef = db.collection("traders").doc(traderId).collection("meta_accounts").doc(documentId);
-  const metaApiUrl = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts";
 
   try {
-    await axios.delete(`${metaApiUrl}/${documentId}`, {
-      headers: {
-        "auth-token": process.env.MT_API_KEY,
-      },
-    });
+    await deleteMetaAccount(documentId);
 
     await metaAccountRef.delete();
     console.log(`Meta account ${documentId} deleted - ${traderId}!`);
@@ -280,51 +290,52 @@ app.delete("/metaAccount", async (req, res) => {
 });
 
 app.post("/metaAccount", async (req, res) => {
-  console.log("post metaAccount endpoint hit");
   const traderId = req.get("traderId");
-  console.log("req.body", req.body);
   const { login_id, password, server, nickname } = req.body;
-  console.log({ login_id, password, server, nickname });
+
+  let metaApiAccountId;
 
   try {
     const decryptedPassword = await decryptData(traderId, password);
     const metaApiUrl = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts";
-    const metaApiBody = {
-      login: login_id,
-      password: decryptedPassword,
-      server: server,
-      name: nickname,
-    };
+    const metaApiData = { login: login_id, password: decryptedPassword, server, name: nickname };
 
-    const { data: metaApiData } = await axios.post(metaApiUrl, metaApiBody, {
+    const { data: apiResponse } = await axios.post(metaApiUrl, metaApiData, {
       headers: { "auth-token": process.env.MT_API_KEY },
     });
 
-    if (!metaApiData || !metaApiData.id) {
-      throw new Error("Invalid meta API response");
+    if (!apiResponse || !apiResponse.id) {
+      throw new Error("Invalid API response");
     }
 
+    metaApiAccountId = apiResponse.id; // Store the account ID for potential deletion
+
+    // Proceed to save in Firestore
     const newMetaAccountRef = db
       .collection("traders")
       .doc(traderId)
       .collection("meta_accounts")
-      .doc(metaApiData.id);
-
+      .doc(apiResponse.id);
     await newMetaAccountRef.set({
-      id: metaApiData.id,
-      login_id: login_id,
-      password: password,
-      server: server,
-      nickname: nickname,
+      id: apiResponse.id,
+      login_id,
+      password,
+      server,
+      nickname,
     });
 
-    console.log(`Account ${metaApiData.id} added - ${traderId}!`);
     res.status(201).json({
       success: true,
-      message: `Account ${metaApiData.id} added - ${traderId}!`,
+      message: `Account ${login_id} added - ${traderId}!`,
     });
   } catch (error) {
     console.error(`Error processing request: ${error}`);
+    if (metaApiAccountId) {
+      // If the Firestore operation fails, attempt to delete the account from the meta API to avoid orphaned accounts
+      console.log(`Attempting to delete account ${metaApiAccountId} from meta API.`);
+      await deleteMetaAccount(metaApiAccountId);
+    }
+
     res.status(500).json({
       success: false,
       error: `Error processing request for traderId: ${traderId}`,
