@@ -287,6 +287,32 @@ app.post("/metaAccount", async (req, res) => {
     .doc(id); // Use the provided id for this document
 
   try {
+    console.log("Submitting meta account to metaapi");
+    await axios.post(
+      "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts",
+      {
+        login: login_id,
+        password: password,
+        name: nickname,
+        server: server,
+      },
+      {
+        headers: {
+          "auth-token": process.env.MT_API_KEY,
+          "transaction-id": uuidv4(),
+        },
+      }
+    );
+  } catch (error) {
+    console.error(`Error submitting meta account to metaapi: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: `Error submitting meta account to metaapi: ${traderId}`,
+    });
+  }
+
+  console.log("Submitted meta account to metaapi, now adding to firestore");
+  try {
     await newMetaAccountRef.set({
       id: id,
       login_id: login_id,
