@@ -291,27 +291,36 @@ app.delete("/metaAccount", async (req, res) => {
 });
 
 app.post("/metaAccount", async (req, res) => {
+  console.log("Starting /metaAccount endpoint");
   const traderId = req.get("traderId");
+  console.log(`Received traderId: ${traderId}`);
   const { login_id, password, server, nickname } = req.body;
+  console.log(`Received body: login_id=${login_id}, server=${server}, nickname=${nickname}`);
 
   let metaApiAccountId;
 
   try {
+    console.log("Attempting to decrypt password");
     const decryptedPassword = await decryptData(traderId, password);
+    console.log("Password decrypted successfully");
     const metaApiUrl = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts";
     const metaApiData = { login: login_id, password: decryptedPassword, server, name: nickname };
+    console.log(`Preparing to send data to Meta API`);
 
     const { data: apiResponse } = await axios.post(metaApiUrl, metaApiData, {
       headers: { "auth-token": process.env.MT_API_KEY },
     });
+    console.log(`Received response from Meta API: ${JSON.stringify(apiResponse)}`);
 
     if (!apiResponse || !apiResponse.id) {
       throw new Error("Invalid API response");
     }
 
     metaApiAccountId = apiResponse.id; // Store the account ID for potential deletion
+    console.log(`Meta API account ID stored for potential deletion: ${metaApiAccountId}`);
 
     // Proceed to save in Firestore
+    console.log(`Attempting to save Meta account in Firestore under trader ID: ${traderId}`);
     const newMetaAccountRef = db
       .collection("traders")
       .doc(traderId)
@@ -324,17 +333,22 @@ app.post("/metaAccount", async (req, res) => {
       server,
       nickname,
     });
+    console.log(`Meta account ${apiResponse.id} added successfully - ${traderId}!`);
 
     res.status(201).json({
       success: true,
       message: `Account ${login_id} added - ${traderId}!`,
     });
   } catch (error) {
-    console.error(`Error processing request: ${error}`);
+    console.error(`Error processing request for traderId: ${traderId}: ${error}`);
     if (metaApiAccountId) {
       // If the Firestore operation fails, attempt to delete the account from the meta API to avoid orphaned accounts
-      console.log(`Attempting to delete account ${metaApiAccountId} from meta API.`);
+      console.log(
+        `Error encountered, attempting to delete account ${metaApiAccountId} from meta API to avoid orphaned accounts.`
+      );
       await deleteMetaAccount(metaApiAccountId);
+
+      console.log(`Account ${metaApiAccountId} deleted from meta API. Sending error response.`);
     }
 
     res.status(500).json({
