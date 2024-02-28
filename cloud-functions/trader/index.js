@@ -11,7 +11,7 @@ applyMiddleware(app);
 const WHOP_TOKEN = process.env.whopToken;
 const request = require("request");
 const axios = require("axios");
-const { decryptData } = require("./utils/decryption");
+const decryptData = require("./utils/decryption");
 
 const getMonthYear = (timestamp) => {
   const date = new Date(timestamp * 1000);
