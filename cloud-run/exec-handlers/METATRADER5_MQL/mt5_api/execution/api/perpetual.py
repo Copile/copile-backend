@@ -1,6 +1,39 @@
 import datetime
 import MetaTrader5 as mt5
 
+def start_mt5(username, password, server):
+    """
+    Initializes and logs into MT5
+    :param username: 8 digit integer
+    :param password: string
+    :param server: string
+    :param path: string
+    :return: True if successful, Error if not
+    """
+    # Ensure that all variables are the correct type
+    uname = int(username)  # Username must be an int
+    pword = str(password)  # Password must be a string
+    trading_server = str(server)  # Server must be a string
+
+    # Attempt to start MT5
+    try:
+        metaTrader_init = mt5.initialize(login=uname, password=pword, server=trading_server)
+    except Exception as e:
+        print(f"Error initializing MetaTrader: {e}")
+
+    # Attempt to login to MT5
+    if not metaTrader_init:
+        print("Error")
+    else:
+        try:
+            metaTrader_login = mt5.login(login=uname, password=pword, server=trading_server)
+        except Exception as e:
+            print(f"Error loging in to MetaTrader: {e}")
+
+    # Return True if initialization and login are successful
+    if metaTrader_login:
+        return True
+
 # Function to place a trade on MT5
 def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, direct=False, price=0):
     """
@@ -20,38 +53,55 @@ def place_order(order_type, symbol, volume, stop_loss, take_profit, comment, dir
     request = {
         "symbol": symbol,
         "volume": volume,
-        "sl": round(stop_loss, 3),
-        "tp": round(take_profit, 3),
-        "type_time": mt5.ORDER_TIME_GTC,
         "comment": comment
     }
 
+    if stop_loss is not None:
+        request["sl"] = float(stop_loss)
+
+    if take_profit is not None:
+        request["tp"] = float(take_profit)
+
+
     # Create the order type based upon provided values. This can be expanded for different order types as needed.
-    if order_type == "SELL_STOP":
+    if order_type == "BUY":
+        request['type_filling'] = mt5.ORDER_FILLING_FOK
+        if price != 0:
+            request['type'] = mt5.ORDER_TYPE_BUY_LIMIT
+            request['action'] = mt5.TRADE_ACTION_PENDING
+            request['price'] = float(price)
+        else:
+            request['type'] = mt5.ORDER_TYPE_BUY
+            request['action'] = mt5.TRADE_ACTION_DEAL
+    
+    elif order_type == "SELL":
+        request['type_filling'] = mt5.ORDER_FILLING_FOK
+        if price != 0:
+            request['price'] = float(price)
+            request['type'] = mt5.ORDER_TYPE_SELL_LIMIT
+            request['action'] = mt5.TRADE_ACTION_PENDING
+        else:
+            request['type'] = mt5.ORDER_TYPE_SELL
+            request['action'] = mt5.TRADE_ACTION_DEAL
+
+    elif order_type == "SELL_STOP":
         request['type'] = mt5.ORDER_TYPE_SELL_STOP
         request['action'] = mt5.TRADE_ACTION_PENDING
         if price <= 0:
-            print("Incorrect StopPrice")
+            print("Incorrect Price")
         else:
-            request['price'] = round(price, 3)
-            request['type_filling'] = mt5.ORDER_FILLING_RETURN
+            request['price'] = float(price)
+            request['type_filling'] = mt5.ORDER_FILLING_FOK
+    
     elif order_type == "BUY_STOP":
         request['type'] = mt5.ORDER_TYPE_BUY_STOP
         request['action'] = mt5.TRADE_ACTION_PENDING
         if price <= 0:
-            print("Incorrect StopPrice")
+            print("Incorrect Price")
         else:
-            request['price'] = round(price, 3)
-            request['type_filling'] = mt5.ORDER_FILLING_RETURN
+            request['price'] = float(price)
+            request['type_filling'] = mt5.ORDER_FILLING_FOK
 
-    elif order_type == "SELL":
-        request['type'] = mt5.ORDER_TYPE_SELL
-        request['action'] = mt5.TRADE_ACTION_DEAL
-        request['type_filling'] = mt5.ORDER_FILLING_IOC
-    elif order_type == "BUY":
-        request['type'] = mt5.ORDER_TYPE_BUY
-        request['action'] = mt5.TRADE_ACTION_DEAL
-        request['type_filling'] = mt5.ORDER_FILLING_IOC
     else:
         print("Choose a valid order type from SELL_STOP, BUY_STOP, SELL, BUY")
         raise SyntaxError
@@ -125,17 +175,21 @@ def modify_position(order_number, symbol, new_stop_loss, new_take_profit):
     request = {
         "action": mt5.TRADE_ACTION_SLTP,
         "symbol": symbol,
-        "sl": new_stop_loss,
-        "tp": new_take_profit,
         "position": order_number
     }
+
+    if new_stop_loss is not None:
+        request["sl"] = float(new_stop_loss)
+
+    if new_take_profit is not None:
+        request["tp"] = float(new_take_profit)
+
     # Send order to MT5
     order_result = mt5.order_send(request)
     if order_result[0] == 10009:
         return True
     else:
         print(f"Error modifying position. Details: {order_result}")
-        raise mt5.MetaTraderModifyPositionError
 
 
 # Function to retrieve all open orders from MT5
@@ -170,15 +224,22 @@ def close_position(order_number, symbol, volume, order_type, price, comment):
     :param order_number: int
     :return: Boolean
     """
+
+    def get_close_price(symbol, order_type):
+        if order_type == "SELL":
+            return mt5.symbol_info(symbol).bid
+        elif order_type == "BUY":
+            return mt5.symbol_info(symbol).ask
+
     # Create the request
     request = {
         'action': mt5.TRADE_ACTION_DEAL,
         'symbol': symbol,
         'volume': volume,
         'position': order_number,
-        'price': price,
+        'price': get_close_price(symbol, order_type),
         'type_time': mt5.ORDER_TIME_GTC,
-        'type_filling': mt5.ORDER_FILLING_IOC,
+        'type_filling': mt5.ORDER_FILLING_FOK,
         'comment': comment
     }
 
@@ -189,7 +250,6 @@ def close_position(order_number, symbol, volume, order_type, price, comment):
     else:
         print(f"Incorrect syntax for position close {order_type}")
         raise SyntaxError
-
     # Place the order
     result = mt5.order_send(request)
     if result[0] == 10009:
@@ -209,4 +269,4 @@ def retrieve_latest_tick(symbol):
     tick = mt5.symbol_info_tick(symbol)._asdict()
     spread = tick['ask'] - tick['bid']
     tick['spread'] = spread
-    return tick
+    return float(tick['bid'])

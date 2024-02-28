@@ -123,3 +123,6 @@ pids
 
 # serviceAccKeys.json
 /serviceAccKeys.json
+
+# python config
+.pyc

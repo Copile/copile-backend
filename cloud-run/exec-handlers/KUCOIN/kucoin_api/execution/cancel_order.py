@@ -1,5 +1,4 @@
 from ..api.perpetual import KucoinFunctions
-from utils.firestore import get_trade_info
 from utils.message import message_cancel_order
 from utils.notification import notification_cancel_order
 from logs.logger import Logger
