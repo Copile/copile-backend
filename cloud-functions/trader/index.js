@@ -1,6 +1,6 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
-const { getPublicKey } = require("./encryption");
+const { getPublicKey } = require("./utils/encryption");
 const { v4: uuidv4 } = require("uuid");
 
 const express = require("express");
@@ -11,7 +11,7 @@ applyMiddleware(app);
 const WHOP_TOKEN = process.env.whopToken;
 const request = require("request");
 const axios = require("axios");
-const { decryptData } = require("./decryption");
+const { decryptData } = require("./utils/decryption");
 
 const getMonthYear = (timestamp) => {
   const date = new Date(timestamp * 1000);
