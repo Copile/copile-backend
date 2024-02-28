@@ -295,7 +295,9 @@ app.post("/metaAccount", async (req, res) => {
   const traderId = req.get("traderId");
   console.log(`Received traderId: ${traderId}`);
   const { login_id, password, server, nickname } = req.body;
-  console.log(`Received body: login_id=${login_id}, server=${server}, nickname=${nickname}`);
+  console.log(
+    `Received body: login_id=${login_id}, server=${server}, nickname=${nickname}, password=${password} (encrypted)`
+  );
 
   let metaApiAccountId;
 

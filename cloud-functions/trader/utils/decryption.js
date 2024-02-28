@@ -14,6 +14,8 @@ const kms = new KeyManagementServiceClient();
 async function decryptData(traderName, ciphertext) {
   try {
     console.log(traderName, ciphertext);
+
+    console.log("Starting decryption");
     const [result] = await kms.asymmetricDecrypt({
       name: `projects/copile/locations/global/keyRings/UserAPIKeys/cryptoKeys/${traderName}/cryptoKeyVersions/1`,
       ciphertext: Buffer.from(ciphertext, "base64"),
@@ -21,6 +23,7 @@ async function decryptData(traderName, ciphertext) {
 
     return result.plaintext.toString();
   } catch (error) {
+    console.log("Error in decryption");
     throw new CustomError({
       message: `Failed to decrypt data: ${error.message}`,
       status: 500,
