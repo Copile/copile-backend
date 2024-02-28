@@ -260,6 +260,7 @@ async function deleteMetaAccount(accountId) {
     console.log(`Account ${accountId} deleted from meta API.`);
   } catch (error) {
     console.error(`Failed to delete account ${accountId} from meta API: ${error}`);
+    throw new Error(`Failed to delete account ${accountId} from meta API: ${error}`);
   }
 }
 
