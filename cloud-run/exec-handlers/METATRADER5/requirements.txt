@@ -5,4 +5,5 @@ gunicorn<21.0,>=19.2.0
 google-cloud-firestore
 google-cloud-kms
 google-cloud-logging
+google-cloud-secret-manager
 functions-framework==3.0.0

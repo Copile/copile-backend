@@ -44,12 +44,16 @@ class MetaSession():
     #         logger.error(f"Failed to send cancel_all_tps: {str(e)}", exc_info=True)
     #         raise
 
-    # async def bulk_tp(self, data):
-    #     try:
-    #         return await bulk_tp(self.login_id, self.password, self.server, data)
-    #     except Exception as e:
-    #         logger.error(f"Failed to send bulk_tp: {str(e)}", exc_info=True)
-    #         raise
+    async def bulk_tp(self, data):
+        try:
+
+            data['payload'] = data['take_profits'][0]
+            data['tp_id'] = data['payload']['tp_id']
+
+            return await send_tp(self.login_id, self.password, self.server, data)
+        except Exception as e:
+            logger.error(f"Failed to send bulk_tp: {str(e)}", exc_info=True)
+            raise
 
     async def partial_close(self, data):
         try:

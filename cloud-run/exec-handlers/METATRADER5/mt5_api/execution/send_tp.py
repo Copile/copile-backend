@@ -2,7 +2,7 @@ from api.connection import get_connection
 from utils.firestore import get_trade_info, store_tp
 from scripts.settings import get_precisions
 
-async def send_sl(token, meta_id, data):
+async def send_tp(token, meta_id, data):
     try:
         connection = await get_connection(meta_id, token)
         terminal_state = connection.terminal_state
