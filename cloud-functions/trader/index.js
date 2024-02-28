@@ -306,7 +306,15 @@ app.post("/metaAccount", async (req, res) => {
     const decryptedPassword = await decryptData(traderId, password);
     console.log("Password decrypted successfully");
     const metaApiUrl = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts";
-    const metaApiData = { login: login_id, password: decryptedPassword, server, name: nickname };
+    const metaApiData = {
+      login: login_id,
+      password: decryptedPassword,
+      server,
+      name: nickname,
+      platform: "mt5",
+      manualTrades: true,
+      magic: 0,
+    };
     console.log(`Preparing to send data to Meta API`);
 
     const { data: apiResponse } = await axios.post(metaApiUrl, metaApiData, {
