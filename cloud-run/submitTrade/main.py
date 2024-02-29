@@ -174,7 +174,7 @@ async def bulk_order(data: dict, traderId: str = Header(None)):
         
         execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_order", data)
 
-        if len(data['plans']) != 0:
+        if len(data['plans']) != 0 or len(data['meta_accounts']) != 0:
             # Add the trade to the processing queue
             await add_task_to_queue("bulkOrder", data)
 

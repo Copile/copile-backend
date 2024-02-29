@@ -25,6 +25,7 @@ async def send_sl(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/send_tp')
@@ -42,6 +43,7 @@ async def send_tp(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/cancel_order')
@@ -58,6 +60,7 @@ async def cancel_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -75,6 +78,7 @@ async def cancel_all_orders(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -91,7 +95,8 @@ async def cancel_all_tps(data: dict):
 
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
-        # Log the error and return an error response
+        # Log the error and return an error response#
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -109,6 +114,7 @@ async def bulk_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -126,6 +132,7 @@ async def bulk_tp(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -144,6 +151,7 @@ async def replace_sl(data: dict):
 
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -161,6 +169,7 @@ async def partial_close(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

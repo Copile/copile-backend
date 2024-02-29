@@ -20,6 +20,7 @@ class MetaSession():
         try:
             return await bulk_order(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send bulk_order: {str(e)}", exc_info=True)
             raise
 
@@ -27,6 +28,7 @@ class MetaSession():
         try:
             return await cancel_all_orders(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send cancel_all_orders: {str(e)}", exc_info=True)
             raise
 
@@ -34,6 +36,7 @@ class MetaSession():
         try:
             return await send_sl(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send replace_sl: {str(e)}", exc_info=True)
             raise
 
@@ -52,6 +55,7 @@ class MetaSession():
 
             return await send_tp(self.login_id, self.password, self.server, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send bulk_tp: {str(e)}", exc_info=True)
             raise
 
@@ -59,6 +63,7 @@ class MetaSession():
         try:
             return await partial_close(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send partial_close: {str(e)}", exc_info=True)
             raise
 
@@ -66,6 +71,7 @@ class MetaSession():
         try:
             return await send_sl(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send send_sl: {str(e)}", exc_info=True)
             raise
 
@@ -73,6 +79,7 @@ class MetaSession():
         try:
             return await send_tp(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send send_tp: {str(e)}", exc_info=True)
             raise
 
@@ -80,5 +87,6 @@ class MetaSession():
         try:
             return await cancel_order(self.token, self.meta_id, data)
         except Exception as e:
+            print(e)
             logger.error(f"Failed to send cancel_order: {str(e)}", exc_info=True)
             raise
