@@ -1,6 +1,6 @@
 const Firestore = require("@google-cloud/firestore");
 const db = new Firestore();
-const { getPublicKey } = require("./encryption");
+const { getPublicKey } = require("./utils/encryption");
 const { v4: uuidv4 } = require("uuid");
 
 const express = require("express");
@@ -11,6 +11,7 @@ applyMiddleware(app);
 const WHOP_TOKEN = process.env.whopToken;
 const request = require("request");
 const axios = require("axios");
+const decryptData = require("./utils/decryption");
 
 const getMonthYear = (timestamp) => {
   const date = new Date(timestamp * 1000);
@@ -247,6 +248,22 @@ app.post("/subBingx", async (req, res) => {
   }
 });
 
+// Function to delete an account from the meta API
+// abstracted to allow for use in both the delete /metaAccount endpoint and to catch
+// errors when adding a new account to the meta API
+async function deleteMetaAccount(accountId) {
+  try {
+    const metaApiUrl = `https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${accountId}`;
+    await axios.delete(metaApiUrl, {
+      headers: { "auth-token": process.env.MT_API_KEY },
+    });
+    console.log(`Account ${accountId} deleted from meta API.`);
+  } catch (error) {
+    console.error(`Failed to delete account ${accountId} from meta API: ${error}`);
+    throw new Error(`Failed to delete account ${accountId} from meta API: ${error}`);
+  }
+}
+
 app.delete("/metaAccount", async (req, res) => {
   console.log("delete metaAccount endpoint hit");
   const traderId = req.get("traderId");
@@ -256,6 +273,8 @@ app.delete("/metaAccount", async (req, res) => {
   const metaAccountRef = db.collection("traders").doc(traderId).collection("meta_accounts").doc(documentId);
 
   try {
+    await deleteMetaAccount(documentId);
+
     await metaAccountRef.delete();
     console.log(`Meta account ${documentId} deleted - ${traderId}!`);
     res.status(204).json({
@@ -272,65 +291,79 @@ app.delete("/metaAccount", async (req, res) => {
 });
 
 app.post("/metaAccount", async (req, res) => {
-  console.log("post metaAccount endpoint hit");
+  console.log("Starting /metaAccount endpoint");
   const traderId = req.get("traderId");
-  console.log("req.body", req.body);
+  console.log(`Received traderId: ${traderId}`);
   const { login_id, password, server, nickname } = req.body;
-  console.log({ login_id, password, server, nickname });
+  console.log(
+    `Received body: login_id=${login_id}, server=${server}, nickname=${nickname}, password=${password} (encrypted)`
+  );
 
-  const id = uuidv4();
-
-  const newMetaAccountRef = db
-    .collection("traders")
-    .doc(traderId) // Navigate to the specific trader
-    .collection("meta_accounts") // Directly access the meta_accounts sub-collection
-    .doc(id); // Use the provided id for this document
+  let metaApiAccountId;
 
   try {
-    console.log("Submitting meta account to metaapi");
-    await axios.post(
-      "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts",
-      {
-        login: login_id,
-        password: password,
-        name: nickname,
-        server: server,
-      },
-      {
-        headers: {
-          "auth-token": process.env.MT_API_KEY,
-          "transaction-id": uuidv4(),
-        },
-      }
-    );
-  } catch (error) {
-    console.error(`Error submitting meta account to metaapi: ${error}`);
-    return res.status(500).json({
-      success: false,
-      error: `Error submitting meta account to metaapi: ${traderId}`,
+    console.log("Attempting to decrypt password");
+    const decryptedPassword = await decryptData(traderId, password);
+    console.log("Password decrypted successfully");
+    const metaApiUrl = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts";
+    const metaApiData = {
+      login: login_id,
+      password: decryptedPassword,
+      server,
+      name: nickname,
+      platform: "mt5",
+      manualTrades: true,
+      magic: 0,
+    };
+    console.log(`Preparing to send data to Meta API`);
+
+    const { data: apiResponse } = await axios.post(metaApiUrl, metaApiData, {
+      headers: { "auth-token": process.env.MT_API_KEY },
     });
-  }
+    console.log(`Received response from Meta API: ${JSON.stringify(apiResponse)}`);
 
-  console.log("Submitted meta account to metaapi, now adding to firestore");
-  try {
+    if (!apiResponse || !apiResponse.id) {
+      throw new Error("Invalid API response");
+    }
+
+    metaApiAccountId = apiResponse.id; // Store the account ID for potential deletion
+    console.log(`Meta API account ID stored for potential deletion: ${metaApiAccountId}`);
+
+    // Proceed to save in Firestore
+    console.log(`Attempting to save Meta account in Firestore under trader ID: ${traderId}`);
+    const newMetaAccountRef = db
+      .collection("traders")
+      .doc(traderId)
+      .collection("meta_accounts")
+      .doc(apiResponse.id);
     await newMetaAccountRef.set({
-      id: id,
-      login_id: login_id,
-      password: password,
-      server: server,
-      nickname: nickname,
+      id: apiResponse.id,
+      login_id,
+      password,
+      server,
+      nickname,
     });
+    console.log(`Meta account ${apiResponse.id} added successfully - ${traderId}!`);
 
-    console.log(`Account ${login_id} added - ${traderId}!`);
     res.status(201).json({
       success: true,
       message: `Account ${login_id} added - ${traderId}!`,
     });
   } catch (error) {
-    console.error(`Error adding document: ${error}`);
+    console.error(`Error processing request for traderId: ${traderId}: ${error}`);
+    if (metaApiAccountId) {
+      // If the Firestore operation fails, attempt to delete the account from the meta API to avoid orphaned accounts
+      console.log(
+        `Error encountered, attempting to delete account ${metaApiAccountId} from meta API to avoid orphaned accounts.`
+      );
+      await deleteMetaAccount(metaApiAccountId);
+
+      console.log(`Account ${metaApiAccountId} deleted from meta API. Sending error response.`);
+    }
+
     res.status(500).json({
       success: false,
-      error: `Error adding document: ${traderId}`,
+      error: `Error processing request for traderId: ${traderId}`,
     });
   }
 });
