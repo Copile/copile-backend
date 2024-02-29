@@ -34,6 +34,10 @@ async function addTaskToQueue(type, trade_data) {
       url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
+    case "testnet":
+      url = `https://mt5-exec-handler-zvakwy7kgq-uc.a.run.app/${type}`;
+      break;
+
     default:
       throw new Error(
         "Invalid exchange. Supported exchanges are 'bybit', 'kucoin', 'binance', bingx and testnet'."
