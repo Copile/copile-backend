@@ -9,7 +9,7 @@ async def bulk_order(token, meta_id, data):
         account_id = data['account_id']
         trader_id = data['trader_id']
         trader_percentage = data['trader_percentage']
-        trader_leverage = data['trader_leverage']
+        trader_leverage = data['payload']['leverage']
 
         side = data['payload']['side'].upper()
         entry = data['payload']['entry']
@@ -66,7 +66,7 @@ async def bulk_order(token, meta_id, data):
             "entry": entry if entry != 'market' else market_price,
             "leverage": 0,
             "margin": margin,
-            "exchange": "MT5"
+            "exchange": "mt5"
         }
 
         await store_trade(trader_id, account_id, trade_info)

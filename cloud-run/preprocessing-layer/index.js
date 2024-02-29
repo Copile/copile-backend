@@ -34,7 +34,7 @@ async function addTaskToQueue(type, trade_data) {
       url = `https://asia-testnet-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
       break;
 
-    case "testnet":
+    case "mt5":
       url = `https://mt5-exec-handler-zvakwy7kgq-uc.a.run.app/${type}`;
       break;
 
@@ -79,6 +79,7 @@ app.post("/bulkTP", async (req, res) => {
         const trade_data = {
           trade_id: tradeId,
           user_id: userId,
+          trader_id: traderId,
           take_profits: take_profits,
           exchange: doc.get("exchange"),
         };
@@ -109,6 +110,7 @@ app.post("/replaceTP", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           document_id: orderId,
           payload: payload,
@@ -142,6 +144,7 @@ app.post("/submitSL", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           payload: payload,
           document_id: sl_id,
@@ -174,6 +177,7 @@ app.post("/replaceSL", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           document_id: orderId,
           payload: payload,
@@ -206,6 +210,7 @@ app.post("/cancelOrder", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           document_id: document_id,
           trade_type: type,
@@ -238,6 +243,7 @@ app.post("/cancelAllOrders", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           exchange: doc.get("exchange"),
         };
@@ -268,6 +274,7 @@ app.post("/cancelAllTps", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           exchange: doc.get("exchange"),
         };
@@ -299,8 +306,27 @@ app.post("/bulkOrder", async (req, res) => {
     }
 
     // Extract the necessary fields from the trade data
-    const { plans, exchanges, payload, tradeId, traderId, margin, trader_exchange } = trade;
+    const { plans, exchanges, payload, tradeId, traderId, margin, trader_percentage, meta_accounts } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
+
+    // Create an array to store all metaTasks
+    const metaTasks = [];
+
+    for (let i = 0; i < meta_accounts.length; i++) {
+      let metaTradeData = {
+        trade_id: tradeId,
+        trader_id: traderId,
+        user_id: meta_accounts[i],
+        trader_percentage: trader_percentage, 
+        payload: payload,
+        exchange: 'mt5',
+      };
+      // Push each metaTasks into the array
+      metaTasks.push(addTaskToQueue('bulk_order', metaTradeData));
+    }
+
+    // Wait for all metaTasks to complete
+    await Promise.all(metaTasks);
 
     // Get a reference to the Firestore collection of workers across all users > plans > (plan) > **WORKERS**
     const workersAcrossAllUsersRef = firestore.collectionGroup("workers");
@@ -437,6 +463,7 @@ app.post("/partialClose", async (req, res) => {
       if (userId !== traderId) {
         const trade_data = {
           trade_id: tradeId,
+          trader_id: traderId,
           user_id: userId,
           percentage: percentage,
           exchange: doc.get("exchange"),
