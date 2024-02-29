@@ -1,6 +1,6 @@
-from api.connection import get_connection
-from scripts.settings import get_precisions
-from utils.firestore import get_trade_info, update_trade_quantity
+from .api.connection import get_connection
+from .scripts.settings import get_precisions
+from .utils.firestore import get_trade_info, update_trade_quantity
 
 async def partial_close(token, meta_id, data):
     try:

@@ -1,5 +1,5 @@
-from api.connection import get_connection
-from utils.firestore import get_trade_info, delete_tp_sl_order
+from .api.connection import get_connection
+from .utils.firestore import get_trade_info, delete_tp_sl_order
 
 async def cancel_order(token, meta_id, data):
     try:

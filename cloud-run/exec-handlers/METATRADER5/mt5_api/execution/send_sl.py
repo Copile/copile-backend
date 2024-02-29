@@ -1,6 +1,6 @@
-from api.connection import get_connection
-from utils.firestore import get_trade_info, store_sl
-from scripts.settings import get_precisions
+from .api.connection import get_connection
+from .utils.firestore import get_trade_info, store_sl
+from .scripts.settings import get_precisions
 
 async def send_sl(token, meta_id, data):
     try:

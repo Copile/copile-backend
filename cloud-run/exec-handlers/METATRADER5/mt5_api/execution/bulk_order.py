@@ -1,7 +1,7 @@
 import asyncio
-from scripts.settings import reformat_symbol, get_precisions, retrieve_latest_tick
-from utils.firestore import store_trade, store_sl, store_tp
-from api.connection import get_connection
+from .scripts.settings import reformat_symbol, get_precisions, retrieve_latest_tick
+from .utils.firestore import store_trade, store_sl, store_tp
+from .api.connection import get_connection
 
 async def bulk_order(token, meta_id, data):
     try:
