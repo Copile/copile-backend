@@ -2,6 +2,7 @@ import asyncio
 from .scripts.settings import reformat_symbol, get_precisions, retrieve_latest_tick
 from .utils.firestore import store_trade, store_sl, store_tp
 from .api.connection import get_connection
+from logs.logger import Logger
 
 async def bulk_order(token, meta_id, data):
     try:
@@ -9,6 +10,11 @@ async def bulk_order(token, meta_id, data):
         trader_id = data['trader_id']
         trader_percentage = data['trader_percentage']
         trader_leverage = data['payload']['leverage']
+
+        # Creating logger for info/errors
+        logger = Logger(meta_id, trade_id)
+
+        logger.info(f"Starting bulk order with data: {data}")    
 
         side = data['payload']['side'].upper()
         entry = data['payload']['entry']
@@ -68,6 +74,8 @@ async def bulk_order(token, meta_id, data):
             "exchange": "mt5"
         }
 
+        # Storing trade info in firestore
+        logger.info(f"Saving trade info to firestore: {trade_info}")
         await store_trade(trader_id, meta_id, trade_info)
 
         tp_dict = {
@@ -90,6 +98,9 @@ async def bulk_order(token, meta_id, data):
             store_tp(trader_id, meta_id, tp_dict),
             store_sl(trader_id, meta_id, sl_dict)
         )
+        logger.info(f"Executed bulk_order successfully")
 
+        return
     except Exception as e:
-        print(e)
+        logger.error(e)
+        raise e
