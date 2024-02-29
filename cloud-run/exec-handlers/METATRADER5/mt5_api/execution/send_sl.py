@@ -8,14 +8,13 @@ async def send_sl(token, meta_id, data):
         terminal_state = connection.terminal_state
         
         trade_id = data['trade_id']
-        account_id = data['account_id']
         trader_id = data['trader_id']
         
         document_id = data['sl_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(account_id, trade_id)
+        trade_info = await get_trade_info(meta_id, trade_id)
         order_id = str(trade_info['orderID'])
 
         precision = get_precisions(terminal_state, trade_info['symbol'])
@@ -53,7 +52,7 @@ async def send_sl(token, meta_id, data):
         payload['order_id'] = order_id
         payload['sl_document_id'] = document_id
 
-        await store_sl(trader_id, account_id, payload) 
+        await store_sl(trader_id, meta_id, payload) 
 
     except Exception as e:
         print(e)

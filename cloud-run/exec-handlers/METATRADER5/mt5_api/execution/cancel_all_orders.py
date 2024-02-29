@@ -8,10 +8,9 @@ async def cancel_all_orders(token, meta_id, data):
         terminal_state = connection.terminal_state
 
         trader_id = data['trader_id']
-        account_id = data['acccount_id']
         trade_id = data['trade_id']
 
-        trade_info = await get_trade_info(trader_id, account_id, trade_id)
+        trade_info = await get_trade_info(trader_id, meta_id, trade_id)
         order_id = trade_info['orderID']
 
         position_status = await get_position_status(order_id, terminal_state)

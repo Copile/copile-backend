@@ -8,11 +8,10 @@ async def partial_close(token, meta_id, data):
         terminal_state = connection.terminal_state
 
         trader_id = data['trader_id']
-        account_id = data['acccount_id']
         trade_id = data['trade_id']
         percentage = data['percentage']
 
-        trade_info = await get_trade_info(trader_id, account_id, trade_id)
+        trade_info = await get_trade_info(trader_id, meta_id, trade_id)
         order_id = trade_info['orderID']
 
         precision = get_precisions(terminal_state, trade_info['symbol'])
@@ -26,7 +25,7 @@ async def partial_close(token, meta_id, data):
                 sell_quantity = round(current_quantity * percentage, quantity_precision)
                 await connection.close_position_partially(order_id, sell_quantity)
 
-        await update_trade_quantity(trader_id, account_id, trade_id, round(current_quantity - sell_quantity, quantity_precision), quantity_precision)
+        await update_trade_quantity(trader_id, meta_id, trade_id, round(current_quantity - sell_quantity, quantity_precision), quantity_precision)
 
     except Exception as e:
         print(e)

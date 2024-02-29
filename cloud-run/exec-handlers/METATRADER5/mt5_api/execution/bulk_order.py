@@ -6,7 +6,6 @@ from api.connection import get_connection
 async def bulk_order(token, meta_id, data):
     try:
         trade_id = data['trade_id']
-        account_id = data['account_id']
         trader_id = data['trader_id']
         trader_percentage = data['trader_percentage']
         trader_leverage = data['payload']['leverage']
@@ -69,7 +68,7 @@ async def bulk_order(token, meta_id, data):
             "exchange": "mt5"
         }
 
-        await store_trade(trader_id, account_id, trade_info)
+        await store_trade(trader_id, meta_id, trade_info)
 
         tp_dict = {
             "order_id": 0,
@@ -88,8 +87,8 @@ async def bulk_order(token, meta_id, data):
         }
 
         await asyncio.gather(
-            store_tp(trader_id, account_id, tp_dict),
-            store_sl(trader_id, account_id, sl_dict)
+            store_tp(trader_id, meta_id, tp_dict),
+            store_sl(trader_id, meta_id, sl_dict)
         )
 
     except Exception as e:
