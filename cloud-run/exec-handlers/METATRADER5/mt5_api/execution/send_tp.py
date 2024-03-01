@@ -14,13 +14,13 @@ async def send_tp(token, meta_id, data):
         payload = data['payload']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(meta_id, trade_id)
+        trade_info = await get_trade_info(trader_id, meta_id, trade_id)
         order_id = str(trade_info['orderID'])
 
         precision = get_precisions(terminal_state, trade_info['symbol'])
         price_precision = precision['price_precision']
 
-        take_profit_price = round(float(payload['tp_value'], price_precision))
+        take_profit_price = round(float(payload['tp_value']), price_precision)
 
         open_positions = terminal_state.positions
 

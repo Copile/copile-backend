@@ -12,7 +12,7 @@ async def cancel_order(token, meta_id, data):
         trade_type = data['trade_type']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(meta_id, trade_id)
+        trade_info = await get_trade_info(trader_id, meta_id, trade_id)
         order_id = str(trade_info['orderID'])
 
         terminal_state = connection.terminal_state

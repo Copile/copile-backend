@@ -25,7 +25,7 @@ async def partial_close(token, meta_id, data):
                 sell_quantity = round(current_quantity * percentage, quantity_precision)
                 await connection.close_position_partially(order_id, sell_quantity)
 
-        await update_trade_quantity(trader_id, meta_id, trade_id, round(current_quantity - sell_quantity, quantity_precision), quantity_precision)
+        await update_trade_quantity(trader_id, meta_id, trade_id, round(current_quantity - sell_quantity, quantity_precision))
 
     except Exception as e:
         print(e)

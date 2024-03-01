@@ -53,7 +53,7 @@ class MetaSession():
             data['payload'] = data['take_profits'][0]
             data['tp_id'] = data['payload']['tp_id']
 
-            return await send_tp(self.login_id, self.password, self.server, data)
+            return await send_tp(self.token, self.meta_id, data)
         except Exception as e:
             print(e)
             logger.error(f"Failed to send bulk_tp: {str(e)}", exc_info=True)

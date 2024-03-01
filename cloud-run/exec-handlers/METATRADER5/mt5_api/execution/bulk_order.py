@@ -87,6 +87,7 @@ async def bulk_order(token, meta_id, data):
                 "order_id": 0,
                 'trade_id': trade_id,
                 "tp_number": 1,
+                "tp_document_id": take_profits[0]['tp_id'],
                 "tp_value": take_profit_price,
                 "tp_percentage": 1,
                 "tp_amount": 1
@@ -99,6 +100,7 @@ async def bulk_order(token, meta_id, data):
                 'trade_id': trade_id,
                 'symbol': symbol,
                 'sl_number': 1,
+                "sl_document_id": stop_losses[0]['sl_id'],
                 'sl_value': stop_loss_price,
                 "sl_percentage": 1,
                 "sl_amount": 1
