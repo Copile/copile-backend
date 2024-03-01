@@ -24,3 +24,4 @@ def retrieve_latest_tick(terminal_state, symbol):
     # Retrieve the tick information
     tick = terminal_state.price(symbol)
     return float(tick['bid'])
+
