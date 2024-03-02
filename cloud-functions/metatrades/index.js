@@ -45,5 +45,5 @@ app.get("*", (req, res) => {
 });
 
 module.exports = {
-  trader: app,
+  metatrades: app,
 };
