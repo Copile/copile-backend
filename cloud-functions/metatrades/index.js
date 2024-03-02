@@ -35,16 +35,7 @@ app.get("/trades", async (req, res) => {
 
         if (metaId !== traderId) {
           console.log(`Trade with metaId: ${metaId} is not equal to traderId: ${traderId}, adding to response`);
-          trades.push({
-            trade_id: tradeId,
-            symbol: doc.data().symbol,
-            type: doc.data().type,
-            side: doc.data().side,
-            quantity: doc.data().quantity,
-            entry: doc.data().entry,
-            margin: doc.data().margin,
-            exchange: doc.data().exchange,
-          });
+          trades.push(doc.data());
         } else {
           console.log(`Trade with metaId: ${metaId} is equal to traderId: ${traderId}, skipping`);
         }
@@ -52,7 +43,7 @@ app.get("/trades", async (req, res) => {
     });
 
     console.log(`Sending response with meta_trades:`, trades);
-    res.status(200).json({ meta_trades: trades });
+    res.status(200).json(trades);
   } catch (error) {
     console.error("Error fetching meta trades:", error);
     res.status(500).send("Error fetching meta trades");
