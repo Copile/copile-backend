@@ -8,34 +8,47 @@ applyMiddleware(app);
 
 app.get("/trades", async (req, res) => {
   console.log("Received request for /trades with body:", req.body);
-  const tradeIds = req.query.trade_ids.split(",");
+  const tradeIds = req.query.ids.split(",");
   const traderId = req.get("traderId");
 
   try {
-    console.log(`Looking for trades with tradeID: ${tradeId}`);
     const tradesRef = db.collectionGroup("trades");
-    const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
-    console.log(`Found ${tradeQuery.docs.length} trades with tradeID: ${tradeId}`);
 
-    const trades = tradeQuery.docs.map((doc) => {
-      const metaId = doc.ref.parent.parent.id;
-      console.log(`Processing trade with metaId: ${metaId} and traderId: ${traderId}`);
+    // Map each tradeId to a promise that queries for that tradeId
+    const tradeQueries = tradeIds.map((tradeId) => {
+      console.log(`Looking for trades with tradeID: ${tradeId}`);
+      return tradesRef.where("tradeID", "==", tradeId).get();
+    });
 
-      if (metaId !== traderId) {
-        console.log(`Trade with metaId: ${metaId} is not equal to traderId: ${traderId}, adding to response`);
-        return {
-          trade_id: tradeId,
-          symbol: doc.data().symbol,
-          type: doc.data().type,
-          side: doc.data().side,
-          quantity: doc.data().quantity,
-          entry: doc.data().entry,
-          margin: doc.data().margin,
-          exchange: doc.data().exchange,
-        };
-      } else {
-        console.log(`Trade with metaId: ${metaId} is equal to traderId: ${traderId}, skipping`);
-      }
+    // Wait for all queries to complete
+    const results = await Promise.all(tradeQueries);
+
+    // Process each query result
+    const trades = [];
+    results.forEach((tradeQuery, index) => {
+      const tradeId = tradeIds[index];
+      console.log(`Found ${tradeQuery.docs.length} trades with tradeID: ${tradeId}`);
+
+      tradeQuery.docs.forEach((doc) => {
+        const metaId = doc.ref.parent.parent.id;
+        console.log(`Processing trade with metaId: ${metaId} and traderId: ${traderId}`);
+
+        if (metaId !== traderId) {
+          console.log(`Trade with metaId: ${metaId} is not equal to traderId: ${traderId}, adding to response`);
+          trades.push({
+            trade_id: tradeId,
+            symbol: doc.data().symbol,
+            type: doc.data().type,
+            side: doc.data().side,
+            quantity: doc.data().quantity,
+            entry: doc.data().entry,
+            margin: doc.data().margin,
+            exchange: doc.data().exchange,
+          });
+        } else {
+          console.log(`Trade with metaId: ${metaId} is equal to traderId: ${traderId}, skipping`);
+        }
+      });
     });
 
     console.log(`Sending response with meta_trades:`, trades);
