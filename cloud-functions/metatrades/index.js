@@ -7,16 +7,22 @@ const app = express();
 applyMiddleware(app);
 
 app.get("/trades", async (req, res) => {
-  const { tradeId, traderId } = req.body;
+  console.log("Received request for /trades with body:", req.body);
+  const tradeIds = req.query.trade_ids.split(",");
+  const traderId = req.get("traderId");
 
   try {
+    console.log(`Looking for trades with tradeID: ${tradeId}`);
     const tradesRef = db.collectionGroup("trades");
     const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
+    console.log(`Found ${tradeQuery.docs.length} trades with tradeID: ${tradeId}`);
 
     const trades = tradeQuery.docs.map((doc) => {
       const metaId = doc.ref.parent.parent.id;
+      console.log(`Processing trade with metaId: ${metaId} and traderId: ${traderId}`);
 
       if (metaId !== traderId) {
+        console.log(`Trade with metaId: ${metaId} is not equal to traderId: ${traderId}, adding to response`);
         return {
           trade_id: tradeId,
           symbol: doc.data().symbol,
@@ -27,11 +33,15 @@ app.get("/trades", async (req, res) => {
           margin: doc.data().margin,
           exchange: doc.data().exchange,
         };
+      } else {
+        console.log(`Trade with metaId: ${metaId} is equal to traderId: ${traderId}, skipping`);
       }
     });
 
+    console.log(`Sending response with meta_trades:`, trades);
     res.status(200).json({ meta_trades: trades });
   } catch (error) {
+    console.error("Error fetching meta trades:", error);
     res.status(500).send("Error fetching meta trades");
   }
 });
