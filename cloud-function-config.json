@@ -1,5 +1,12 @@
 [
   {
+    "name": "metatrades",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "metatrades"
+  },
+  {
     "name": "saveUserEman",
     "runtime": "nodejs18",
     "memory": "256MB",
