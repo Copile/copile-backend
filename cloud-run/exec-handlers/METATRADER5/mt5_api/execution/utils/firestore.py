@@ -6,7 +6,7 @@ import asyncio
 db = firestore.AsyncClient()
 
 COLLECTION_META_ACCS  = "meta_accounts"
-COLLECTION_TRADERS = "users"
+COLLECTION_TRADERS = "traders"
 COLLECTION_TRADES = "trades"
 COLLECTION_PLANS = "plans"
 COLLECTION_WORKERS = "workers"
