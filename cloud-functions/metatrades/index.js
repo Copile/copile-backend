@@ -37,7 +37,14 @@ app.get("/trades", async (req, res) => {
           console.log(
             `Trade with parentId: ${parentId} is NOT equal to traderId: ${traderId}, adding to response`
           );
-          trades.push(doc.data());
+
+          const accountNickname = doc.ref.parent.parent.nickname;
+
+          const tradeData = {
+            ...doc.data(),
+            account_nickname: accountNickname,
+          };
+          trades.push(tradeData);
         } else {
           console.log(`Trade with parentId: ${parentId} is equal to traderId: ${traderId}, skipping`);
         }
