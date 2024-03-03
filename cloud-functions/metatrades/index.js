@@ -30,14 +30,16 @@ app.get("/trades", async (req, res) => {
       console.log(`Found ${tradeQuery.docs.length} trades with tradeID: ${tradeId}`);
 
       tradeQuery.docs.forEach((doc) => {
-        const metaId = doc.ref.parent.parent.id;
-        console.log(`Processing trade with metaId: ${metaId} and traderId: ${traderId}`);
+        const parentId = doc.ref.parent.parent.id;
+        console.log(`Processing trade with parentId: ${parentId} and traderId: ${traderId}`);
 
-        if (metaId !== traderId) {
-          console.log(`Trade with metaId: ${metaId} is not equal to traderId: ${traderId}, adding to response`);
+        if (parentId !== traderId) {
+          console.log(
+            `Trade with parentId: ${parentId} is NOT equal to traderId: ${traderId}, adding to response`
+          );
           trades.push(doc.data());
         } else {
-          console.log(`Trade with metaId: ${metaId} is equal to traderId: ${traderId}, skipping`);
+          console.log(`Trade with parentId: ${parentId} is equal to traderId: ${traderId}, skipping`);
         }
       });
     });
