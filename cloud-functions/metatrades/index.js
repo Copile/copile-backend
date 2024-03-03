@@ -23,7 +23,6 @@ app.get("/trades", async (req, res) => {
     // Wait for all queries to complete
     const results = await Promise.all(tradeQueries);
 
-    // Process each query result
     const tradePromises = results.flatMap((tradeQuery, index) =>
       tradeQuery.docs.map(async (doc) => {
         const tradeId = tradeIds[index];
@@ -37,15 +36,24 @@ app.get("/trades", async (req, res) => {
             `Trade with parentId: ${parentId} is NOT equal to traderId: ${traderId}, adding to response`
           );
 
-          // First, get the document snapshot for the trader document
-          const traderDocSnapshot = await doc.ref.parent.parent.get();
+          // Utilize promises to fetch trader document, stop-losses, and take-profits in parallel
+          const [traderDocSnapshot, stopLossesSnapshot, takeProfitsSnapshot] = await Promise.all([
+            doc.ref.parent.parent.get(),
+            doc.ref.collection("stop-losses").get(),
+            doc.ref.collection("take-profits").get(),
+          ]);
 
-          // Then, access the nickname from the document's data
           const accountNickname = traderDocSnapshot.data().nickname;
+
+          // Map documents in each collection to their data
+          const stopLosses = stopLossesSnapshot.docs.map((doc) => doc.data());
+          const takeProfits = takeProfitsSnapshot.docs.map((doc) => doc.data());
 
           const tradeData = {
             ...doc.data(),
             account_nickname: accountNickname,
+            stop_losses: stopLosses,
+            take_profits: takeProfits,
           };
           return tradeData;
         } else {
@@ -54,7 +62,6 @@ app.get("/trades", async (req, res) => {
         }
       })
     );
-
     // Wait for all the trade data promises to resolve and filter out nulls
     const trades = (await Promise.all(tradePromises)).filter((trade) => trade !== null);
 
