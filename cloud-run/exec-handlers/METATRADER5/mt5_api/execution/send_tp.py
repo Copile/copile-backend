@@ -1,5 +1,5 @@
 from .api.connection import get_connection
-from .utils.firestore import get_trade_info, store_tp
+from .utils.firestore import get_trade_info, update_tp_sl_price
 from .scripts.settings import get_precisions
 
 async def send_tp(token, meta_id, data):
@@ -10,7 +10,6 @@ async def send_tp(token, meta_id, data):
         trade_id = data['trade_id']
         trader_id = data['trader_id']
         
-        document_id = data['tp_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
@@ -46,13 +45,8 @@ async def send_tp(token, meta_id, data):
                         order['stopLoss'] = None
 
                     await connection.modify_order(order_id, float(order['openPrice']), order['stopLoss'], take_profit_price)
-        
-        payload['trade_id'] = trade_id
-        payload['tp_amount'] = 1
-        payload['order_id'] = order_id
-        payload['tp_document_id'] = document_id
 
-        await store_tp(trader_id, meta_id, payload) 
+        await update_tp_sl_price(trader_id, meta_id, trade_id, take_profit_price, 'tp')
         await connection.close()
         return
     except Exception as e:

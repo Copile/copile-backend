@@ -35,8 +35,6 @@ class MetaSession():
 
     async def replace_sl(self, data):
         try:
-            data['document_id'] = data['payload']['sl_id']
-
             return await send_sl(self.token, self.meta_id, data)
         except Exception as e:
             print(e)
@@ -47,9 +45,6 @@ class MetaSession():
         try:
             data['trade_type'] = 'tp'
 
-            take_profits = await get_tp_orders(data['trader_id'], self.meta_id, data['trade_id'])
-            data['document_id'] = take_profits[0]['document_id']
-
             return await cancel_order(self.token, self.meta_id, data)
         except Exception as e:
             logger.error(f"Failed to send cancel_all_tps: {str(e)}", exc_info=True)
@@ -57,10 +52,6 @@ class MetaSession():
 
     async def bulk_tp(self, data):
         try:
-
-            data['payload'] = data['take_profits'][0]
-            data['tp_id'] = data['payload']['tp_id']
-
             return await send_tp(self.token, self.meta_id, data)
         except Exception as e:
             print(e)
