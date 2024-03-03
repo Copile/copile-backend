@@ -1,5 +1,5 @@
 from .api.connection import get_connection
-from .utils.firestore import get_trade_info, delete_tp_sl_order
+from .utils.firestore import get_trade_info, update_tp_sl_price
 
 async def cancel_order(token, meta_id, data):
     try:
@@ -8,7 +8,6 @@ async def cancel_order(token, meta_id, data):
         trade_id = data['trade_id']
         trader_id = data['trader_id']
         
-        document_id = data['document_id']
         trade_type = data['trade_type']
 
         # Fetching the trade info from firestore
@@ -53,8 +52,7 @@ async def cancel_order(token, meta_id, data):
                     take_profit = None if trade_type == 'tp' else order['takeProfit']
 
                     await connection.modify_order(order_id, float(order['openPrice']), stop_loss, take_profit)
-
-        await delete_tp_sl_order(trader_id, meta_id, trade_id, document_id, trade_type)
+        await update_tp_sl_price(trader_id, meta_id, trade_id, None, trade_type)
         await connection.close()
         return
     except Exception as e:

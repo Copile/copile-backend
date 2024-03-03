@@ -73,41 +73,43 @@ async def bulk_order(token, meta_id, data):
             "entry": entry if entry != 'market' else market_price,
             "leverage": 0,
             "margin": margin,
-            "exchange": "mt5"
+            "exchange": "mt5",
+            "tp": take_profit_price,
+            "sl": stop_loss_price
         }
 
         # Storing trade info in firestore
         logger.info(f"Saving trade info to firestore: {trade_info}")
         await store_trade(trader_id, meta_id, trade_info)
 
-        tasks = []
+        # tasks = []
 
-        if take_profit_price is not None:
-            tp_dict = {
-                "order_id": 0,
-                'trade_id': trade_id,
-                "tp_number": 1,
-                "tp_document_id": take_profits[0]['tp_id'],
-                "tp_value": take_profit_price,
-                "tp_percentage": 1,
-                "tp_amount": 1
-            }
-            tasks.append(store_tp(trader_id, meta_id, tp_dict))
+        # if take_profit_price is not None:
+        #     tp_dict = {
+        #         "order_id": 0,
+        #         'trade_id': trade_id,
+        #         "tp_number": 1,
+        #         "tp_document_id": take_profits[0]['tp_id'],
+        #         "tp_value": take_profit_price,
+        #         "tp_percentage": 1,
+        #         "tp_amount": 1
+        #     }
+        #     tasks.append(store_tp(trader_id, meta_id, tp_dict))
 
-        if stop_loss_price is not None:
-            sl_dict = {
-                "order_id": 0,
-                'trade_id': trade_id,
-                'symbol': symbol,
-                'sl_number': 1,
-                "sl_document_id": stop_losses[0]['sl_id'],
-                'sl_value': stop_loss_price,
-                "sl_percentage": 1,
-                "sl_amount": 1
-            }
-            tasks.append(store_sl(trader_id, meta_id, sl_dict))
+        # if stop_loss_price is not None:
+        #     sl_dict = {
+        #         "order_id": 0,
+        #         'trade_id': trade_id,
+        #         'symbol': symbol,
+        #         'sl_number': 1,
+        #         "sl_document_id": stop_losses[0]['sl_id'],
+        #         'sl_value': stop_loss_price,
+        #         "sl_percentage": 1,
+        #         "sl_amount": 1
+        #     }
+        #     tasks.append(store_sl(trader_id, meta_id, sl_dict))
 
-        asyncio.gather(*tasks)
+        # asyncio.gather(*tasks)
 
         logger.info(f"Executed bulk_order successfully")
         await connection.close()

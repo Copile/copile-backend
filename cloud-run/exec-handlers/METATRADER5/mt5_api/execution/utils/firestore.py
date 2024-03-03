@@ -12,6 +12,7 @@ COLLECTION_PLANS = "plans"
 COLLECTION_WORKERS = "workers"
 COLLECTION_TAKE_PROFITS = "take-profits"
 COLLECTION_STOP_LOSSES = "stop-losses"
+FIELD_ACCOUNT_NICKNAME = "account_nickname"
 FIELD_TRADE_ID = "tradeID"
 FIELD_ORDER_ID = "orderID"
 FIELD_EXECUTED = "executed"
@@ -24,6 +25,8 @@ FIELD_LEVERAGE = "leverage"
 FIELD_MARGIN = "margin"
 FIELD_EXCHANGE = "exchange"
 FIELD_CREATED_AT = "created_at"
+FIELD_TP_PRICE = "tp"
+FIELD_SL_PRICE = "sl"
 FIELD_TP_NUMBER = "tp_number"
 FIELD_TP_VALUE = "tp_value"
 FIELD_TP_PERCENTAGE = "tp_percentage"
@@ -33,6 +36,14 @@ FIELD_SL_VALUE = "sl_value"
 FIELD_SL_PERCENTAGE = "sl_percentage"
 FIELD_SL_AMOUNT = "sl_amount"
 
+# Get mt5 nickname from db
+async def get_nickname(trader_id, meta_id):
+    try:
+        meta_acc_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id)
+        meta_acc_info = (await meta_acc_ref.get()).to_dict()
+        return meta_acc_info["nickname"]
+    except Exception as e:
+        raise e
 
 # Store trade data in db
 async def store_trade(trader_id, meta_id, order_dict):
@@ -40,6 +51,7 @@ async def store_trade(trader_id, meta_id, order_dict):
         trade_doc_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             order_dict["trade_id"])
         await trade_doc_ref.set({
+            FIELD_ACCOUNT_NICKNAME: await get_nickname(trader_id, meta_id),
             FIELD_TRADE_ID: str(order_dict["trade_id"]),
             FIELD_ORDER_ID: order_dict["order_id"],
             FIELD_SYMBOL: order_dict["symbol"],
@@ -50,7 +62,9 @@ async def store_trade(trader_id, meta_id, order_dict):
             FIELD_LEVERAGE: order_dict["leverage"],
             FIELD_MARGIN: order_dict["margin"],
             FIELD_EXCHANGE: order_dict["exchange"],
-            FIELD_CREATED_AT: int(time.time())
+            FIELD_CREATED_AT: int(time.time()),
+            FIELD_TP_PRICE: order_dict["tp"],
+            FIELD_SL_PRICE: order_dict["sl"]
         })
     except Exception as e:
         raise e
@@ -206,6 +220,15 @@ async def update_trade_quantity(trader_id, meta_id, trade_id, new_quantity):
 
         await trade_ref.update({'quantity': new_quantity})
         return f"Trade quantity successfully updated to {new_quantity}"
+    except Exception as e:
+        raise e
+
+# Update either the tp or sl of a trade
+async def update_tp_sl_price(trader_id, meta_id, trade_id, new_price, is_tp_or_sl):
+    try:
+        trade_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
+            trade_id)
+        await trade_ref.update({'tp': new_price}) if is_tp_or_sl == 'tp' else await trade_ref.update({'sl': new_price})
     except Exception as e:
         raise e
 
