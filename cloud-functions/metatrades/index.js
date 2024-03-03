@@ -29,7 +29,7 @@ app.get("/trades", async (req, res) => {
       const tradeId = tradeIds[index];
       console.log(`Found ${tradeQuery.docs.length} trades with tradeID: ${tradeId}`);
 
-      tradeQuery.docs.forEach((doc) => {
+      tradeQuery.docs.forEach(async (doc) => {
         const parentId = doc.ref.parent.parent.id;
         console.log(`Processing trade with parentId: ${parentId} and traderId: ${traderId}`);
 
@@ -38,7 +38,11 @@ app.get("/trades", async (req, res) => {
             `Trade with parentId: ${parentId} is NOT equal to traderId: ${traderId}, adding to response`
           );
 
-          const accountNickname = doc.ref.parent.parent.nickname;
+          // First, get the document snapshot for the trader document
+          const traderDocSnapshot = await doc.ref.parent.parent.get();
+
+          // Then, access the nickname from the document's data
+          const accountNickname = traderDocSnapshot.data().nickname;
 
           const tradeData = {
             ...doc.data(),
