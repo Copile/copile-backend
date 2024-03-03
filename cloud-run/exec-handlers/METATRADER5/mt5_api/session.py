@@ -34,6 +34,8 @@ class MetaSession():
 
     async def replace_sl(self, data):
         try:
+            data['sl_id'] = data['payload']['sl_id']
+
             return await send_sl(self.token, self.meta_id, data)
         except Exception as e:
             print(e)
