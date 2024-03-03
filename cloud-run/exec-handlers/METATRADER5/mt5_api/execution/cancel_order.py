@@ -55,6 +55,7 @@ async def cancel_order(token, meta_id, data):
                     await connection.modify_order(order_id, float(order['openPrice']), stop_loss, take_profit)
 
         await delete_tp_sl_order(trader_id, meta_id, trade_id, document_id, trade_type)
-
+        await connection.close()
+        return
     except Exception as e:
         print(e)

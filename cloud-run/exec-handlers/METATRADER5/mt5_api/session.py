@@ -5,6 +5,7 @@ from .execution.cancel_order import cancel_order
 from .execution.send_sl import send_sl
 from .execution.send_tp import send_tp
 from .execution.partial_close import partial_close
+from .execution.utils.firestore import get_tp_orders
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +35,25 @@ class MetaSession():
 
     async def replace_sl(self, data):
         try:
+            data['document_id'] = data['payload']['sl_id']
+
             return await send_sl(self.token, self.meta_id, data)
         except Exception as e:
             print(e)
             logger.error(f"Failed to send replace_sl: {str(e)}", exc_info=True)
             raise
 
-    # async def cancel_all_tps(self, data):
-    #     try:
-    #         return await cancel_all_tps(self.login_id, self.password, self.server, data)
-    #     except Exception as e:
-    #         logger.error(f"Failed to send cancel_all_tps: {str(e)}", exc_info=True)
-    #         raise
+    async def cancel_all_tps(self, data):
+        try:
+            data['trade_type'] = 'tp'
+
+            take_profits = await get_tp_orders(data['trader_id'], self.meta_id, data['trade_id'])
+            data['document_id'] = take_profits[0]['document_id']
+
+            return await cancel_order(self.token, self.meta_id, data)
+        except Exception as e:
+            logger.error(f"Failed to send cancel_all_tps: {str(e)}", exc_info=True)
+            raise
 
     async def bulk_tp(self, data):
         try:
