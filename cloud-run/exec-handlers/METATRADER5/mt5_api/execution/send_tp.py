@@ -53,6 +53,7 @@ async def send_tp(token, meta_id, data):
         payload['tp_document_id'] = document_id
 
         await store_tp(trader_id, meta_id, payload) 
-
+        await connection.close()
+        return
     except Exception as e:
         print(e)

@@ -53,6 +53,7 @@ async def send_sl(token, meta_id, data):
         payload['sl_document_id'] = document_id
 
         await store_sl(trader_id, meta_id, payload) 
-
+        await connection.close()
+        return
     except Exception as e:
         print(e)

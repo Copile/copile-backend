@@ -24,6 +24,8 @@ async def cancel_all_orders(token, meta_id, data):
             await connection.close_position(order_id)
         else:
             await connection.cancel_order(order_id)
+        await connection.close()
+        return
     except Exception as e:
         logger.error(e)
         raise e

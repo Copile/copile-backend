@@ -110,7 +110,7 @@ async def bulk_order(token, meta_id, data):
         asyncio.gather(*tasks)
 
         logger.info(f"Executed bulk_order successfully")
-
+        await connection.close()
         return
     except Exception as e:
         logger.error(e)
