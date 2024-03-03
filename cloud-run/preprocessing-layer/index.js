@@ -199,7 +199,7 @@ app.post("/replaceSL", async (req, res) => {
 app.post("/cancelOrder", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
-    const { tradeId, traderId, document_id, type } = trade;
+    const { tradeId, traderId, document_id, trade_type } = trade;
 
     const plansRef = firestore.collectionGroup("trades");
     const tradeQuery = await plansRef.where("tradeID", "==", tradeId).get();
@@ -213,7 +213,7 @@ app.post("/cancelOrder", async (req, res) => {
           trader_id: traderId,
           user_id: userId,
           document_id: document_id,
-          trade_type: type,
+          trade_type: trade_type,
           exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("cancel_order", trade_data));

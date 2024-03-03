@@ -10,7 +10,7 @@ async def send_sl(token, meta_id, data):
         trade_id = data['trade_id']
         trader_id = data['trader_id']
         
-        document_id = data['sl_id']
+        document_id = data['document_id']
         payload = data['payload']
 
         # Fetching the trade info from firestore
