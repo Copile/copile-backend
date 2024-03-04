@@ -52,6 +52,9 @@ class MetaSession():
 
     async def bulk_tp(self, data):
         try:
+
+            data['payload'] = data['take_profits'][0]
+
             return await send_tp(self.token, self.meta_id, data)
         except Exception as e:
             print(e)

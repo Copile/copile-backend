@@ -213,12 +213,12 @@ async def check_executed_status(trader_id, meta_id, trade_id, document_id, is_tp
 
 
 # Update quantity field for a specific order
-async def update_trade_quantity(trader_id, meta_id, trade_id, new_quantity):
+async def update_trade_quantity_margin(trader_id, meta_id, trade_id, new_quantity, new_margin):
     try:
         trade_ref = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(COLLECTION_TRADES).document(
             trade_id)
 
-        await trade_ref.update({'quantity': new_quantity})
+        await trade_ref.update({'quantity': new_quantity, 'margin': new_margin})
         return f"Trade quantity successfully updated to {new_quantity}"
     except Exception as e:
         raise e
