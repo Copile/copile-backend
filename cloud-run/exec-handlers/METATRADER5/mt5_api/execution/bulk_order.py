@@ -39,7 +39,7 @@ async def bulk_order(token, meta_id, data):
         # Fetching current market price for specific symbol
         market_price = retrieve_latest_tick(terminal_state, symbol)
 
-        quantity = round(((margin * 100) * (trader_leverage / 100)) / market_price, quantity_precision)
+        quantity = round(margin / market_price, quantity_precision)
 
         stop_loss_price = float(round(stop_losses[0]['sl_value'], price_precision)) if stop_losses != [] else None
         take_profit_price = float(round(take_profits[0]['tp_value'], price_precision)) if take_profits != [] else None
