@@ -12,6 +12,7 @@ async def send_sl(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
+        trader_id = data['trader_id']
         trade_id = data['trade_id']
 
         # Creating logger for info/errors
@@ -23,7 +24,7 @@ async def send_sl(api_key, api_secret, data):
         logger.info(f"Starting send sl with data: {data}")
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, trade_id)
+        trade_info = await get_trade_info(trader_id, user_id, trade_id)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -58,7 +59,7 @@ async def send_sl(api_key, api_secret, data):
         logger.info(f"Storing stop-loss in firestore: {payload}")
 
         # Storing stop-loss in firestore
-        await store_sl(user_id, payload)
+        await store_sl(trader_id, user_id, payload)
 
         logger.info(f"Executed send_sl successfully")
 

@@ -15,6 +15,7 @@ async def bulk_order(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
+        trader_id = data['trader_id']
         trade_id = data['trade_id']
 
         # Creating logger for info/errors
@@ -137,11 +138,11 @@ async def bulk_order(api_key, api_secret, data):
 
         # Storing trade info in firestore
         logger.info(f"Saving trade info to firestore: {trade_info}")
-        await store_trade(user_id, trade_info)
+        await store_trade(trader_id, user_id, trade_info)
 
         # Storing take-profits and stop-losses in firestore
-        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
-        sl_promises = [store_sl(user_id, sl) for sl in stop_losses_with_ids]
+        tp_promises = [store_tp(trader_id, user_id, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(trader_id, user_id, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
         logger.info(f"Executed bulk_order successfully")

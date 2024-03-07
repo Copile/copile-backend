@@ -16,6 +16,7 @@ async def partial_close(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
+        trader_id = data['trader_id']
         trade_id = data['trade_id']
 
         # Creating logger for info/errors
@@ -25,8 +26,8 @@ async def partial_close(api_key, api_secret, data):
 
         # Fetching the trade info and current take-profits/stop-losses from firestore
         trade_info, tp_sl_orders = await asyncio.gather(
-            get_trade_info(user_id, trade_id),
-            get_tp_sl_orders(user_id, trade_id)
+            get_trade_info(trader_id, user_id, trade_id),
+            get_tp_sl_orders(trader_id, user_id, trade_id)
         )
         symbol = trade_info["symbol"]
         side = trade_info["side"]
@@ -79,7 +80,7 @@ async def partial_close(api_key, api_secret, data):
             await session.trade_order(sell_order)
 
             # Updating new quantity in firestore
-            await update_trade_quantity(user_id, trade_id, new_quantity)
+            await update_trade_quantity(trader_id, user_id, trade_id, new_quantity)
             logger.info(f"Updated quantity in firestore: {new_quantity}")
         else:
             # Creating new limit order object to replace old order
@@ -106,7 +107,7 @@ async def partial_close(api_key, api_secret, data):
             logger.info(f"Saving trade info to firestore: {trade_info}")
 
             # Storing trade info in firestore
-            await store_trade(user_id, trade_info)
+            await store_trade(trader_id, user_id, trade_info)
 
         # Arrays to store orders for execution or order id filtering
         prepared_orders = []
@@ -156,8 +157,8 @@ async def partial_close(api_key, api_secret, data):
             stop_losses_with_ids.append(sl_order_dict)
 
         # Storing take-profits and stop-losses in firestore
-        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
-        sl_promises = [store_sl(user_id, sl) for sl in stop_losses_with_ids]
+        tp_promises = [store_tp(trader_id, user_id, tp) for tp in new_take_profits_with_ids]
+        sl_promises = [store_sl(trader_id, user_id, sl) for sl in stop_losses_with_ids]
 
         await asyncio.gather(*tp_promises, *sl_promises)
 

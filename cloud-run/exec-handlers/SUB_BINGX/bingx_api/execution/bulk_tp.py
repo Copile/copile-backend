@@ -14,6 +14,7 @@ async def bulk_tp(api_key, api_secret, data):
         session = BingXFunctions(api_key, api_secret)
 
         user_id = data['user_id']
+        trader_id = data['trader_id']
         trade_id = data['trade_id']
 
         # Creating logger for info/errors
@@ -24,7 +25,7 @@ async def bulk_tp(api_key, api_secret, data):
         take_profits = data['take_profits']
 
         # Fetching the trade info from firestore
-        trade_info = await get_trade_info(user_id, trade_id)
+        trade_info = await get_trade_info(trader_id, user_id, trade_id)
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
@@ -76,7 +77,7 @@ async def bulk_tp(api_key, api_secret, data):
             tp_count += 1
 
         # Store take profits in firestore
-        tp_promises = [store_tp(user_id, tp) for tp in new_take_profits_with_ids]
+        tp_promises = [store_tp(trader_id, user_id, tp) for tp in new_take_profits_with_ids]
 
         await asyncio.gather(*tp_promises)
 
@@ -87,5 +88,5 @@ async def bulk_tp(api_key, api_secret, data):
         return message_bulk_tp(trade_id, new_take_profits_with_ids)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e

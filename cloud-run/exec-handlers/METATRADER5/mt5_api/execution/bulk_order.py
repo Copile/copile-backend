@@ -9,7 +9,7 @@ async def bulk_order(token, meta_id, data):
         trade_id = data['trade_id']
         trader_id = data['trader_id']
         trader_percentage = data['trader_percentage']
-        trader_leverage = data['payload']['leverage']
+        #trader_leverage = data['payload']['leverage']
 
         # Creating logger for info/errors
         logger = Logger(meta_id, trade_id)

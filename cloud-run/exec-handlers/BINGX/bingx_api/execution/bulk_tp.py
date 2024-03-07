@@ -87,5 +87,5 @@ async def bulk_tp(api_key, api_secret, data):
         return message_bulk_tp(trade_id, new_take_profits_with_ids)
 
     except Exception as e:
-        log_error(user_id, trade_id, e)
+        logger.error(e)
         raise e

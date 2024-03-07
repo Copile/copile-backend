@@ -5,7 +5,6 @@ from .logs.logger import Logger
 
 async def cancel_all_orders(token, meta_id, data):
     try:
-        
         trader_id = data['trader_id']
         trade_id = data['trade_id']
 
