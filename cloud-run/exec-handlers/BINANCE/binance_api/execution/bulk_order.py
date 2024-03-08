@@ -28,7 +28,7 @@ async def bulk_order(api_key, api_secret, data):
         margin = await get_margin(session, user_id, plan_id, worker_id)
 
         trader_exchange = data['exchange']
-        margin_type = data['margin_type']
+        margin_type = "CROSSED" if data['margin_type'].upper() == "CROSS" else "ISOLATED"
 
         symbol = data['payload']['symbol']
         side = data['payload']['side'].upper()

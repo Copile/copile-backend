@@ -3,7 +3,6 @@ from ..api.perpetual import BingXFunctions
 from utils.firestore import store_trade, store_tp, store_sl
 from utils.message import message_bulk_order
 from utils.notification import notification_bulk_order
-from utils.margin import get_margin
 from logs.logger import Logger
 from ..scripts.order_factory import Order
 from ..scripts.distribution import calculate_tp_amounts
@@ -23,11 +22,8 @@ async def bulk_order(api_key, api_secret, data):
 
         logger.info(f"Starting bulk order with data: {data}")
 
-        plan_id = data['plan_id']
-        worker_id = data['worker_id']
-        margin = await get_margin(session, user_id, plan_id, worker_id)
-        trader_exchange = data['exchange']
-        margin_type = data['margin_type']
+        trader_percentage = data['trader_percentage']
+        margin_type = "CROSSED" if data['margin_type'].upper() == "CROSS" else "ISOLATED"
 
         side = data['payload']['side'].upper()
         leverage = data['payload']['leverage']
@@ -53,6 +49,9 @@ async def bulk_order(api_key, api_secret, data):
             session.set_leverage(symbol, order_side, leverage),
             session.get_market(symbol)
         )
+
+        balance = await session.get_balance()
+        margin = round(float(balance) * float(trader_percentage), 2)
 
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
@@ -133,7 +132,7 @@ async def bulk_order(api_key, api_secret, data):
             "entry": entry if entry != 'market' else market_price,
             "leverage": leverage,
             "margin": margin,
-            "exchange": trader_exchange
+            "exchange": "sub_bingx"
         }
 
         # Storing trade info in firestore

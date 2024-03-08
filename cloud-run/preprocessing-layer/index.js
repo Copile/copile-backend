@@ -38,6 +38,11 @@ async function addTaskToQueue(type, trade_data) {
       url = `https://mt5-exec-handler-zvakwy7kgq-uc.a.run.app/${type}`;
       break;
 
+    case "sub_bingx":
+      url = `https://asia-sub-bingx-exec-handler-zvakwy7kgq-as.a.run.app/${type}`;
+      break;
+  
+
     default:
       throw new Error(
         "Invalid exchange. Supported exchanges are 'bybit', 'kucoin', 'binance', bingx and testnet'."
@@ -306,11 +311,12 @@ app.post("/bulkOrder", async (req, res) => {
     }
 
     // Extract the necessary fields from the trade data
-    const { plans, exchanges, payload, tradeId, traderId, margin, trader_percentage, meta_accounts } = trade;
+    const { plans, exchanges, payload, tradeId, traderId, margin, trader_percentage, meta_accounts, sub_bingx } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
 
     // Create an array to store all metaTasks
     const metaTasks = [];
+    const subBingxTasks = []
 
     for (let i = 0; i < meta_accounts.length; i++) {
       let metaTradeData = {
@@ -323,6 +329,19 @@ app.post("/bulkOrder", async (req, res) => {
       };
       // Push each metaTasks into the array
       metaTasks.push(addTaskToQueue('bulk_order', metaTradeData));
+    }
+
+    for (let i = 0; i < sub_bingx.length; i++) {
+      let metaTradeData = {
+        trade_id: tradeId,
+        trader_id: traderId,
+        user_id: meta_accounts[i],
+        trader_percentage: trader_percentage, 
+        payload: payload,
+        exchange: 'sub_bingx',
+      };
+      // Push each metaTasks into the array
+      subBingxTasks.push(addTaskToQueue('bulk_order', metaTradeData));
     }
 
     // Wait for all metaTasks to complete
