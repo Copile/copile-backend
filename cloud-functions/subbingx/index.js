@@ -16,11 +16,10 @@ app.get("/trades", async (req, res) => {
     const tradesRef = db.collectionGroup("trades");
     console.log("Preparing to query trades collection group");
     const tradeQueries = tradeIds.map((tradeId) => {
-      console.log(`Querying for tradeID: ${tradeId}`);
+      console.log(`Looking for trades with tradeID: ${tradeId}`);
       return tradesRef.where("tradeID", "==", tradeId).get();
     });
     const results = await Promise.all(tradeQueries);
-    console.log("Completed querying for trades");
 
     const trades = await Promise.all(
       results.flatMap((tradeQuery) =>
@@ -28,21 +27,27 @@ app.get("/trades", async (req, res) => {
           const parentId = doc.ref.parent.parent.id;
           console.log(`Processing trade with parentId: ${parentId} and comparing with traderId: ${traderId}`);
           if (parentId === traderId) {
-            console.log(`Master trade found, skipping master trade with parent id: ${parentId}`);
+            console.log(
+              `Trade with parentId: ${parentId} is equal to traderId: ${traderId}, skipping master trade`
+            );
             return null; // Skip main master trade
           }
 
+          console.log(
+            `Trade with parentId: ${parentId} is NOT equal to traderId: ${traderId}, extracting trade data`
+          );
+
           const trade = doc.data();
-          console.log(`Initializing stop-losses and take-profits arrays for tradeID: ${trade.tradeID}`);
           trade["stop-losses"] = []; // Initialize arrays
           trade["take-profits"] = [];
 
+          console.log(`Fetching stop-losses and take-profits for trade`);
           const [stopLosses, takeProfits] = await Promise.all([
             doc.ref.collection("stop-losses").get(),
             doc.ref.collection("take-profits").get(),
           ]);
 
-          console.log(`Adding stop-losses and take-profits to tradeID: ${trade.tradeID}`);
+          console.log(`Adding stop-losses and take-profits to response data`);
           stopLosses.forEach((stopLoss) => trade["stop-losses"].push(stopLoss.data()));
           takeProfits.forEach((takeProfit) => trade["take-profits"].push(takeProfit.data()));
 
