@@ -315,7 +315,15 @@ app.post("/metaAccount", async (req, res) => {
       manualTrades: true,
       magic: 0,
     };
-    console.log(`Preparing to send data to Meta API`);
+    console.log(`Preparing to send data to Meta API`, {
+      login: login_id,
+      server,
+      name: nickname,
+      password: "***",
+      platform: "mt5",
+      manualTrades: true,
+      magic: 0,
+    });
 
     const { data: apiResponse } = await axios.post(metaApiUrl, metaApiData, {
       headers: { "auth-token": process.env.MT_API_KEY },
@@ -351,6 +359,11 @@ app.post("/metaAccount", async (req, res) => {
     });
   } catch (error) {
     console.error(`Error processing request for traderId: ${traderId}: ${error}`);
+
+    if (error.response) {
+      console.error(`Meta API response: ${JSON.stringify(error.response.data)}`);
+    }
+
     if (metaApiAccountId) {
       // If the Firestore operation fails, attempt to delete the account from the meta API to avoid orphaned accounts
       console.log(
