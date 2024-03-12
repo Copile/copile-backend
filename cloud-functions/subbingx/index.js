@@ -10,6 +10,7 @@ app.get("/trades", async (req, res) => {
   console.log("Received request for /trades with query parameters:", req.query);
   const tradeIds = req.query.ids.split(",");
   const traderId = req.get("traderId");
+
   console.log(`Extracted tradeIds: ${tradeIds} and traderId: ${traderId} from request`);
 
   try {
