@@ -1,5 +1,12 @@
 [
   {
+    "name": "distribution",
+    "runtime": "nodejs18",
+    "memory": "256MB",
+    "region": "us-central1",
+    "entry_point": "distribution"
+  },
+  {
     "name": "subbingx",
     "runtime": "nodejs18",
     "memory": "256MB",
