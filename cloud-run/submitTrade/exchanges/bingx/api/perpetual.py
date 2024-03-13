@@ -80,8 +80,8 @@ class BingXFunctions:
         payload = {'symbol': symbol, 'side': side, 'leverage': int(leverage)}
         print(payload)
         response = await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
-        check_lev = await self.get_leverage(symbol)['longLeverage' if side == "LONG" else "shortLeverage"]
-        if check_lev == int(leverage):
+        check_lev = await self.get_leverage(symbol)
+        if check_lev['longLeverage' if side == "LONG" else "shortLeverage"] == int(leverage):
             return response
         else:
             print('Error setting leverage')
