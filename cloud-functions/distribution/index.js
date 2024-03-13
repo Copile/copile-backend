@@ -86,5 +86,5 @@ app.get("*", (req, res) => {
 });
 
 module.exports = {
-  metatrades: app,
+  distribution: app,
 };
