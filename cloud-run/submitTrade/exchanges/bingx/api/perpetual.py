@@ -78,7 +78,16 @@ class BingXFunctions:
     async def set_leverage(self, symbol, side, leverage):
         path = "/openApi/swap/v2/trade/leverage"
         payload = {'symbol': symbol, 'side': side, 'leverage': int(leverage)}
-        return await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+        print(payload)
+        response = await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+        check_lev = await self.get_leverage(symbol)['longLeverage' if side == "LONG" else "shortLeverage"]
+        if check_lev == int(leverage):
+            return response
+        else:
+            print('Error setting leverage')
+            print(response)
+            print(check_lev)
+            return None
 
     async def force_orders(self, symbol=None, auto_close_type=None, start_time=None, end_time=None, limit=None):
         path = "/openApi/swap/v2/trade/forceOrders"

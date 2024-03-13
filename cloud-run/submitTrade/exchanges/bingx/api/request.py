@@ -21,7 +21,6 @@ async def get_server_time():
         async with session.get(url) as response:
             data = await response.json()
             server_time = data['data']['serverTime']
-            print(server_time)
             return server_time
 
 
