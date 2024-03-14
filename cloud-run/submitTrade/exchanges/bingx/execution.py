@@ -174,8 +174,9 @@ async def send_sl(api_key, api_secret, data):
         symbol = trade_info["symbol"]
         side = trade_info["side"]
 
-        # Preparing position side stop-loss
+       # Preparing position sides for  and stop-losses
         sl_position_side = "LONG" if side == "BUY" else "SHORT"
+        sl_side = "SELL" if side == "BUY" else "BUY"
 
         # Fetching current position and precision of symbol
         position, precision = await asyncio.gather(
@@ -190,7 +191,7 @@ async def send_sl(api_key, api_secret, data):
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
         # Creating stop-loss order object
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, position_quantity,
+        order = Order(symbol, "TRIGGER_MARKET", sl_side, None, float(position_quantity),
                       sl_position_side, price, None)
 
         # Executing new stop-loss order
@@ -234,10 +235,11 @@ async def replace_sl(api_key, api_secret, data):
         # Fetching the trade info from firestore
         trade_info = await get_trade_info(traderId, tradeId)
         symbol = trade_info["symbol"]
-        side = trade_info["side"]
+        side = trade_info["side"].upper()
 
-        # Preparing position side stop-loss
+       # Preparing position sides for  and stop-losses
         sl_position_side = "LONG" if side == "BUY" else "SHORT"
+        sl_side = "SELL" if side == "BUY" else "BUY"
 
         # Fetch the current position and precisions
         # Cancel the current stop-loss
@@ -254,7 +256,7 @@ async def replace_sl(api_key, api_secret, data):
         price = round(float(payload["sl_value"]), precision["price_precision"])
 
         # Creating stop-loss order object
-        order = Order(symbol, "TRIGGER_MARKET", "BUY" if side == "SELL" else "BUY", None, float(position_quantity),
+        order = Order(symbol, "TRIGGER_MARKET", sl_side, None, float(position_quantity),
                       sl_position_side, price, None)
 
         # Executing new stop-loss order
