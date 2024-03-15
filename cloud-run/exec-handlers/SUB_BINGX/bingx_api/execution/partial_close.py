@@ -1,6 +1,6 @@
 import asyncio
 from ..api.perpetual import BingXFunctions
-from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity, get_tp_sl_orders
+from utils.firestore import store_trade, store_tp, store_sl, get_trade_info, update_trade_quantity_margin, get_tp_sl_orders
 from utils.message import message_partial_close
 from utils.partial import distribute_percentages
 from utils.notification import notification_partial_close
@@ -55,6 +55,8 @@ async def partial_close(api_key, api_secret, data):
         quantity_to_sell = round(position_quantity * float(percentage), precision["quantity_precision"])
         new_quantity = round(position_quantity - quantity_to_sell, precision["quantity_precision"])
 
+        new_margin = round(float(trade_info["margin"] * float(percentage)), 2)
+
         logger.info(f"Position info: {position}, quantity to sell: {quantity_to_sell}, new quantity: {new_quantity}")
 
         # Fetching the statuses of all take-profits for filtering active/inactive
@@ -80,7 +82,7 @@ async def partial_close(api_key, api_secret, data):
             await session.trade_order(sell_order)
 
             # Updating new quantity in firestore
-            await update_trade_quantity(trader_id, user_id, trade_id, new_quantity)
+            await update_trade_quantity_margin(trader_id, user_id, trade_id, new_quantity, new_margin)
             logger.info(f"Updated quantity in firestore: {new_quantity}")
         else:
             # Creating new limit order object to replace old order
@@ -100,7 +102,7 @@ async def partial_close(api_key, api_secret, data):
                 "quantity": new_quantity,
                 "entry": trade_info["entry"],
                 "leverage": trade_info["leverage"],
-                "margin": round(float(trade_info["margin"] * float(percentage)), 2),
+                "margin": new_margin,
                 "exchange": trade_info["exchange"]
             }
 
