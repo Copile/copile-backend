@@ -13,11 +13,10 @@ async def test():
 @app.post('/send_sl')
 async def send_sl(data: dict):
     try:
-
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -26,16 +25,17 @@ async def send_sl(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post('/cancel_order')
 async def cancel_order(data: dict):
     try:
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -44,16 +44,17 @@ async def cancel_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post('/cancel_all_orders')
 async def cancel_all_orders(data: dict):
     try:
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -62,6 +63,7 @@ async def cancel_all_orders(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -69,10 +71,10 @@ async def cancel_all_orders(data: dict):
 async def cancel_all_tps(data: dict):
     try:
 
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -81,6 +83,7 @@ async def cancel_all_tps(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -88,10 +91,10 @@ async def cancel_all_tps(data: dict):
 async def bulk_order(data: dict):
     try:
 
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -100,17 +103,17 @@ async def bulk_order(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post('/bulk_tp')
 async def bulk_tp(data: dict):
     try:
-
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -119,17 +122,17 @@ async def bulk_tp(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post('/replace_sl')
 async def replace_sl(data: dict):
     try:
-
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -139,17 +142,17 @@ async def replace_sl(data: dict):
 
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post('/partial_close')
 async def partial_close(data: dict):
     try:
-
-        exchange = data["exchange"]
+        trader_id = data["trader_id"]
         user_id = data['user_id']
 
-        keys = await get_user_keys(user_id, exchange)
+        keys = await get_user_keys(trader_id, user_id)
 
         session = BingXSession(keys['api_key'], keys['api_secret'])
 
@@ -158,6 +161,7 @@ async def partial_close(data: dict):
         return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
         # Log the error and return an error response
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

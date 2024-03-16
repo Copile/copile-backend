@@ -127,14 +127,12 @@ async def get_user_keys(trader_id, meta_id):
         keys = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_SUB_BINGX).document(meta_id)
         
         keys_info = (await keys.get()).to_dict()
-        login_id = keys_info["login_id"]
-        password = await decrypt_data(trader_id, keys_info["password"])
-        server = keys_info['server']
+        api_key = keys_info["api_key"]
+        api_secret = await decrypt_data(trader_id, keys_info["api_secret"])
 
         account_data = {
-            "login_id": login_id,
-            "password": password,
-            "server": server
+            "api_key": api_key,
+            "api_secret": api_secret
         }
 
         return account_data

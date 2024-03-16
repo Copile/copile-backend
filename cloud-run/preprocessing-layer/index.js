@@ -311,7 +311,7 @@ app.post("/bulkOrder", async (req, res) => {
     }
 
     // Extract the necessary fields from the trade data
-    const { plans, exchanges, payload, tradeId, traderId, margin, trader_percentage, meta_accounts, sub_bingx } = trade;
+    const { plans, exchanges, payload, marginType, tradeId, traderId, margin, trader_percentage, meta_accounts, sub_bingx } = trade;
     console.log(`Processing trade with ID: ${tradeId} from trader: ${traderId}`);
 
     // Create an array to store all metaTasks
@@ -335,8 +335,9 @@ app.post("/bulkOrder", async (req, res) => {
       let metaTradeData = {
         trade_id: tradeId,
         trader_id: traderId,
-        user_id: meta_accounts[i],
-        trader_percentage: trader_percentage, 
+        user_id: sub_bingx[i],
+        trader_percentage: trader_percentage,
+        margin_type: marginType, 
         payload: payload,
         exchange: 'sub_bingx',
       };
