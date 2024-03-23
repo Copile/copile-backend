@@ -314,13 +314,13 @@ async def get_tp_sl_orders(account_id, trade_id):
 
         for tp_doc in tp_collection:
             tp_data = tp_doc.to_dict()
-            tp_data['document_id'] = tp_doc.id  # Add document ID to the dictionary
+            tp_data['tp_id'] = tp_doc.id
             tp_data['trade_type'] = "tp"
             tp_sl_orders.append(tp_data)
 
         for sl_doc in sl_collection:
             sl_data = sl_doc.to_dict()
-            sl_data['document_id'] = sl_doc.id  # Add document ID to the dictionary
+            sl_data['sl_id'] = sl_doc.id
             sl_data['trade_type'] = "sl"
             tp_sl_orders.append(sl_data)
 
