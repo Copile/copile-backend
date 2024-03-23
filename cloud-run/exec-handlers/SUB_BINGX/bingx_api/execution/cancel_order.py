@@ -28,7 +28,7 @@ async def cancel_order(api_key, api_secret, data):
         symbol = trade_info["symbol"]
 
         # Cancelling specific order based on trade_type (tp/sl)
-        await send_cancel(session, symbol, user_id, trade_id, document_id, trade_type)
+        await send_cancel(session, symbol, user_id, trader_id, trade_id, document_id, trade_type)
 
         logger.info(f"Executed cancel_order successfully")
 
