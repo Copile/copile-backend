@@ -76,6 +76,11 @@ class BingXFunctions:
             print('Error in switch_margin_mode:', error)
             return None
 
+    async def get_leverage(self, symbol):
+        path = "/openApi/swap/v2/trade/leverage"
+        payload = {'symbol': symbol}
+        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+
     async def set_leverage(self, symbol, side, leverage):
         path = "/openApi/swap/v2/trade/leverage"
         payload = {'symbol': symbol, 'side': side, 'leverage': int(leverage)}
