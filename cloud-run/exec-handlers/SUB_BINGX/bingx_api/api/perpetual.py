@@ -76,10 +76,21 @@ class BingXFunctions:
             print('Error in switch_margin_mode:', error)
             return None
 
-    async def get_leverage(self, symbol):
+    async def set_leverage(self, symbol, side, leverage):
         path = "/openApi/swap/v2/trade/leverage"
-        payload = {'symbol': symbol}
-        return await make_signed_request("GET", path, payload, self.api_key, self.api_secret)
+        payload = {'symbol': symbol, 'side': side, 'leverage': int(leverage)}
+        print(payload)
+        for attempt in range(3):
+            response = await make_signed_request("POST", path, payload, self.api_key, self.api_secret)
+            check_lev = await self.get_leverage(symbol)
+            if check_lev['longLeverage' if side == "LONG" else "shortLeverage"] == int(leverage):
+                return response
+            else:
+                print(f'Attempt {attempt + 1}: Error setting leverage')
+                print(response)
+                print(check_lev)
+                if attempt == 2:
+                    return None
 
     async def set_leverage(self, symbol, side, leverage):
         path = "/openApi/swap/v2/trade/leverage"

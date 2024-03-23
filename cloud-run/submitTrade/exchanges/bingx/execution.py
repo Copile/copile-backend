@@ -54,6 +54,11 @@ async def bulk_order(api_key, api_secret, data):
             session.get_market(symbol)
         )
 
+        if set_leverage is None:
+            error_message = "Failed to set leverage, stopping the trade due to an issue with the leverage setting."
+            logger.error(error_message)
+            raise Exception(error_message)
+
         # Calculating quantity when the entry is either market or specific price
         quantity = round((float(margin) * int(leverage) / float(entry)),
                          precision["quantity_precision"]) if entry != "market" else round(
