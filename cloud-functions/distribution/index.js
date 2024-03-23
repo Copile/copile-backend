@@ -47,7 +47,7 @@ app.get("/trades", async (req, res) => {
           if (trade.exchange === "mt5") {
             console.log(`Trade is mt5, adding to mt5Trades array`);
             mt5Trades.push(trade);
-          } else if (trade.exchange === "subbingx") {
+          } else if (trade.exchange === "sub_bingx") {
             console.log(`Trade is subbingx, fetching stop-losses and take-profits`);
             trade["stop-losses"] = [];
             trade["take-profits"] = [];
