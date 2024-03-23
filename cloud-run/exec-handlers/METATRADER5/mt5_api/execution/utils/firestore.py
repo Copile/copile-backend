@@ -261,9 +261,9 @@ async def get_tp_sl_orders(trader_id, meta_id, trade_id):
         tp_collection_task = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(
             COLLECTION_TRADES).document(
             trade_id).collection(COLLECTION_TAKE_PROFITS).get()
-        sl_collection_task = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).document(trader_id).collection(
-            COLLECTION_TRADES).document(
-            trade_id).collection(COLLECTION_STOP_LOSSES).get()
+        sl_collection_task = db.collection(COLLECTION_TRADERS).document(trader_id).collection(COLLECTION_META_ACCS).document(meta_id).collection(
+            COLLECTION_TRADES).document(trade_id).collection(
+            COLLECTION_STOP_LOSSES).get()
 
         tp_collection, sl_collection = await asyncio.gather(tp_collection_task, sl_collection_task)
 
