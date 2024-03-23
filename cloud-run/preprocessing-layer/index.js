@@ -152,7 +152,7 @@ app.post("/submitSL", async (req, res) => {
           trader_id: traderId,
           user_id: userId,
           payload: payload,
-          document_id: sl_id,
+          sl_id: sl_id,
           exchange: doc.get("exchange"),
         };
         tasks.push(addTaskToQueue("send_sl", trade_data));
