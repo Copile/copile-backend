@@ -171,7 +171,7 @@ app.post("/submitSL", async (req, res) => {
 app.post("/replaceSL", async (req, res) => {
   try {
     const trade = JSON.parse(req.body);
-    const { tradeId, traderId, orderId, payload } = trade;
+    const { tradeId, traderId, document_id, payload } = trade;
 
     const tradesRef = firestore.collectionGroup("trades");
     const tradeQuery = await tradesRef.where("tradeID", "==", tradeId).get();
@@ -184,7 +184,7 @@ app.post("/replaceSL", async (req, res) => {
           trade_id: tradeId,
           trader_id: traderId,
           user_id: userId,
-          document_id: orderId,
+          document_id: document_id,
           payload: payload,
           exchange: doc.get("exchange"),
         };
