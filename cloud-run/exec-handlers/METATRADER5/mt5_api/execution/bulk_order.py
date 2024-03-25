@@ -1,6 +1,6 @@
 import asyncio
 from .scripts.settings import reformat_symbol, get_precisions, retrieve_latest_tick
-from .utils.firestore import store_trade, store_sl, store_tp
+from .utils.firestore import store_trade, store_sl, store_tp, get_user_keys
 from .api.connection import get_connection
 from .logs.logger import Logger
 
@@ -21,7 +21,8 @@ async def bulk_order(token, meta_id, data):
         stop_losses = data['payload']['stop_losses']
         take_profits = data['payload']['take_profits']
 
-        symbol = reformat_symbol(data['payload']['symbol'])
+        account_data = await get_user_keys(trader_id, meta_id)
+        symbol = reformat_symbol(data['payload']['symbol']) if account_data['server'] == 'EvolveMarkets-MT5 Demo Server' else data['payload']['symbol']
 
         connection = await get_connection(meta_id, token)
 
