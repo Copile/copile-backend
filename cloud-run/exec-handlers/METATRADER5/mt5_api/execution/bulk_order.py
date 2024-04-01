@@ -28,7 +28,9 @@ async def bulk_order(token, meta_id, data):
 
         terminal_state = connection.terminal_state
 
-        margin = round(float(terminal_state.account_information["freeMargin"]) * trader_percentage, 2)
+        margin = round(float(terminal_state.account_information["freeMargin"]) * float(terminal_state.account_information["leverage"]) * trader_percentage, 2)
+
+        logger.info(f"Margin: {margin}")
 
         # Fetching precision for specific symbol
         precision = get_precisions(terminal_state, symbol)
@@ -40,7 +42,11 @@ async def bulk_order(token, meta_id, data):
         # Fetching current market price for specific symbol
         market_price = retrieve_latest_tick(terminal_state, symbol)
 
+        logger.info(f"Market price: {market_price}")
+
         quantity = round(margin / market_price, quantity_precision)
+
+        logger.info(f"Quantity: {quantity}")
 
         stop_loss_price = float(round(stop_losses[0]['sl_value'], price_precision)) if stop_losses != [] else None
         take_profit_price = float(round(take_profits[0]['tp_value'], price_precision)) if take_profits != [] else None
