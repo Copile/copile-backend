@@ -22,7 +22,7 @@ async def bulk_order(token, meta_id, data):
         take_profits = data['payload']['take_profits']
 
         account_data = await get_user_keys(trader_id, meta_id)
-        symbol = reformat_symbol(data['payload']['symbol']) if account_data['server'] == 'EvolveMarkets-MT5 Demo Server' else data['payload']['symbol']
+        symbol = reformat_symbol(data['payload']['symbol']) if account_data['server'] == 'EvolveMarkets-MT5 Demo Server' else data['payload']['symbol'] + 'f.t'
 
         connection = await get_connection(meta_id, token)
 
