@@ -19,54 +19,47 @@ steps:
           region=$(echo "$function_config" | jq -r '.region')
           entry_point=$(echo "$function_config" | jq -r '.entry_point')
 
-          # Check if the current function is notifications, admintrades, bybit or usertrades before deploying
-          if [ "$name" = "distribution" ] || [ "$name" = "xx" ] || [ "$name" = "dxXx" ] || [ "$name" = "x" ]; then
-            echo "Deploying function: $name"
-            # Deploy Cloud Function with specified settings
-            gcloud functions deploy $name \
-              --runtime=$runtime \
-              --trigger-http \
-              --allow-unauthenticated \
-              --region=$region \
-              --memory=$memory \
-              --entry-point=$entry_point \
-              --source=cloud-functions/$name
-          else
-            # Skip this function and continue to the next one
-            echo "Skipping function: $name"
-          fi
+          echo "Deploying function: $name"
+          # Deploy Cloud Function with specified settings
+          gcloud functions deploy $name \
+            --runtime=$runtime \
+            --trigger-http \
+            --allow-unauthenticated \
+            --region=$region \
+            --memory=$memory \
+            --entry-point=$entry_point \
+            --source=cloud-functions/$name
         done
 
-    # Cloud Run (Asia)
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['build', '-t', 'asia-trader-exec-handler:latest', 'cloud-run/asia-handler/asia-trader-exec-handler']
-    #   id: 'build-asia-trader-exec-handler'
+    # Cloud Run Services
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['build', '-t', 'solana-indexer:latest', 'cloud-run/solana-indexer']
+      id: 'build-solana-indexer'
 
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['tag', 'asia-trader-exec-handler:latest', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    #   id: 'tag-asia-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['tag', 'solana-indexer:latest', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-indexer:latest']
+      id: 'tag-solana-indexer'
 
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['push', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    #   id: 'push-asia-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['push', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-indexer:latest']
+      id: 'push-solana-indexer'
 
-    # - name: 'gcr.io/cloud-builders/gcloud'
-    #   args: ['run', 'deploy', 'asia-trader-exec-handler', '--image', 'asia-docker.pkg.dev/copile/asia.gcr.io/asia-trader-exec-handler:latest']
-    #   id: 'deploy-asia-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['run', 'deploy', 'solana-indexer', '--image', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-indexer:latest', '--region', 'europe-west2']
+      id: 'deploy-solana-indexer'
 
-    # # Cloud Run (US)
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['build', '-t', 'us-trader-exec-handler:latest', 'cloud-run/us-handler/us-trader-exec-handler']
-    #   id: 'build-us-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['build', '-t', 'solana-executor:latest', 'cloud-run/solana-executor']
+      id: 'build-solana-executor'
 
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['tag', 'us-trader-exec-handler:latest', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    #   id: 'tag-us-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['tag', 'solana-executor:latest', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-executor:latest']
+      id: 'tag-solana-executor'
 
-    # - name: 'gcr.io/cloud-builders/docker'
-    #   args: ['push', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    #   id: 'push-us-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['push', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-executor:latest']
+      id: 'push-solana-executor'
 
-    # - name: 'gcr.io/cloud-builders/gcloud'
-    #   args: ['run', 'deploy', 'us-trader-exec-handler', '--image', 'us-docker.pkg.dev/copile/us.gcr.io/us-trader-exec-handler:latest']
-    #   id: 'deploy-us-trader-exec-handler'
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['run', 'deploy', 'solana-executor', '--image', 'europe-docker.pkg.dev/copile/eu.gcr.io/solana-executor:latest', '--region', 'europe-west2']
+      id: 'deploy-solana-executor'
