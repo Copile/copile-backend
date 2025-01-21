@@ -1,17 +1,22 @@
 {
   "name": "wallet-analytics",
   "version": "1.0.0",
-  "description": "Solana wallet analytics utility for copy trading platform",
+  "description": "Cloud function for analyzing Solana wallet behavior and patterns",
   "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "functions-framework --target=analyzeWallet",
+    "deploy": "gcloud functions deploy wallet-analytics --gen2 --runtime=nodejs20 --region=us-central1 --trigger-http --entry-point=analyzeWallet"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.26.0",
+    "@google-cloud/functions-framework": "^3.3.0",
     "@solana/web3.js": "^1.87.6",
+    "@project-serum/serum": "^0.13.65",
     "@jito-labs/jito-ts": "^2.1.0",
     "firebase-admin": "^11.11.1",
-    "@google-cloud/functions-framework": "^3.3.0",
-    "bs58": "^5.0.0"
+    "node-cache": "^5.1.2",
+    "decimal.js": "^10.4.3"
   }
 }
