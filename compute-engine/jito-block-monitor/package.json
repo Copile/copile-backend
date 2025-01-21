@@ -1,0 +1,24 @@
+{
+  "name": "jito-block-monitor",
+  "version": "1.0.0",
+  "description": "Jito block production and MEV monitoring service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "@jito-labs/jito-ts": "^2.1.0",
+    "firebase-admin": "^11.11.1",
+    "ws": "^8.16.0",
+    "decimal.js": "^10.4.3",
+    "express": "^4.18.2",
+    "winston": "^3.11.0",
+    "node-cache": "^5.1.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
