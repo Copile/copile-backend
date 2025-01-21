@@ -1,18 +1,21 @@
 {
   "name": "jito-mempool-monitor",
   "version": "1.0.0",
-  "description": "Jito MEV monitoring service for Solana copy trading",
+  "description": "Cloud function for monitoring Solana mempool using Jito",
   "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "functions-framework --target=monitorMempool",
+    "deploy": "gcloud functions deploy jito-mempool-monitor --gen2 --runtime=nodejs20 --region=us-central1 --trigger-http --entry-point=monitorMempool"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.26.0",
+    "@google-cloud/functions-framework": "^3.3.0",
     "@solana/web3.js": "^1.87.6",
     "@jito-labs/jito-ts": "^2.1.0",
     "firebase-admin": "^11.11.1",
-    "@google-cloud/functions-framework": "^3.3.0",
-    "ws": "^8.16.0",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "decimal.js": "^10.4.3"
   }
 }

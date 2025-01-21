@@ -1,18 +1,22 @@
 {
   "name": "profitability-tracker",
   "version": "1.0.0",
-  "description": "Solana wallet profitability tracking service",
+  "description": "Cloud function for tracking trading profitability on Solana",
   "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "functions-framework --target=trackProfitability",
+    "deploy": "gcloud functions deploy profitability-tracker --gen2 --runtime=nodejs20 --region=us-central1 --trigger-http --entry-point=trackProfitability"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.26.0",
+    "@google-cloud/functions-framework": "^3.3.0",
     "@solana/web3.js": "^1.87.6",
+    "@project-serum/serum": "^0.13.65",
     "@jito-labs/jito-ts": "^2.1.0",
     "firebase-admin": "^11.11.1",
-    "@google-cloud/functions-framework": "^3.3.0",
-    "decimal.js": "^10.4.3",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "decimal.js": "^10.4.3"
   }
 }
