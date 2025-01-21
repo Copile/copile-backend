@@ -1,294 +1,88 @@
-from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
-from google.cloud import tasks_v2
-from google.protobuf import duration_pb2, timestamp_pb2
-import json
-import uuid
 import os
-import datetime
-from utils.firestore import trader_check, get_user_keys
-from logs.logger import Logger
-from trade.trade_execution import trade_execution
+import base58
+from typing import Dict, Any, Optional
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from solders.keypair import Keypair
+from solders.transaction import Transaction
+from trade.coordinator import CopyTradeCoordinator
 
-app = FastAPI()
+app = FastAPI(title="Solana Copy Trading Engine")
 
-async def add_task_to_queue(type, payload):
-    # Create a Cloud Task payload with the Cloud Run service URL and request body
-    
-    client = tasks_v2.CloudTasksAsyncClient()
+# Initialize coordinator with environment keypair
+keypair = Keypair.from_bytes(
+    base58.b58decode(os.getenv("SOLANA_KEYPAIR"))
+)
+coordinator = CopyTradeCoordinator(keypair)
 
-    parent = client.queue_path("copile", "us-central1", "processing-queue")
+class CopyTradeRequest(BaseModel):
+    input_mint: str
+    output_mint: str
+    amount: int
+    original_tx: Optional[str] = None
+    slippage_bps: Optional[int] = 100
 
-    # Create a Cloud Task object with the task payload and target URL
-    task = {
-        "http_request": {
-            "http_method": tasks_v2.HttpMethod.POST,
-            "url": 'https://preprocessing-layer-zvakwy7kgq-as.a.run.app/' + type,
-            "oidc_token": tasks_v2.OidcToken(
-                service_account_email="tasks-service-account@copile.iam.gserviceaccount.com"
-            ),
-            "body": json.dumps(payload).encode(),
-            "headers": {
-                "Content-type": "application/json"
-            }
-        }
-    }
+class AnalyzeTradeRequest(BaseModel):
+    token_address: str
+    amount: int
 
-    d = datetime.datetime.utcnow() + datetime.timedelta(seconds=6)
-    timestamp = timestamp_pb2.Timestamp()
-    timestamp.FromDatetime(d)
-    task["schedule_time"] = timestamp
-
-    task_name = str(uuid.uuid4())
-    task["name"] = client.task_path("copile", "us-central1", 'processing-queue', task_name)
-
-    duration = duration_pb2.Duration()
-    duration.FromSeconds(900)
-    task["dispatch_deadline"] = duration
-
-    # Create the Cloud Task request with the parent queue, task and schedule time
-    await client.create_task(request={"parent": parent, "task": task})
-    return
-
-@app.get('/test')
-async def test():
-    return {"message": "Hello World"}
-
-@app.post('/submit_sl')
-async def submit_sl(data: dict, traderId: str = Header(None)):
+@app.post("/copy-trade")
+async def copy_trade(request: CopyTradeRequest) -> Dict[str, Any]:
+    """
+    Execute a copy trade with optional MEV protection
+    """
     try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
+        original_tx = None
+        if request.original_tx:
+            original_tx = Transaction.from_string(request.original_tx)
             
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
+        result = await coordinator.execute_copy_trade(
+            input_mint=request.input_mint,
+            output_mint=request.output_mint,
+            amount=request.amount,
+            original_tx=original_tx,
+            slippage_bps=request.slippage_bps or 100
+        )
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "send_sl", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("submitSL", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/cancel_order')
-async def cancel_order(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
+        if result["status"] == "error":
+            raise HTTPException(
+                status_code=400,
+                detail=result["reason"]
+            )
             
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
+        return result
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_order", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("cancelOrder", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/cancel_all_orders')
-async def cancel_all_orders(data: dict, traderId: str = Header(None)):
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@app.post("/analyze-trade")
+async def analyze_trade(request: AnalyzeTradeRequest) -> Dict[str, Any]:
+    """
+    Analyze a trade opportunity before execution
+    """
     try:
-        exists = await trader_check(traderId)
+        result = await coordinator.analyze_trade_opportunity(
+            token_address=request.token_address,
+            amount=request.amount
+        )
         
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
+        if result["status"] == "error":
+            raise HTTPException(
+                status_code=400,
+                detail=result["reason"]
+            )
             
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
+        return result
         
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_orders", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("cancelAllOrders", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
     except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/cancel_all_tps')
-async def cancel_all_tps(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
-            
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "cancel_all_tps", data)
-        
-        # Add the trade to the processing queue
-        await add_task_to_queue("cancelAllTps", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/bulk_order')
-async def bulk_order(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": execution})
-
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_order", data)
-
-        if len(data['plans']) != 0 or len(data['meta_accounts']) != 0 or len(data['sub_bingx']) != 0:
-            # Add the trade to the processing queue
-            await add_task_to_queue("bulkOrder", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post('/bulk_tp')
-async def bulk_tp(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
-
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "bulk_tp", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("bulkTP", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/replace_tp')
-async def replace_tp(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
-            
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_tp", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("replaceTP", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post('/replace_sl')
-async def replace_sl(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
-            
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "replace_sl", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("replaceSL", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post('/partial_close')
-async def partial_close(data: dict, traderId: str = Header(None)):
-    try:
-        exists = await trader_check(traderId)
-        
-        # Check if trader exists
-        if not exists:
-            return JSONResponse(status_code=400, content={ "success": False, "message": 'Trader does not exist.' })
-            
-        data["traderId"] = traderId
-        trader_exchange = data["trader_exchange"]
-
-        keys = await get_user_keys(traderId, trader_exchange)
-        
-        execution = await trade_execution(keys['api_key'], keys['api_secret'], keys['api_passphrase'], "partial_close", data)
-
-        # Add the trade to the processing queue
-        await add_task_to_queue("partialClose", data)
-
-        return JSONResponse(status_code=200, content={"success": True, "message": execution})
-    except Exception as e:
-        # Log the error and return an error response
-        logger = Logger(traderId, None)
-        logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+@app.on_event("shutdown")
+async def shutdown_event():
+    await coordinator.cleanup()
