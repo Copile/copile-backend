@@ -1,170 +1,51 @@
 [
   {
-    "name": "distribution",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "distribution"
-  },
-  {
-    "name": "subbingx",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "subbingx"
-  },
-  {
-    "name": "metatrades",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "metatrades"
-  },
-  {
-    "name": "saveUserEman",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "saveUserEman"
-  },
-  {
-    "name": "checkReferral",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "checkReferral"
-  },
-  {
-    "name": "WhopWebhook",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "createLicense"
-  },
-  {
-    "name": "groups",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "groups"
-  },
-  {
-    "name": "clerkWebhook",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "clerkWebhook"
-  },
-  {
-    "name": "admintrades",
-    "runtime": "nodejs18",
-    "memory": "1GB",
-    "region": "europe-west2",
-    "entry_point": "trades"
-  },
-  {
-    "name": "apiKeys",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "europe-west2",
-    "entry_point": "validate"
-  },
-  {
-    "name": "bybit",
-    "runtime": "nodejs18",
-    "memory": "1GB",
-    "region": "europe-west2",
-    "entry_point": "trades"
-  },
-  {
-    "name": "checkMember",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "checkMember"
-  },
-  {
-    "name": "createBalances",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "createBalances"
-  },
-  {
-    "name": "binance",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "europe-west2",
-    "entry_point": "binance"
-  },
-  {
-    "name": "member",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "member"
-  },
-  {
-    "name": "salestracker",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "salestracker"
-  },
-  {
-    "name": "saveUserToFirestore",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "saveUserToFirestore"
-  },
-  {
-    "name": "OAuth",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "callback"
-  },
-  {
-    "name": "submitTrade",
-    "runtime": "python311",
-    "memory": "1GB",
-    "region": "europe-west2",
-    "entry_point": "test"
-  },
-  {
-    "name": "trader",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "trader"
-  },
-  {
-    "name": "traderBalance",
-    "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "traderBalance"
-  },
-  {
-    "name": "usertrades",
-    "runtime": "nodejs18",
-    "memory": "1GB",
-    "region": "europe-west2",
-    "entry_point": "trades"
-  },
-  {
-    "name": "watchPositions",
+    "name": "wallet-analytics",
     "runtime": "nodejs18",
     "memory": "512MB",
-    "region": "us-central1",
-    "entry_point": "trades"
+    "region": "europe-west2",
+    "entry_point": "analyzeWallet"
   },
   {
-    "name": "notifications",
+    "name": "profitability-tracker",
     "runtime": "nodejs18",
-    "memory": "256MB",
-    "region": "us-central1",
-    "entry_point": "notifications"
+    "memory": "512MB",
+    "region": "europe-west2",
+    "entry_point": "trackProfitability"
+  },
+  {
+    "name": "jito-mempool-monitor",
+    "runtime": "nodejs18",
+    "memory": "1GB",
+    "region": "europe-west2",
+    "entry_point": "getMevOpportunities"
+  },
+  {
+    "name": "liquidity-analyzer",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "europe-west2",
+    "entry_point": "analyzeLiquidity"
+  },
+  {
+    "name": "market-maker-detector",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "europe-west2",
+    "entry_point": "detectMarketMakers"
+  },
+  {
+    "name": "position-tracker",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "europe-west2",
+    "entry_point": "trackPositions"
+  },
+  {
+    "name": "transaction-analyzer",
+    "runtime": "nodejs18",
+    "memory": "512MB",
+    "region": "europe-west2",
+    "entry_point": "analyzeTransactions"
   }
 ]
