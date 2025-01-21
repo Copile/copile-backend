@@ -1,44 +1,62 @@
 import time
-import aiohttp
-import hashlib
-import hmac
-from urllib.parse import urlencode
+import asyncio
+import base58
+from typing import Dict, Any
+import grpc
+import anthropic
+from openai import AsyncOpenAI
+from solana.rpc.async_api import AsyncClient
+from solders.keypair import Keypair
+from solders.instruction import Instruction
+from jito_protos.block_engine.v1 import block_engine_pb2_grpc
+from jito_protos.block_engine.v1.block_engine_pb2 import GetTipAccountsRequest
 
-api_config = {
-    "host": "fapi.binance.com",
-    "protocol": "https"
+# Configuration for Jito and Solana endpoints
+network_config = {
+    "jito_grpc": "grpc.jito.wtf:443",
+    "solana_rpc": "https://api.mainnet-beta.solana.com",
+    "anthropic_api_key": None,  # To be set via environment
+    "openai_api_key": None      # To be set via environment
 }
 
-recv_window = 5000
+class TradeCopyEngine:
+    def __init__(self, keypair: Keypair):
+        self.keypair = keypair
+        self.solana_client = AsyncClient(network_config["solana_rpc"])
+        self.anthropic_client = anthropic.AsyncAnthropic()
+        self.openai_client = AsyncOpenAI()
+        
+    async def analyze_trade_viability(self, token_address: str) -> Dict[str, Any]:
+        """
+        Uses AI to analyze if a trade should be copied based on token metrics
+        """
+        # Token analysis would go here using Claude/GPT
+        pass
 
+    async def setup_jito_connection(self) -> grpc.aio.Channel:
+        """
+        Establishes secure gRPC connection to Jito MEV infrastructure
+        """
+        channel = grpc.aio.secure_channel(
+            network_config["jito_grpc"],
+            grpc.ssl_channel_credentials()
+        )
+        return channel
 
-# Function to create signature for request based on payload
-def sign_request(params, api_secret):
-    encoded_params = urlencode(params)
-    signature = hmac.new(api_secret.encode(), encoded_params.encode(), hashlib.sha256).hexdigest()
-    return signature
+    async def get_tip_accounts(self, channel: grpc.aio.Channel):
+        """
+        Fetches tip accounts from Jito for MEV opportunities
+        """
+        stub = block_engine_pb2_grpc.BlockEngineStub(channel)
+        request = GetTipAccountsRequest()
+        response = await stub.GetTipAccounts(request)
+        return response
 
-
-# Function to send the request to Binance
-async def make_signed_request(method, path, payload, api_key, api_secret):
-    timestamp = str(int(time.time() * 1000))
-    payload['timestamp'] = timestamp
-
-    params = payload.copy()
-    signature = sign_request(params, api_secret)
-    params['signature'] = signature
-
-    url = f"{api_config['protocol']}://{api_config['host']}{path}?{urlencode(params)}"
-    print(url)
-    headers = {
-        "X-MBX-APIKEY": api_key,
-    }
-
-    conn = aiohttp.TCPConnector(ssl=True)
-    async with aiohttp.ClientSession(connector=conn) as session:
-        async with session.request(method, url, headers=headers) as response:
-            if response.status != 200:
-                raise Exception(f"Failed to send Binance API request to {path}: {response.reason}")
-            data = await response.json()
-            print(data)
-            return data
+    async def submit_copy_trade(self, 
+                              original_tx_sig: str,
+                              instructions: list[Instruction]) -> str:
+        """
+        Submits a copy trade ensuring it lands in same/next block as target
+        """
+        # Implementation for submitting copy trade would go here
+        pass
