@@ -1,0 +1,6 @@
+solana==0.30.2
+solders>=0.18.0
+anchorpy>=0.17.0
+base58==2.1.1
+aiohttp>=3.8.0
+python-dotenv==1.0.0 
