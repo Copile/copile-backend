@@ -6,6 +6,10 @@ const admin = require("firebase-admin");
 const winston = require("winston");
 const WebSocket = require("ws");
 const NodeCache = require("node-cache");
+const { GeyserClient } = require("jito-ts/dist/sdk");
+const { BundleClient } = require("jito-ts/dist/sdk");
+const { Firestore } = require("@google-cloud/firestore");
+const { PubSub } = require("@google-cloud/pubsub");
 
 // Initialize Express app
 const app = express();
@@ -22,10 +26,7 @@ const cache = new NodeCache({ stdTTL: 60 }); // 1 minute cache
 // Configure logger
 const logger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
     new winston.transports.File({ filename: "error.log", level: "error" }),
     new winston.transports.File({ filename: "combined.log" }),
@@ -34,12 +35,17 @@ const logger = winston.createLogger({
 });
 
 // Initialize Solana connection
-const connection = new Connection(
-  process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
-);
-const jitoClient = new JitoRpcClient(
-  process.env.JITO_RPC_URL || "https://jito-api.mainnet-beta.solana.com"
-);
+const connection = new Connection(process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com");
+const jitoClient = new JitoRpcClient(process.env.JITO_RPC_URL || "https://jito-api.mainnet-beta.solana.com");
+
+// Initialize clients
+const firestore = new Firestore();
+const pubsub = new PubSub();
+const topic = pubsub.topic(process.env.PUBSUB_TOPIC);
+
+// Initialize Jito clients
+const geyserClient = new GeyserClient(process.env.JITO_GEYSER_URL);
+const bundleClient = new BundleClient(process.env.JITO_BUNDLE_URL);
 
 // Block monitoring state
 let blockStats = {
@@ -52,13 +58,107 @@ let blockStats = {
 
 let wsConnection = null;
 
+// Cache of wallets we're tracking
+let trackedWallets = new Set();
+
+async function updateTrackedWallets() {
+  try {
+    const snapshot = await firestore.collection("tracked_wallets").get();
+    const wallets = new Set();
+    snapshot.forEach((doc) => {
+      wallets.add(new PublicKey(doc.data().address));
+    });
+    trackedWallets = wallets;
+    console.log(`Updated tracked wallets: ${wallets.size} wallets`);
+  } catch (error) {
+    console.error("Failed to update tracked wallets:", error);
+  }
+}
+
+async function handleTransaction(tx, slot, blockTime) {
+  try {
+    // Check if transaction involves any tracked wallets
+    const accounts = tx.message.accountKeys;
+    const trackedAccounts = accounts.filter((account) => trackedWallets.has(account.toString()));
+
+    if (trackedAccounts.length === 0) return;
+
+    // Decode and analyze the transaction
+    const decodedTx = await connection.getParsedTransaction(tx.signature, "confirmed");
+    if (!decodedTx) return;
+
+    // Extract relevant trade information
+    const tradeInfo = {
+      signature: tx.signature,
+      slot,
+      blockTime,
+      trader: trackedAccounts[0].toString(),
+      instructions: decodedTx.transaction.message.instructions,
+      accounts: accounts.map((a) => a.toString()),
+      programIds: decodedTx.transaction.message.instructions.map((ix) => ix.programId.toString()),
+    };
+
+    // Store trade information
+    await firestore.collection("trades").add({
+      ...tradeInfo,
+      timestamp: new Date(blockTime * 1000),
+    });
+
+    // Publish trade for copy execution
+    await topic.publish(
+      Buffer.from(
+        JSON.stringify({
+          type: "new_trade",
+          data: tradeInfo,
+        })
+      )
+    );
+
+    console.log(`Processed trade from ${tradeInfo.trader} in slot ${slot}`);
+  } catch (error) {
+    console.error("Failed to handle transaction:", error);
+  }
+}
+
+async function main() {
+  // Initial load of tracked wallets
+  await updateTrackedWallets();
+
+  // Watch for changes to tracked wallets
+  firestore.collection("tracked_wallets").onSnapshot(() => updateTrackedWallets());
+
+  // Subscribe to Jito Geyser for real-time block data
+  await geyserClient.subscribeBlocksAndTxs(
+    {
+      commitment: "processed",
+      accounts: Array.from(trackedWallets),
+      votePubkey: null,
+      includeTransactions: true,
+      includeAccounts: true,
+      includeEntries: false,
+    },
+    {
+      onBlock: async (block) => {
+        for (const tx of block.transactions) {
+          await handleTransaction(tx, block.slot, block.blockTime);
+        }
+      },
+      onError: (error) => {
+        console.error("Geyser subscription error:", error);
+      },
+    }
+  );
+
+  console.log("Started monitoring Jito blocks for trades");
+}
+
+main().catch(console.error);
+
 // Connect to Jito WebSocket
 const connectToJitoWs = () => {
   if (wsConnection) return;
 
-  wsConnection = new WebSocket(
-    "wss://jito-block-engine.mainnet-beta.solana.com"
-  );
+  wsConnection = new WebSocket("wss://jito-block-engine.mainnet-beta.solana.com");
 
   wsConnection.on("open", () => {
     logger.info("Connected to Jito block engine");
@@ -112,9 +212,7 @@ async function processBlock(block) {
   // Analyze transactions for MEV opportunities
   if (block.transactions) {
     for (const tx of block.transactions) {
-      const programIds = tx.transaction.message.accountKeys.map((key) =>
-        key.toString()
-      );
+      const programIds = tx.transaction.message.accountKeys.map((key) => key.toString());
 
       // Look for specific MEV patterns (e.g., sandwich attacks)
       const potentialMev = analyzeMevPattern(tx, programIds);
@@ -134,11 +232,7 @@ async function processBlock(block) {
   blockStats.lastUpdate = new Date().toISOString();
 
   // Store block info in Firebase
-  await admin
-    .firestore()
-    .collection("jito-blocks")
-    .doc(block.parentSlot.toString())
-    .set(blockInfo);
+  await admin.firestore().collection("jito-blocks").doc(block.parentSlot.toString()).set(blockInfo);
 }
 
 // Analyze transaction for MEV patterns
@@ -179,9 +273,7 @@ app.get("/blocks/stats", (req, res) => {
 });
 
 app.get("/blocks/mev", (req, res) => {
-  const mevBlocks = blockStats.recentBlocks.filter(
-    (block) => block.mevOpportunities > 0
-  );
+  const mevBlocks = blockStats.recentBlocks.filter((block) => block.mevOpportunities > 0);
   res.json({
     success: true,
     totalMevOpportunities: blockStats.mevOpportunities,
@@ -190,9 +282,7 @@ app.get("/blocks/mev", (req, res) => {
 });
 
 app.get("/blocks/jito", (req, res) => {
-  const jitoBlocks = blockStats.recentBlocks.filter(
-    (block) => block.isJitoBlock
-  );
+  const jitoBlocks = blockStats.recentBlocks.filter((block) => block.isJitoBlock);
   res.json({
     success: true,
     totalJitoBlocks: blockStats.jitoBlocks,

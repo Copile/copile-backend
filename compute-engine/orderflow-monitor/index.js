@@ -8,6 +8,10 @@ const winston = require("winston");
 const WebSocket = require("ws");
 const NodeCache = require("node-cache");
 const Decimal = require("decimal.js");
+const { GeyserClient } = require("jito-ts/dist/sdk");
+const { Firestore } = require("@google-cloud/firestore");
+const { PubSub } = require("@google-cloud/pubsub");
+const { Helius } = require("helius-sdk");
 
 // Initialize Express app
 const app = express();
@@ -24,10 +28,7 @@ const cache = new NodeCache({ stdTTL: 60 }); // 1 minute cache
 // Configure logger
 const logger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
     new winston.transports.File({ filename: "error.log", level: "error" }),
     new winston.transports.File({ filename: "combined.log" }),
@@ -35,19 +36,26 @@ const logger = winston.createLogger({
   ],
 });
 
+// Initialize clients
+const firestore = new Firestore();
+const pubsub = new PubSub();
+const topic = pubsub.topic(process.env.PUBSUB_TOPIC);
+
+// Initialize Helius client for enhanced transaction data
+const helius = new Helius(process.env.HELIUS_API_KEY);
+
+// Initialize Jito client
+const geyserClient = new GeyserClient(process.env.JITO_GEYSER_URL);
+
 // Initialize Solana connection
-const connection = new Connection(
-  process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
-);
-const jitoClient = new JitoRpcClient(
-  process.env.JITO_RPC_URL || "https://jito-api.mainnet-beta.solana.com"
-);
+const connection = new Connection(process.env.JITO_RPC_URL);
 
 // Known DEX program IDs
 const DEX_PROGRAMS = {
   SERUM: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
   RAYDIUM: "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
   JUPITER: "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB",
+  ORCA: "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP",
 };
 
 // Orderflow state
@@ -72,9 +80,7 @@ let wsConnection = null;
 const connectToJitoWs = () => {
   if (wsConnection) return;
 
-  wsConnection = new WebSocket(
-    "wss://jito-block-engine.mainnet-beta.solana.com"
-  );
+  wsConnection = new WebSocket("wss://jito-block-engine.mainnet-beta.solana.com");
 
   wsConnection.on("open", () => {
     logger.info("Connected to Jito block engine");
@@ -112,36 +118,26 @@ async function processBlock(block) {
 
   for (const tx of block.transactions) {
     const signature = tx.transaction.signatures[0];
-    const programIds = tx.transaction.message.accountKeys.map((key) =>
-      key.toString()
-    );
+    const programIds = tx.transaction.message.accountKeys.map((key) => key.toString());
 
     // Look for DEX transactions
-    const dexPrograms = programIds.filter((id) =>
-      Object.values(DEX_PROGRAMS).includes(id)
-    );
+    const dexPrograms = programIds.filter((id) => Object.values(DEX_PROGRAMS).includes(id));
     if (dexPrograms.length === 0) continue;
 
     // Calculate transaction volume
-    const volume = new Decimal(
-      Math.abs(tx.meta.preBalances[0] - tx.meta.postBalances[0])
-    );
+    const volume = new Decimal(Math.abs(tx.meta.preBalances[0] - tx.meta.postBalances[0]));
 
     // Update volume stats
-    orderflowState.volumeStats.total =
-      orderflowState.volumeStats.total.plus(volume);
+    orderflowState.volumeStats.total = orderflowState.volumeStats.total.plus(volume);
 
     // Update DEX-specific volumes
     dexPrograms.forEach((program) => {
       if (program === DEX_PROGRAMS.SERUM) {
-        orderflowState.volumeStats.byDex.serum =
-          orderflowState.volumeStats.byDex.serum.plus(volume);
+        orderflowState.volumeStats.byDex.serum = orderflowState.volumeStats.byDex.serum.plus(volume);
       } else if (program === DEX_PROGRAMS.RAYDIUM) {
-        orderflowState.volumeStats.byDex.raydium =
-          orderflowState.volumeStats.byDex.raydium.plus(volume);
+        orderflowState.volumeStats.byDex.raydium = orderflowState.volumeStats.byDex.raydium.plus(volume);
       } else if (program === DEX_PROGRAMS.JUPITER) {
-        orderflowState.volumeStats.byDex.jupiter =
-          orderflowState.volumeStats.byDex.jupiter.plus(volume);
+        orderflowState.volumeStats.byDex.jupiter = orderflowState.volumeStats.byDex.jupiter.plus(volume);
       }
     });
 
@@ -177,11 +173,7 @@ async function processBlock(block) {
     }
 
     // Store in Firebase
-    await admin
-      .firestore()
-      .collection("orderflow")
-      .doc(signature)
-      .set(orderInfo);
+    await admin.firestore().collection("orderflow").doc(signature).set(orderInfo);
   }
 
   // Update patterns
@@ -202,10 +194,7 @@ function analyzePatterns() {
 
     if (windowOrders.length === 0) return;
 
-    const volume = windowOrders.reduce(
-      (acc, order) => acc.plus(new Decimal(order.volume)),
-      new Decimal(0)
-    );
+    const volume = windowOrders.reduce((acc, order) => acc.plus(new Decimal(order.volume)), new Decimal(0));
 
     patterns.push({
       timeWindow: window,
@@ -272,3 +261,128 @@ process.on("SIGTERM", () => {
   }
   process.exit(0);
 });
+
+// Cache of recent trades for pattern detection
+const recentTrades = new Map();
+
+async function analyzeTransaction(tx, slot, blockTime) {
+  try {
+    // Get enhanced transaction data from Helius
+    const enrichedTx = await helius.getEnrichedTransaction(tx.signature);
+    if (!enrichedTx) return;
+
+    // Check if transaction involves DEX programs
+    const dexInteractions = enrichedTx.instructions.filter((ix) =>
+      Object.values(DEX_PROGRAMS).includes(ix.programId)
+    );
+
+    if (dexInteractions.length === 0) return;
+
+    // Extract trade information
+    const tradeInfo = {
+      signature: tx.signature,
+      slot,
+      blockTime,
+      dex: dexInteractions[0].programId,
+      instructions: enrichedTx.instructions,
+      tokenTransfers: enrichedTx.tokenTransfers,
+      accounts: enrichedTx.accountKeys.map((a) => a.toString()),
+      computeUnits: enrichedTx.computeUnits,
+      fee: enrichedTx.fee,
+    };
+
+    // Store trade in recent trades cache
+    recentTrades.set(tx.signature, {
+      ...tradeInfo,
+      timestamp: Date.now(),
+    });
+
+    // Clean up old trades (older than 5 minutes)
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    for (const [sig, trade] of recentTrades.entries()) {
+      if (trade.timestamp < fiveMinutesAgo) {
+        recentTrades.delete(sig);
+      }
+    }
+
+    // Analyze for patterns
+    const patterns = await analyzeTradePatterns(tradeInfo);
+    if (patterns.length > 0) {
+      tradeInfo.patterns = patterns;
+
+      // Store pattern information
+      await firestore.collection("trade_patterns").add({
+        ...tradeInfo,
+        timestamp: new Date(blockTime * 1000),
+      });
+
+      // Publish pattern for potential action
+      await topic.publish(
+        Buffer.from(
+          JSON.stringify({
+            type: "trade_pattern",
+            data: tradeInfo,
+          })
+        )
+      );
+    }
+
+    console.log(`Processed DEX trade in slot ${slot} with patterns: ${patterns.join(", ")}`);
+  } catch (error) {
+    console.error("Failed to analyze transaction:", error);
+  }
+}
+
+async function analyzeTradePatterns(trade) {
+  const patterns = [];
+
+  // Look for large trades
+  if (trade.tokenTransfers.some((t) => t.amount > 10000)) {
+    patterns.push("large_trade");
+  }
+
+  // Look for multi-hop trades
+  if (trade.instructions.length > 2) {
+    patterns.push("multi_hop");
+  }
+
+  // Look for sandwich opportunities
+  const recentTradesArray = Array.from(recentTrades.values());
+  const sameTokenTrades = recentTradesArray.filter((t) =>
+    t.tokenTransfers.some((tt) => trade.tokenTransfers.some((currentTt) => currentTt.mint === tt.mint))
+  );
+
+  if (sameTokenTrades.length > 2) {
+    patterns.push("potential_sandwich");
+  }
+
+  return patterns;
+}
+
+async function main() {
+  // Subscribe to Jito Geyser for real-time block data
+  await geyserClient.subscribeBlocksAndTxs(
+    {
+      commitment: "processed",
+      accounts: Object.values(DEX_PROGRAMS).map((id) => new PublicKey(id)),
+      votePubkey: null,
+      includeTransactions: true,
+      includeAccounts: true,
+      includeEntries: false,
+    },
+    {
+      onBlock: async (block) => {
+        for (const tx of block.transactions) {
+          await analyzeTransaction(tx, block.slot, block.blockTime);
+        }
+      },
+      onError: (error) => {
+        console.error("Geyser subscription error:", error);
+      },
+    }
+  );
+
+  console.log("Started monitoring DEX orderflow");
+}
+
+main().catch(console.error);
