@@ -98,7 +98,7 @@ async def handle_request(request: Request) -> Dict[str, Any]:
             "signature": signature,
             "message": "Copy trade executed successfully"
         }
-        
+
     except Exception as e:
         logging.error(f"Failed to execute copy trade: {str(e)}")
         return {
