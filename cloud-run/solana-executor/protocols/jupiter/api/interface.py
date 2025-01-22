@@ -126,3 +126,22 @@ class JupiterInterface:
             }
         except Exception as e:
             raise Exception(f"Failed to get token accounts: {str(e)}") 
+
+
+
+                                                                                                                
+                                                                                                    
+                                                                                                    
+                                                 
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                                                                                                                        
+                                                                                                    
+                                                                                                    
+                                                                                                    
