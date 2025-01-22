@@ -1,9 +1,9 @@
-fastapi[all]
-uvicorn[standard]
-gunicorn<21.0,>=19.2.0
-google-cloud-firestore
-google-cloud-tasks
-google-cloud-kms
-google-cloud-logging
-aiohttp
+solana==0.30.2
+solders>=0.18.0
+anchorpy>=0.17.0
+base58==2.1.1
+aiohttp>=3.8.0
+python-dotenv==1.0.0
+google-cloud-firestore==2.11.1
+google-cloud-logging==3.5.0
 functions-framework==3.0.0
