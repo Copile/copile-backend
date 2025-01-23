@@ -226,19 +226,6 @@ optimizer := submission.NewBundleOptimizer(
 submitter.UseOptimizer(optimizer)
 ```
 
-## Documentation
-
-For detailed documentation, visit:
-
-- [Infrastructure Guide](docs/infrastructure.md)
-- [API Reference](docs/api-reference.md)
-- [Performance Tuning](docs/performance.md)
-- [Cloud Integration](docs/cloud-integration.md)
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
 ## License
 
-Copyright © 2024 Copile, Inc. All rights reserved.
+Copyright © 2024 Mira Trading LTD. All rights reserved.
