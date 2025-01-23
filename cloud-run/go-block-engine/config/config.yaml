@@ -1,0 +1,7 @@
+solana_rpc: "https://api.mainnet-beta.solana.com"
+jito_rpc: "https://jito-api.mainnet-beta.solana.com"
+nextblock_url: "https://nextblock.solana.com"
+project_id: "copile"
+region: "europe-west2"
+port: 8080
+log_level: "info"
