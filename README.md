@@ -6,7 +6,9 @@ Copile is an advanced infrastructure platform for building high-performance Sola
 
 ### 1. Transaction Monitoring System
 
-Our monitoring system provides microsecond-level transaction detection and analysis:
+- Scalable PubSub event distribution
+  Our monitoring system provides microsecond-level transaction detection and analysis:
+- Multi-endpoint load balancing with health checks
 
 ```go
 type MonitoringConfig struct {
@@ -15,7 +17,7 @@ type MonitoringConfig struct {
     LatencyThreshold       time.Duration
     MetricsPrefix          string
 }
-
+  - Risk management and position sizing
 // Example usage:
 monitor := monitoring.NewBlockMonitor(MonitoringConfig{
     EnableParallelProcessing: true,
@@ -35,8 +37,9 @@ Key Features:
 ### 2. Advanced Streaming Infrastructure
 
 Our streaming infrastructure provides real-time data flow with sophisticated error handling and recovery:
+// Example: Subscribe to transaction stream
 
-```go
+````go
 type StreamConfig struct {
     Sources           []string
     RedundancyFactor  int
@@ -52,16 +55,16 @@ stream := streaming.NewMultiSourceStream(StreamConfig{
     },
     RedundancyFactor: 2,
 })
-```
+Handles high-performance transaction submission with MEV protection:
 
 Features:
-
+// Example: Submit transaction with MEV protection
 - Multi-source data aggregation
 - Automatic failover and recovery
 - Configurable redundancy
 - Custom data transformation pipelines
 - Back-pressure handling
-
+  method: "POST",
 ### 3. High-Performance Submission System
 
 Our submission system is designed for maximum throughput and reliability:
@@ -82,20 +85,20 @@ submitter := submission.NewBundleSubmitter(SubmissionConfig{
         {Name: "High", MaxLatency: 500 * time.Microsecond},
     },
 })
-```
+Enables advanced copy trading strategies:
 
 Capabilities:
-
+// Example: Create copy trading strategy
 - Intelligent bundle optimization
 - Priority-based scheduling
 - Adaptive rate limiting
 - Transaction simulation and validation
 - MEV opportunity detection
-
+  sourceWallets: ["wallet1", "wallet2"],
 ## Cloud Integration
-
+    "Content-Type": "application/json",
 Copile's infrastructure is designed to be cloud-agnostic and easily integrable with any provider:
-
+## 🔧 Technical Stack
 ### GCP Integration
 
 ```yaml
@@ -109,10 +112,10 @@ resources:
   autoscaling:
     minInstances: 2
     maxInstances: 10
-```
-
+- **Runtime**: Node.js 20 with Express
+- **Monitoring**: Prometheus metrics, Winston logging
 ### AWS Integration
-
+- Transaction submission latency: < 100ms
 ```yaml
 # Example AWS ECS configuration
 service: copile-submitter
@@ -123,11 +126,15 @@ task_definition:
   autoscaling:
     min_capacity: 2
     max_capacity: 8
-```
+````
+
+- System uptime: 99.99%
 
 ## Flagship Component: Copy Trading System
 
 Our copy trading system demonstrates the power of our infrastructure:
+
+- Redis
 
 ```go
 type CopyTradingEngine struct {
@@ -135,7 +142,7 @@ type CopyTradingEngine struct {
     Submitter  *submission.BundleSubmitter
     Optimizer  *trading.OptimizerEngine
 }
-
+- Solana CLI
 // Advanced configuration example:
 engine := NewCopyTradingEngine(EngineConfig{
     MonitoringConfig: MonitoringConfig{
@@ -149,6 +156,8 @@ engine := NewCopyTradingEngine(EngineConfig{
 })
 ```
 
+# Install dependencies
+
 Features built on our core infrastructure:
 
 - Real-time trade detection and analysis
@@ -157,27 +166,33 @@ Features built on our core infrastructure:
 - Advanced market impact analysis
 - Sub-millisecond execution capabilities
 
+# Start services locally
+
 ## Performance Metrics
 
+npm run dev:copy # Start copy trading service
 Our infrastructure consistently achieves:
+
+# Build and deploy to Cloud Run
 
 - Transaction detection: < 100 microseconds
 - Bundle submission latency: < 500 microseconds
 - Stream processing throughput: > 100,000 TPS
 - Availability: 99.99%
 - Recovery time: < 50 milliseconds
+  gcloud run deploy solana-stream --image gcr.io/PROJECT_ID/solana-stream
 
 ## Getting Started
 
 1. Install dependencies:
 
-```bash
+````bash
 go mod init your-project
 go get github.com/copile/infrastructure
-```
+### Streaming Service
 
 2. Initialize core components:
-
+- `GET /health` - Health check endpoint
 ```go
 config := copile.Config{
     Endpoints: []string{"your-rpc-endpoints"},
@@ -185,7 +200,9 @@ config := copile.Config{
 }
 
 infrastructure := copile.NewInfrastructure(config)
-```
+````
+
+- `GET /health` - Health check endpoint
 
 3. Configure monitoring:
 
@@ -194,15 +211,21 @@ monitor := infrastructure.NewMonitor(monitoring.Config{
     EnableMetrics: true,
     BlockBuffer: 1000,
 })
-
+- `GET /strategies/:id` - Get strategy details
 monitor.OnTransaction(func(tx *solana.Transaction) {
     // Your custom logic here
 })
 ```
 
+- `GET /health` - Health check endpoint
+
 ## Advanced Configuration Examples
 
+- Environment variables for sensitive configuration
+
 ### Custom Monitoring Pipeline
+
+- Firestore security rules
 
 ```go
 pipeline := monitoring.NewPipeline(
@@ -210,11 +233,15 @@ pipeline := monitoring.NewPipeline(
     analyzers.NewMarketImpactAnalyzer(),
     processors.NewMEVDetector(),
 )
-
+- Custom dashboards in Grafana
 monitor.UsePipeline(pipeline)
 ```
 
+- Google Cloud Monitoring integration
+
 ### Advanced Bundle Optimization
+
+2. Create your feature branch
 
 ```go
 optimizer := submission.NewBundleOptimizer(
@@ -222,10 +249,8 @@ optimizer := submission.NewBundleOptimizer(
     optimizers.NewTimingOptimizer(),
     optimizers.NewValueOptimizer(),
 )
-
+4. Push to the branch
 submitter.UseOptimizer(optimizer)
 ```
 
 ## License
-
-Copyright © 2024 Mira Trading LTD. All rights reserved.
