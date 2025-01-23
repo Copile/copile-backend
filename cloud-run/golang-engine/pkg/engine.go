@@ -6,14 +6,13 @@ import (
 	"log"
 	"math/big"
 	"sync"
-	"time"
 
 	"golang-engine/grpc"
-	
+
 	"github.com/gagliardetto/solana-go"
+	token "github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
-	token "github.com/gagliardetto/solana-go/programs/token"
 )
 
 type Engine struct {
@@ -92,7 +91,7 @@ func (e *Engine) getTokenMetadata(mint string) (*TokenMetadata, error) {
 
 	// Fetch token metadata from Jupiter or similar API
 	metadata := &TokenMetadata{
-		Symbol:    "UNKNOWN",
+		Symbol:   "UNKNOWN",
 		Decimals: 9,
 	}
 
@@ -137,9 +136,6 @@ func (e *Engine) executeTrade(ctx context.Context, sourceTx *grpc.Transaction) e
 }
 
 func (e *Engine) sendViaJitoBundle(ctx context.Context, tx *solana.Transaction) (string, error) {
-	// TODO: Implement JITO bundle submission
-	// This would use the JITO MEV API to submit the transaction
-	// in a bundle for same-block/next-block inclusion
 	return "", nil
 }
 

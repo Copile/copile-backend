@@ -1,6 +1,6 @@
 module github.com/copile/go-block-engine
 
-go 1.21
+go 1.23.2
 
 require (
 	github.com/gagliardetto/solana-go v1.8.4
