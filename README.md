@@ -39,7 +39,7 @@ Key Features:
 Our streaming infrastructure provides real-time data flow with sophisticated error handling and recovery:
 // Example: Subscribe to transaction stream
 
-````go
+```go
 type StreamConfig struct {
     Sources           []string
     RedundancyFactor  int
@@ -55,6 +55,8 @@ stream := streaming.NewMultiSourceStream(StreamConfig{
     },
     RedundancyFactor: 2,
 })
+```
+
 Handles high-performance transaction submission with MEV protection:
 
 Features:
@@ -85,6 +87,7 @@ if err != nil {
   return nil, fmt.Errorf("could not send bundle: %w", err)
 }
 ```
+
 Enables advanced copy trading strategies:
 
 Capabilities:
@@ -114,6 +117,7 @@ resources:
     maxInstances: 10
 - **Runtime**: Node.js 20 with Express
 - **Monitoring**: Prometheus metrics, Winston logging
+```
 ### AWS Integration
 - Transaction submission latency: < 100ms
 ```yaml
@@ -126,7 +130,7 @@ task_definition:
   autoscaling:
     min_capacity: 2
     max_capacity: 8
-````
+```
 
 - System uptime: 99.99%
 
