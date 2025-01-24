@@ -86,7 +86,7 @@ if err != nil {
 }
 
 Enables advanced copy trading strategies:
-
+```
 Capabilities:
 // Example: Create copy trading strategy
 - Intelligent bundle optimization
