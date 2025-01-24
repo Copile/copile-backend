@@ -3,6 +3,7 @@
 Copile is an advanced infrastructure platform for building high-performance Solana applications, featuring ultra-fast transaction monitoring, sophisticated streaming capabilities, and a high-throughput submission system. While our flagship component demonstrates copy trading capabilities, our core strength lies in providing enterprise-grade infrastructure that seamlessly integrates with any cloud provider.
 
 ![image](https://github.com/user-attachments/assets/77332c0a-bb56-4cc3-8267-31fb1c4f8e3b)
+### Check us out at [www.copile.trade](https://x.com/CopileTrading) and [X](https://x.com/CopileTrading)
 
 ## Core Infrastructure Components
 
