@@ -84,9 +84,9 @@ if err != nil {
   fmt.Println(err)
   return nil, fmt.Errorf("could not send bundle: %w", err)
 }
-
-Enables advanced copy trading strategies:
 ```
+Enables advanced copy trading strategies:
+
 Capabilities:
 // Example: Create copy trading strategy
 - Intelligent bundle optimization
