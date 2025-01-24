@@ -70,21 +70,21 @@ Features:
 Our submission system is designed for maximum throughput and reliability:
 
 ```go
-type SubmissionConfig struct {
-    MaxBundleSize    int
-    PriorityLevels   []PriorityLevel
-    RetryStrategy    RetryConfig
-    LoadBalancing    LoadBalancerConfig
+// Advanced bundle submission:
+searcherClient, err := block_engine.NewSearcherClient(
+  ctx,
+  block_engine_pkg.GetEndpoint("FRA"),
+  nil,
+  connection,
+  &SenderPrivateKey,
+)
+
+bundleResult, err := searcherClient.SendBundle(tx)
+if err != nil {
+  fmt.Println(err)
+  return nil, fmt.Errorf("could not send bundle: %w", err)
 }
 
-// Advanced bundle submission:
-submitter := submission.NewBundleSubmitter(SubmissionConfig{
-    MaxBundleSize: 25,
-    PriorityLevels: []PriorityLevel{
-        {Name: "Critical", MaxLatency: 100 * time.Microsecond},
-        {Name: "High", MaxLatency: 500 * time.Microsecond},
-    },
-})
 Enables advanced copy trading strategies:
 
 Capabilities:
