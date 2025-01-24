@@ -1,0 +1,15 @@
+app = "solana-lite-rpc"
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "../Dockerfile"
+
+[env]
+  PORT_HTTP = "8890"
+  PORT_WS = "8891"
+  RUST_LOG = "info"
+
+ [metrics]
+   path = "/metrics"
+   port = 9091
