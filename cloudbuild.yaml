@@ -99,3 +99,39 @@ steps:
         - '--set-env-vars'
         - 'NODE_ENV=production'
       id: 'deploy-network-monitor'
+
+    # Program Monitor Service
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['build', '-t', 'program-monitor:latest', 'compute-engine/program-monitor']
+      id: 'build-program-monitor'
+
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['tag', 'program-monitor:latest', 'europe-docker.pkg.dev/copile/eu.gcr.io/program-monitor:latest']
+      id: 'tag-program-monitor'
+
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['push', 'europe-docker.pkg.dev/copile/eu.gcr.io/program-monitor:latest']
+      id: 'push-program-monitor'
+
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: 
+        - 'run'
+        - 'deploy'
+        - 'program-monitor'
+        - '--image'
+        - 'europe-docker.pkg.dev/copile/eu.gcr.io/program-monitor:latest'
+        - '--region'
+        - 'europe-west2'
+        - '--port'
+        - '3003'
+        - '--memory'
+        - '1Gi'
+        - '--cpu'
+        - '1'
+        - '--min-instances'
+        - '1'
+        - '--max-instances'
+        - '10'
+        - '--set-env-vars'
+        - 'NODE_ENV=production'
+      id: 'deploy-program-monitor'
